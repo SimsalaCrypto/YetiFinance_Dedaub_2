@@ -6,7 +6,6 @@ import "./ILiquityBase.sol";
 import "./IStabilityPool.sol";
 import "./IYUSDToken.sol";
 import "./IYETIToken.sol";
-import "./ISYETI.sol";
 import "./IActivePool.sol";
 import "./IDefaultPool.sol";
 
@@ -14,26 +13,6 @@ import "./IDefaultPool.sol";
 interface ITroveManager is ILiquityBase {
   // --- Events ---
 
-  event BorrowerOperationsAddressChanged(address _newBorrowerOperationsAddress);
-  event PriceFeedAddressChanged(address _newPriceFeedAddress);
-  event YUSDTokenAddressChanged(address _newYUSDTokenAddress);
-  event ActivePoolAddressChanged(address _activePoolAddress);
-  event DefaultPoolAddressChanged(address _defaultPoolAddress);
-  event StabilityPoolAddressChanged(address _stabilityPoolAddress);
-  event GasPoolAddressChanged(address _gasPoolAddress);
-  event CollSurplusPoolAddressChanged(address _collSurplusPoolAddress);
-  event SortedTrovesAddressChanged(address _sortedTrovesAddress);
-  event YETITokenAddressChanged(address _yetiTokenAddress);
-  event SYETIAddressChanged(address _sYETIAddress);
-
-  event Liquidation(
-    uint256 liquidatedAmount,
-    uint256 totalYUSDGasCompensation,
-    address[] totalCollTokens,
-    uint256[] totalCollAmounts,
-    address[] totalCollGasCompTokens,
-    uint256[] totalCollGasCompAmounts
-  );
   event Redemption(
     uint256 _attemptedYUSDAmount,
     uint256 _actualYUSDAmount,
@@ -64,25 +43,11 @@ interface ITroveManager is ILiquityBase {
     address _borrowerOperationsAddress,
     address _activePoolAddress,
     address _defaultPoolAddress,
-    address _stabilityPoolAddress,
-    address _gasPoolAddress,
-    address _collSurplusPoolAddress,
-    address _yusdTokenAddress,
     address _sortedTrovesAddress,
-    address _yetiTokenAddress,
-    address _sYETIAddress,
-    address _whitelistAddress,
+    address _controllerAddress,
     address _troveManagerRedemptionsAddress,
     address _troveManagerLiquidationsAddress
   ) external;
-
-  function stabilityPool() external view returns (IStabilityPool);
-
-  function yusdToken() external view returns (IYUSDToken);
-
-  function yetiToken() external view returns (IYETIToken);
-
-  function sYETI() external view returns (ISYETI);
 
   function getTroveOwnersCount() external view returns (uint256);
 
@@ -93,7 +58,7 @@ interface ITroveManager is ILiquityBase {
 
   function getCurrentICR(address _borrower) external view returns (uint256);
 
-  function getCurrentRICR(address _borrower) external view returns (uint256);
+  function getCurrentAICR(address _borrower) external view returns (uint256);
 
   function liquidate(address _borrower) external;
 
@@ -112,12 +77,14 @@ interface ITroveManager is ILiquityBase {
     uint256 _maxIterations
   ) external;
 
-  function updateStakeAndTotalStakes(address _borrower) external;
-
-  function updateTroveCollTMR(
-    address _borrower,
-    address[] memory addresses,
-    uint256[] memory amounts
+  function redeemCollateralSingle(
+    uint256 _YUSDamount,
+    uint256 _YUSDMaxFee,
+    address _target,
+    address _upperHint,
+    address _lowerHint,
+    uint256 _hintAICR,
+    address _collToRedeem
   ) external;
 
   function updateTroveRewardSnapshots(address _borrower) external;
@@ -128,7 +95,6 @@ interface ITroveManager is ILiquityBase {
 
   function applyPendingRewards(address _borrower) external;
 
-  //    function getPendingETHReward(address _borrower) external view returns (uint);
   function getPendingCollRewards(address _borrower)
     external
     view
@@ -141,18 +107,7 @@ interface ITroveManager is ILiquityBase {
 
   function hasPendingRewards(address _borrower) external view returns (bool);
 
-  //    function getEntireDebtAndColl(address _borrower) external view returns (
-  //        uint debt,
-  //        uint coll,
-  //        uint pendingYUSDDebtReward,
-  //        uint pendingETHReward
-  //    );
-
-  function closeTrove(address _borrower) external;
-
-  function removeStake(address _borrower) external;
-
-  function removeStakeTMR(address _borrower) external;
+  function removeStakeAndCloseTrove(address _borrower) external;
 
   function updateTroveDebt(address _borrower, uint256 debt) external;
 
@@ -176,7 +131,9 @@ interface ITroveManager is ILiquityBase {
     view
     returns (uint256);
 
-  function decayBaseRateFromBorrowing() external;
+  function decayBaseRateFromBorrowingAndCalculateFee(uint256 _YUSDDebt)
+    external
+    returns (uint256);
 
   function getTroveStatus(address _borrower) external view returns (uint256);
 
@@ -205,7 +162,6 @@ interface ITroveManager is ILiquityBase {
     view
     returns (uint256);
 
-  // returns the VC value of a trove
   function getTroveVC(address _borrower) external view returns (uint256);
 
   function getTroveColls(address _borrower)
@@ -224,7 +180,7 @@ interface ITroveManager is ILiquityBase {
 
   function setTroveStatus(address _borrower, uint256 num) external;
 
-  function updateTroveColl(
+  function updateTroveCollAndStakeAndTotalStakes(
     address _borrower,
     address[] memory _tokens,
     uint256[] memory _amounts
@@ -246,7 +202,7 @@ interface ITroveManager is ILiquityBase {
 
   function closeTroveLiquidation(address _borrower) external;
 
-  function removeStakeTLR(address _borrower) external;
+  function removeStake(address _borrower) external;
 
   function updateBaseRate(uint256 newBaseRate) external;
 
@@ -278,18 +234,23 @@ interface ITroveManager is ILiquityBase {
       uint256[] memory
     );
 
-  function movePendingTroveRewardsToActivePool(
-    IActivePool _activePool,
-    IDefaultPool _defaultPool,
-    uint256 _YUSD,
-    address[] memory _tokens,
-    uint256[] memory _amounts,
-    address _borrower
+  function updateTroves(
+    address[] calldata _borrowers,
+    address[] calldata _lowerHints,
+    address[] calldata _upperHints
   ) external;
 
-  function collSurplusUpdate(
-    address _account,
-    address[] memory _tokens,
-    uint256[] memory _amounts
-  ) external;
+  function updateUnderCollateralizedTroves(address[] memory _ids) external;
+
+  function getMCR() external view returns (uint256);
+
+  function getCCR() external view returns (uint256);
+
+  function getYUSD_GAS_COMPENSATION() external view returns (uint256);
+
+  function getMIN_NET_DEBT() external view returns (uint256);
+
+  function getBORROWING_FEE_FLOOR() external view returns (uint256);
+
+  function getREDEMPTION_FEE_FLOOR() external view returns (uint256);
 }

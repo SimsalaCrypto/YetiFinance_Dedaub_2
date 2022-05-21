@@ -41,23 +41,11 @@ interface IStabilityPool is ICollateralReceiver {
   event StabilityPoolETHBalanceUpdated(uint256 _newBalance);
   event StabilityPoolYUSDBalanceUpdated(uint256 _newBalance);
 
-  event BorrowerOperationsAddressChanged(address _newBorrowerOperationsAddress);
-  event TroveManagerAddressChanged(address _newTroveManagerAddress);
-  event ActivePoolAddressChanged(address _newActivePoolAddress);
-  event DefaultPoolAddressChanged(address _newDefaultPoolAddress);
-  event YUSDTokenAddressChanged(address _newYUSDTokenAddress);
-  event SortedTrovesAddressChanged(address _newSortedTrovesAddress);
-  event PriceFeedAddressChanged(address _newPriceFeedAddress);
-  event CommunityIssuanceAddressChanged(address _newCommunityIssuanceAddress);
-
   event P_Updated(uint256 _P);
   event S_Updated(uint256 _S, uint128 _epoch, uint128 _scale);
   event G_Updated(uint256 _G, uint128 _epoch, uint128 _scale);
   event EpochUpdated(uint128 _currentEpoch);
   event ScaleUpdated(uint128 _currentScale);
-
-  event FrontEndRegistered(address indexed _frontEnd, uint256 _kickbackRate);
-  event FrontEndTagSet(address indexed _depositor, address indexed _frontEnd);
 
   event DepositSnapshotUpdated(
     address indexed _depositor,
@@ -65,17 +53,7 @@ interface IStabilityPool is ICollateralReceiver {
     uint256 _S,
     uint256 _G
   );
-  event FrontEndSnapshotUpdated(
-    address indexed _frontEnd,
-    uint256 _P,
-    uint256 _G
-  );
   event UserDepositChanged(address indexed _depositor, uint256 _newDeposit);
-  event FrontEndStakeChanged(
-    address indexed _frontEnd,
-    uint256 _newFrontEndStake,
-    address _depositor
-  );
 
   event ETHGainWithdrawn(
     address indexed _depositor,
@@ -83,7 +61,6 @@ interface IStabilityPool is ICollateralReceiver {
     uint256 _YUSDLoss
   );
   event YETIPaidToDepositor(address indexed _depositor, uint256 _YETI);
-  event YETIPaidToFrontEnd(address indexed _frontEnd, uint256 _YETI);
   event EtherSent(address _to, uint256 _amount);
 
   // --- Functions ---
@@ -99,14 +76,12 @@ interface IStabilityPool is ICollateralReceiver {
     address _yusdTokenAddress,
     address _sortedTrovesAddress,
     address _communityIssuanceAddress,
-    address _whitelistAddress,
+    address _controllerAddress,
     address _troveManagerLiquidationsAddress
   ) external;
 
   /*
    * Initial checks:
-   * - Frontend is registered or zero address
-   * - Sender is not a registered frontend
    * - _amount is not zero
    * ---
    * - Triggers a YETI issuance, based on time passed since the last issuance. The YETI issuance is shared between *all* depositors and front ends
@@ -115,7 +90,7 @@ interface IStabilityPool is ICollateralReceiver {
    * - Sends the tagged front end's accumulated YETI gains to the tagged front end
    * - Increases deposit and tagged front end's stake, and takes new snapshots for each.
    */
-  function provideToSP(uint256 _amount, address _frontEndTag) external;
+  function provideToSP(uint256 _amount) external;
 
   /*
    * Initial checks:
@@ -132,15 +107,9 @@ interface IStabilityPool is ICollateralReceiver {
    */
   function withdrawFromSP(uint256 _amount) external;
 
-  /*
-   * Initial checks:
-   * - Frontend (sender) not already registered
-   * - User (sender) has no deposit
-   * - _kickbackRate is in the range [0, 100%]
-   * ---
-   * Front end makes a one-time selection of kickback rate upon registering
-   */
-  function registerFrontEnd(uint256 _kickbackRate) external;
+  function claimRewardsSwap(uint256 _yusdMinAmountTotal)
+    external
+    returns (uint256 amountFromSwap);
 
   /*
    * Initial checks:
@@ -193,27 +162,9 @@ interface IStabilityPool is ICollateralReceiver {
     returns (uint256);
 
   /*
-   * Return the YETI gain earned by the front end.
-   */
-  function getFrontEndYETIGain(address _frontEnd)
-    external
-    view
-    returns (uint256);
-
-  /*
    * Return the user's compounded deposit.
    */
   function getCompoundedYUSDDeposit(address _depositor)
-    external
-    view
-    returns (uint256);
-
-  /*
-   * Return the front end's compounded stake.
-   *
-   * The front end's compounded stake is equal to the sum of its depositors' compounded deposits.
-   */
-  function getCompoundedFrontEndStake(address _frontEnd)
     external
     view
     returns (uint256);
@@ -234,4 +185,9 @@ interface IStabilityPool is ICollateralReceiver {
     external
     view
     returns (address[] memory, uint256[] memory);
+
+  function getEstimatedYETIPoolRewards(uint256 _amount, uint256 _time)
+    external
+    view
+    returns (uint256);
 }

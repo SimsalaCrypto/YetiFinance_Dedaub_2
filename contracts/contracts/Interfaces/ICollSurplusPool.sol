@@ -8,10 +8,6 @@ import "./ICollateralReceiver.sol";
 interface ICollSurplusPool is ICollateralReceiver {
   // --- Events ---
 
-  event BorrowerOperationsAddressChanged(address _newBorrowerOperationsAddress);
-  event TroveManagerAddressChanged(address _newTroveManagerAddress);
-  event ActivePoolAddressChanged(address _newActivePoolAddress);
-
   event CollBalanceUpdated(address indexed _account);
   event CollateralSent(address _to);
 
@@ -19,18 +15,33 @@ interface ICollSurplusPool is ICollateralReceiver {
 
   function setAddresses(
     address _borrowerOperationsAddress,
-    address _troveManagerAddress,
+    address _troveManagerLiquidationsAddress,
     address _troveManagerRedemptionsAddress,
     address _activePoolAddress,
-    address _whitelistAddress
+    address _controllerAddress,
+    address _yusdTokenAddress
   ) external;
 
   function getCollVC() external view returns (uint256);
+
+  function getTotalRedemptionBonus() external view returns (uint256);
 
   function getAmountClaimable(address _account, address _collateral)
     external
     view
     returns (uint256);
+
+  function getAmountsClaimable(address _account)
+    external
+    view
+    returns (address[] memory, uint256[] memory);
+
+  function hasClaimableCollateral(address _account)
+    external
+    view
+    returns (bool);
+
+  function getRedemptionBonus(address _account) external view returns (uint256);
 
   function getCollateral(address _collateral) external view returns (uint256);
 
@@ -45,7 +56,9 @@ interface ICollSurplusPool is ICollateralReceiver {
     uint256[] memory _amounts
   ) external;
 
-  function claimColl(address _account) external;
+  function accountRedemptionBonus(address _account, uint256 _amount) external;
+
+  function claimCollateral() external;
 
   function addCollateralType(address _collateral) external;
 }

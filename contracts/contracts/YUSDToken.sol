@@ -2,9 +2,40 @@
 
 pragma solidity 0.6.11;
 
-import "./Interfaces/IYUSDToken.sol";
-import "./Dependencies/SafeMath.sol";
-import "./Dependencies/CheckContract.sol";
+import "../Interfaces/IYUSDToken.sol";
+import "../Dependencies/SafeMath.sol";
+
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&@@@@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&   ,.@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@&&&.,,      ,,**.&&&&&@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@,               ..,,,,,,,,,&@@@@@@@@@@
+// @@@@@@,,,,,,&@@@@@@@@&                       ,,,,,&@@@@@@@@@
+// @@@&,,,,,,,,@@@@@@@@@                        ,,,,,*@@@/@@@@@
+// @@,*,*,*,*#,,*,&@@@@@   $$          $$       *,,,  ***&@@@@@
+// @&***********(@@@@@@&   $$          $$       ,,,%&. & %@@@@@
+// @(*****&**     &@@@@#                        *,,%  ,#%@*&@@@
+// @... &             &                         **,,*&,(@*,*,&@
+// @&,,.              &                         *,*       **,,@
+// @@@,,,.            *                         **         ,*,,
+// @@@@@,,,...   .,,,,&                        .,%          *,*
+// @@@@@@@&/,,,,,,,,,,,,&,,,,,.         .,,,,,,,,.           *,
+// @@@@@@@@@@@@&&@(,,,,,(@&&@@&&&&&%&&&&&%%%&,,,&            .(
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&,,,,,,,,,,,,,,&             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/,,,,,,,,,,,,&             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/            &             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&              &             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&      ,,,@@@&  &  &&  .&( &#%
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&&&&&%#**@@@&*&*******,,,,,**
+//
+//  $$\     $$\          $$\     $$\       $$$$$$$$\ $$\
+//  \$$\   $$  |         $$ |    \__|      $$  _____|\__|
+//   \$$\ $$  /$$$$$$\ $$$$$$\   $$\       $$ |      $$\ $$$$$$$\   $$$$$$\  $$$$$$$\   $$$$$$$\  $$$$$$\
+//    \$$$$  /$$  __$$\\_$$  _|  $$ |      $$$$$\    $$ |$$  __$$\  \____$$\ $$  __$$\ $$  _____|$$  __$$\
+//     \$$  / $$$$$$$$ | $$ |    $$ |      $$  __|   $$ |$$ |  $$ | $$$$$$$ |$$ |  $$ |$$ /      $$$$$$$$ |
+//      $$ |  $$   ____| $$ |$$\ $$ |      $$ |      $$ |$$ |  $$ |$$  __$$ |$$ |  $$ |$$ |      $$   ____|
+//      $$ |  \$$$$$$$\  \$$$$  |$$ |      $$ |      $$ |$$ |  $$ |\$$$$$$$ |$$ |  $$ |\$$$$$$$\ \$$$$$$$\
+//      \__|   \_______|  \____/ \__|      \__|      \__|\__|  \__| \_______|\__|  \__| \_______| \_______|
 
 /*
  *
@@ -24,7 +55,7 @@ import "./Dependencies/CheckContract.sol";
  * 2) sendToPool() and returnFromPool(): functions callable only Yeti core contracts, which move YUSD tokens between Yeti <-> user.
  */
 
-contract YUSDToken is CheckContract, IYUSDToken {
+contract YUSDToken is IYUSDToken {
   using SafeMath for uint256;
 
   uint256 private _totalSupply;
@@ -32,13 +63,14 @@ contract YUSDToken is CheckContract, IYUSDToken {
   string internal constant _SYMBOL = "YUSD";
   string internal constant _VERSION = "1";
   uint8 internal constant _DECIMALS = 18;
+  bool canMint = true;
 
   // --- Data for EIP2612 ---
 
   // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
   bytes32 private constant _PERMIT_TYPEHASH =
     0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
-  // keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+  //     keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
   bytes32 private constant _TYPE_HASH =
     0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
 
@@ -62,19 +94,16 @@ contract YUSDToken is CheckContract, IYUSDToken {
   address internal immutable troveManagerRedemptionsAddress;
   address internal immutable stabilityPoolAddress;
   address internal immutable borrowerOperationsAddress;
-  address internal immutable timelockAddress;
+  address internal immutable controllerAddress;
   mapping(address => bool) validMinters;
 
-  // --- Events ---
-  event TroveManagerAddressChanged(address _troveManagerAddress);
-  event TroveManagerLiquidatorAddressChanged(
-    address _troveManagerLiquidatorAddress
-  );
-  event TroveManagerRedemptionsAddressChanged(
-    address _troveManagerRedemptionsAddress
-  );
-  event StabilityPoolAddressChanged(address _newStabilityPoolAddress);
-  event BorrowerOperationsAddressChanged(address _newBorrowerOperationsAddress);
+  modifier onlyController() {
+    require(
+      msg.sender == controllerAddress,
+      "YUSDToken: Caller is not YetiController"
+    );
+    _;
+  }
 
   constructor(
     address _troveManagerAddress,
@@ -82,31 +111,16 @@ contract YUSDToken is CheckContract, IYUSDToken {
     address _troveManagerRedemptionsAddress,
     address _stabilityPoolAddress,
     address _borrowerOperationsAddress,
-    address _timelockAddress
+    address _controllerAddress
   ) public {
-    checkContract(_troveManagerAddress);
-    checkContract(_troveManagerLiquidationsAddress);
-    checkContract(_troveManagerRedemptionsAddress);
-    checkContract(_stabilityPoolAddress);
-    checkContract(_borrowerOperationsAddress);
-
     troveManagerAddress = _troveManagerAddress;
-    emit TroveManagerAddressChanged(_troveManagerAddress);
-
     troveManagerLiquidationsAddress = _troveManagerLiquidationsAddress;
-    emit TroveManagerLiquidatorAddressChanged(_troveManagerLiquidationsAddress);
-
     troveManagerRedemptionsAddress = _troveManagerRedemptionsAddress;
-    emit TroveManagerRedemptionsAddressChanged(_troveManagerRedemptionsAddress);
-
     stabilityPoolAddress = _stabilityPoolAddress;
-    emit StabilityPoolAddressChanged(_stabilityPoolAddress);
-
     borrowerOperationsAddress = _borrowerOperationsAddress;
-    validMinters[_borrowerOperationsAddress] = true;
-    emit BorrowerOperationsAddressChanged(_borrowerOperationsAddress);
+    controllerAddress = _controllerAddress;
 
-    timelockAddress = _timelockAddress;
+    validMinters[_borrowerOperationsAddress] = true;
 
     bytes32 hashedName = keccak256(bytes(_NAME));
     bytes32 hashedVersion = keccak256(bytes(_VERSION));
@@ -124,6 +138,7 @@ contract YUSDToken is CheckContract, IYUSDToken {
   // --- Functions for intra-Yeti calls ---
 
   function mint(address _account, uint256 _amount) external override {
+    _requireCanMint();
     _requireValidMinter();
     _mint(_account, _amount);
   }
@@ -133,6 +148,9 @@ contract YUSDToken is CheckContract, IYUSDToken {
     _burn(_account, _amount);
   }
 
+  /**
+   * Function special to Yeti which sends YUSD directly to SP without approve
+   */
   function sendToPool(
     address _sender,
     address _poolAddress,
@@ -142,6 +160,9 @@ contract YUSDToken is CheckContract, IYUSDToken {
     _transfer(_sender, _poolAddress, _amount);
   }
 
+  /**
+   * Function special to Yeti which sends YUSD directly from pool back to a user
+   */
   function returnFromPool(
     address _poolAddress,
     address _receiver,
@@ -274,10 +295,7 @@ contract YUSDToken is CheckContract, IYUSDToken {
       )
     );
     address recoveredAddress = ecrecover(digest, v, r, s);
-    require(
-      recoveredAddress == owner || recoveredAddress != address(0),
-      "YUSD: invalid signature"
-    );
+    require(recoveredAddress == owner, "YUSD: invalid signature");
     _approve(owner, spender, amount);
   }
 
@@ -353,28 +371,29 @@ contract YUSDToken is CheckContract, IYUSDToken {
     emit Approval(owner, spender, amount);
   }
 
-  function addValidMinter(address _newMinter) external {
-    require(msg.sender == timelockAddress, "YUSD: NotTimelock");
+  function addValidMinter(address _newMinter) external override onlyController {
     validMinters[_newMinter] = true;
+  }
+
+  function removeValidMinter(address _minter) external override onlyController {
+    validMinters[_minter] = false;
+  }
+
+  function updateMinting(bool _canMint) external override onlyController {
+    canMint = _canMint;
+  }
+
+  function _requireCanMint() internal view {
+    require(canMint);
   }
 
   // --- 'require' functions ---
 
-  // TODO: update this when we've finalized where YUSD can/can't be sent.
-  // May want to make it possible to send to adddress(0) for burns or something
   function _requireValidRecipient(address _recipient) internal view {
     require(
-      _recipient != address(0) && _recipient != address(this),
-      "YUSD: Cannot transfer tokens directly to the YUSD token contract or the zero address"
+      _recipient != address(this),
+      "YUSD: Cannot transfer tokens directly to the YUSD token contract"
     );
-    // require(
-    //     _recipient != stabilityPoolAddress &&
-    //     _recipient != troveManagerAddress &&
-    //     _recipient != troveManagerLiquidationsAddress &&
-    //     _recipient != troveManagerRedemptionsAddress, //&&
-    //     // _recipient != borrowerOperationsAddress, //
-    //     "YUSD: Cannot transfer tokens directly to the StabilityPool, TroveManager or BorrowerOps"
-    // );
   }
 
   function _requireValidMinter() internal view {

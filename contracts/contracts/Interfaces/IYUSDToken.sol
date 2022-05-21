@@ -8,10 +8,6 @@ import "../Interfaces/IERC2612.sol";
 interface IYUSDToken is IERC20, IERC2612 {
   // --- Events ---
 
-  event TroveManagerAddressChanged(address _troveManagerAddress);
-  event StabilityPoolAddressChanged(address _newStabilityPoolAddress);
-  event BorrowerOperationsAddressChanged(address _newBorrowerOperationsAddress);
-
   event YUSDTokenBalanceUpdated(address _user, uint256 _amount);
 
   // --- Functions ---
@@ -31,4 +27,10 @@ interface IYUSDToken is IERC20, IERC2612 {
     address user,
     uint256 _amount
   ) external;
+
+  function updateMinting(bool _canMint) external;
+
+  function addValidMinter(address _newMinter) external;
+
+  function removeValidMinter(address _minter) external;
 }

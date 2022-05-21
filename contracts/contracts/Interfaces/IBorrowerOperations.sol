@@ -4,41 +4,17 @@ pragma solidity 0.6.11;
 
 // Common interface for the Trove Manager.
 interface IBorrowerOperations {
-  // --- Events ---
-
-  event TroveManagerAddressChanged(address _newTroveManagerAddress);
-  event ActivePoolAddressChanged(address _activePoolAddress);
-  event DefaultPoolAddressChanged(address _defaultPoolAddress);
-  event StabilityPoolAddressChanged(address _stabilityPoolAddress);
-  event GasPoolAddressChanged(address _gasPoolAddress);
-  event CollSurplusPoolAddressChanged(address _collSurplusPoolAddress);
-  event PriceFeedAddressChanged(address _newPriceFeedAddress);
-  event SortedTrovesAddressChanged(address _sortedTrovesAddress);
-  event YUSDTokenAddressChanged(address _yusdTokenAddress);
-  event SYETIAddressChanged(address _sYETIAddress);
-
-  event TroveCreated(address indexed _borrower, uint256 arrayIndex);
-  event TroveUpdated(
-    address indexed _borrower,
-    uint256 _debt,
-    uint256 _coll,
-    uint8 operation
-  );
-  event YUSDBorrowingFeePaid(address indexed _borrower, uint256 _YUSDFee);
-
   // --- Functions ---
 
   function setAddresses(
     address _troveManagerAddress,
     address _activePoolAddress,
     address _defaultPoolAddress,
-    address _stabilityPoolAddress,
     address _gasPoolAddress,
     address _collSurplusPoolAddress,
     address _sortedTrovesAddress,
     address _yusdTokenAddress,
-    address _sYETIAddress,
-    address _whiteListAddress
+    address _controllerAddress
   ) external;
 
   function openTrove(
@@ -81,13 +57,7 @@ interface IBorrowerOperations {
     uint256 _maxFeePercentage
   ) external;
 
-  function addColl(
-    address[] memory _collsIn,
-    uint256[] memory _amountsIn,
-    address _upperHint,
-    address _lowerHint,
-    uint256 _maxFeePercentage
-  ) external;
+  // function addColl(address[] memory _collsIn, uint[] memory _amountsIn, address _upperHint, address _lowerHint, uint _maxFeePercentage) external;
 
   function addCollLeverUp(
     address[] memory _collsIn,
@@ -100,13 +70,6 @@ interface IBorrowerOperations {
     uint256 _maxFeePercentage
   ) external;
 
-  function withdrawColl(
-    address[] memory _collsOut,
-    uint256[] memory _amountsOut,
-    address _upperHint,
-    address _lowerHint
-  ) external;
-
   function withdrawCollUnleverUp(
     address[] memory _collsOut,
     uint256[] memory _amountsOut,
@@ -115,23 +78,4 @@ interface IBorrowerOperations {
     address _upperHint,
     address _lowerHint
   ) external;
-
-  function withdrawYUSD(
-    uint256 _maxFeePercentage,
-    uint256 _YUSDAmount,
-    address _upperHint,
-    address _lowerHint
-  ) external;
-
-  function repayYUSD(
-    uint256 _YUSDAmount,
-    address _upperHint,
-    address _lowerHint
-  ) external;
-
-  function claimCollateral() external;
-
-  function getCompositeDebt(uint256 _debt) external pure returns (uint256);
-
-  function setLeverUp(bool _enabled) external;
 }

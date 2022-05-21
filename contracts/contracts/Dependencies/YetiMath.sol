@@ -19,8 +19,8 @@ library YetiMath {
   }
 
   /**
-     * @notice Multiply two decimal numbers 
-     * @dev Use normal rounding rules: 
+   * @notice Multiply two decimal numbers
+     * @dev Use normal rounding rules:
         -round product up if 19'th mantissa digit >= 5
         -round product down if 19'th mantissa digit < 5
      */

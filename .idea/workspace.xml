@@ -1,21 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="8acb2d09-a8be-4973-9dea-044c162d1acd" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/YetiMath.sol" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IEmitter.sol" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiController.sol" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiVaultToken.sol" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IveYETI.sol" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/contracts/contracts/PoolBase2.sol" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/contracts/contracts/veYETI.sol" afterDir="false" />
+    <list default="true" id="8acb2d09-a8be-4973-9dea-044c162d1acd" name="Changes" comment="reformat code to match newest Solidity standards">
+      <change afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiLever.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/ActivePool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/ActivePool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/BorrowerOperations.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/BorrowerOperations.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/Address.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/Address.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/LiquityBase.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/LiquityBase.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/YetiCustomBase.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/YetiCustomBase.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/YetiMath.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/YetiMath.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IActivePool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IActivePool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IBorrowerOperations.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IBorrowerOperations.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICollSurplusPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICollSurplusPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICollateralReceiver.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICollateralReceiver.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IDefaultPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IDefaultPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ILiquityBase.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ILiquityBase.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPool.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/YETIToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/YETI/YETIToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPriceFeed.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPriceFeed.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ISortedTroves.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ISortedTroves.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IStabilityPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IStabilityPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ITroveManager.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ITroveManager.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYETIToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYETIToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYUSDToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYUSDToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiController.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiController.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiVaultToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiVaultToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IveYETI.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YUSDToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/YUSDToken.sol" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -40,15 +50,16 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
-    &quot;nodejs_package_manager_path&quot;: &quot;yarn&quot;,
-    &quot;settings.editor.selected.configurable&quot;: &quot;settings.nodejs&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "last_opened_file_path": "C:/Users/49176/YetiFinance/YetiFinance_Dedaub_2",
+    "nodejs_package_manager_path": "yarn",
+    "settings.editor.selected.configurable": "settings.nodejs"
   }
-}</component>
+}]]></component>
   <component name="RunManager">
     <configuration name="prepare:compile" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/contracts/package.json" />
@@ -77,7 +88,16 @@
       <workItem from="1653039910301" duration="1463000" />
       <workItem from="1653041389983" duration="3100000" />
       <workItem from="1653132954149" duration="269000" />
+      <workItem from="1653137620031" duration="1459000" />
     </task>
+    <task id="LOCAL-00001" summary="reformat code to match newest Solidity standards">
+      <created>1653137819775</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1653137819775</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -93,6 +113,10 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="reformat code to match newest Solidity standards" />
+    <option name="LAST_COMMIT_MESSAGE" value="reformat code to match newest Solidity standards" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
