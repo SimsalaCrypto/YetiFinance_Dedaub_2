@@ -2,11 +2,42 @@
 
 pragma solidity 0.6.11;
 
-import "./Interfaces/IWAsset.sol";
-import "./Dependencies/TroveManagerBase.sol";
+import "../Dependencies/TroveManagerBase.sol";
+
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&@@@@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&   ,.@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@&&&.,,      ,,**.&&&&&@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@,               ..,,,,,,,,,&@@@@@@@@@@
+// @@@@@@,,,,,,&@@@@@@@@&                       ,,,,,&@@@@@@@@@
+// @@@&,,,,,,,,@@@@@@@@@                        ,,,,,*@@@/@@@@@
+// @@,*,*,*,*#,,*,&@@@@@   $$          $$       *,,,  ***&@@@@@
+// @&***********(@@@@@@&   $$          $$       ,,,%&. & %@@@@@
+// @(*****&**     &@@@@#                        *,,%  ,#%@*&@@@
+// @... &             &                         **,,*&,(@*,*,&@
+// @&,,.              &                         *,*       **,,@
+// @@@,,,.            *                         **         ,*,,
+// @@@@@,,,...   .,,,,&                        .,%          *,*
+// @@@@@@@&/,,,,,,,,,,,,&,,,,,.         .,,,,,,,,.           *,
+// @@@@@@@@@@@@&&@(,,,,,(@&&@@&&&&&%&&&&&%%%&,,,&            .(
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&,,,,,,,,,,,,,,&             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/,,,,,,,,,,,,&             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/            &             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&              &             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&      ,,,@@@&  &  &&  .&( &#%
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&&&&&%#**@@@&*&*******,,,,,**
+//
+//  $$\     $$\          $$\     $$\       $$$$$$$$\ $$\
+//  \$$\   $$  |         $$ |    \__|      $$  _____|\__|
+//   \$$\ $$  /$$$$$$\ $$$$$$\   $$\       $$ |      $$\ $$$$$$$\   $$$$$$\  $$$$$$$\   $$$$$$$\  $$$$$$\
+//    \$$$$  /$$  __$$\\_$$  _|  $$ |      $$$$$\    $$ |$$  __$$\  \____$$\ $$  __$$\ $$  _____|$$  __$$\
+//     \$$  / $$$$$$$$ | $$ |    $$ |      $$  __|   $$ |$$ |  $$ | $$$$$$$ |$$ |  $$ |$$ /      $$$$$$$$ |
+//      $$ |  $$   ____| $$ |$$\ $$ |      $$ |      $$ |$$ |  $$ |$$  __$$ |$$ |  $$ |$$ |      $$   ____|
+//      $$ |  \$$$$$$$\  \$$$$  |$$ |      $$ |      $$ |$$ |  $$ |\$$$$$$$ |$$ |  $$ |\$$$$$$$\ \$$$$$$$\
+//      \__|   \_______|  \____/ \__|      \__|      \__|\__|  \__| \_______|\__|  \__| \_______| \_______|
 
 /**
- * TroveManagerLiquidations is derived from TroveManager and has all the functions
+ * @notice TroveManagerLiquidations is derived from TroveManager and has all the functions
  * related to Liquidations.
  */
 
@@ -14,13 +45,14 @@ contract TroveManagerLiquidations is
   TroveManagerBase,
   ITroveManagerLiquidations
 {
-  bytes32 public constant NAME = "TroveManagerRedemptions";
+  bytes32 public constant NAME = "TroveManagerLiquidations";
 
-  uint256 public constant _100pct = 1e18; // 1e18 == 100%
+  uint256 internal constant _100pct = 1e18; // 1e18 == 100%
 
-  uint256 public constant PERCENT_DIVISOR = 200; // dividing by 200 yields 0.5%
+  // Additional 1e9 precision for the SP Ratio calculation
+  uint256 internal constant SPRatioPrecision = 1e27;
 
-  address internal borrowerOperationsAddress;
+  uint256 internal constant PERCENT_DIVISOR = 200; // dividing by 200 yields 0.5%
 
   IStabilityPool internal stabilityPoolContract;
 
@@ -28,21 +60,9 @@ contract TroveManagerLiquidations is
 
   IYUSDToken internal yusdTokenContract;
 
-  IYETIToken internal yetiTokenContract;
-
-  ISYETI internal sYETIContract;
-
-  ITroveManagerLiquidations internal troveManagerLiquidations;
-
   address internal gasPoolAddress;
 
-  address internal troveManagerAddress;
-
-  ISortedTroves internal sortedTroves;
-
   ICollSurplusPool internal collSurplusPool;
-
-  address yetiFinanceTreasury;
 
   struct LiquidationValues {
     uint256 entireTroveDebt;
@@ -74,8 +94,6 @@ contract TroveManagerLiquidations is
     uint256 ICR;
     address user;
     bool backToNormalMode;
-    uint256 entireSystemDebt;
-    uint256 entireSystemColl;
   }
 
   struct LocalVariables_OuterLiquidationFunction {
@@ -112,42 +130,33 @@ contract TroveManagerLiquidations is
     uint256[] totalCollGasCompAmounts
   );
 
+  bool private addressSet;
+
   function setAddresses(
-    address _borrowerOperationsAddress,
     address _activePoolAddress,
     address _defaultPoolAddress,
     address _stabilityPoolAddress,
     address _gasPoolAddress,
     address _collSurplusPoolAddress,
     address _yusdTokenAddress,
-    address _sortedTrovesAddress,
-    address _yetiTokenAddress,
-    address _sYETIAddress,
-    address _whitelistAddress,
-    address _troveManagerAddress,
-    address _yetiFinanceTreasury
-  ) external onlyOwner {
-    borrowerOperationsAddress = _borrowerOperationsAddress;
+    address _controllerAddress,
+    address _troveManagerAddress
+  ) external {
+    require(addressSet == false, "Addresses already set");
+    addressSet = true;
     activePool = IActivePool(_activePoolAddress);
     defaultPool = IDefaultPool(_defaultPoolAddress);
     stabilityPoolContract = IStabilityPool(_stabilityPoolAddress);
-    whitelist = IWhitelist(_whitelistAddress);
+    controller = IYetiController(_controllerAddress);
     gasPoolAddress = _gasPoolAddress;
     collSurplusPool = ICollSurplusPool(_collSurplusPoolAddress);
     yusdTokenContract = IYUSDToken(_yusdTokenAddress);
-    sortedTroves = ISortedTroves(_sortedTrovesAddress);
-    yetiTokenContract = IYETIToken(_yetiTokenAddress);
-    sYETIContract = ISYETI(_sYETIAddress);
     troveManager = ITroveManager(_troveManagerAddress);
-    troveManagerAddress = _troveManagerAddress;
-    yetiFinanceTreasury = _yetiFinanceTreasury;
-
-    _renounceOwnership();
   }
 
   /**
-   * Function for liquidating a list of troves in a single transaction. Will perform as many as it can
-   * and looks at if it is eligible for liquidation based on the current ICR value.
+   * @notice Function for liquidating a list of troves in a single transaction
+   * @dev Will perform as many as it can and looks at if it is eligible for liquidation based on the current ICR value
    */
   function batchLiquidateTroves(
     address[] memory _troveArray,
@@ -164,7 +173,15 @@ contract TroveManagerLiquidations is
     LiquidationTotals memory totals;
 
     vars.YUSDInStabPool = stabilityPoolCached.getTotalYUSDDeposits();
-    vars.recoveryModeAtStart = _checkRecoveryMode();
+    uint256 systemCollVC;
+    uint256 systemDebt;
+    // System coll RVC not needed here.
+    (
+      vars.recoveryModeAtStart,
+      systemCollVC,
+      ,
+      systemDebt
+    ) = _checkRecoveryModeAndSystem();
 
     // Perform the appropriate liquidation sequence - tally values and obtain their totals.
     if (vars.recoveryModeAtStart) {
@@ -172,6 +189,8 @@ contract TroveManagerLiquidations is
         activePoolCached,
         defaultPoolCached,
         vars.YUSDInStabPool,
+        systemCollVC,
+        systemDebt,
         _troveArray
       );
     } else {
@@ -230,6 +249,7 @@ contract TroveManagerLiquidations is
       totals.totalCollGasCompensation.tokens,
       totals.totalCollGasCompensation.amounts
     );
+
     // Send gas compensation to caller
     _sendGasCompensation(
       activePoolCached,
@@ -240,14 +260,17 @@ contract TroveManagerLiquidations is
     );
   }
 
-  /*
-   * This function is used when the batch liquidation sequence starts during Recovery Mode. However, it
-   * handle the case where the system *leaves* Recovery Mode, part way through the liquidation sequence
+  /**
+   * @notice This function is used when the batch liquidation sequence starts during Recovery Mode
+   * @dev It handles the case where the system *leaves* Recovery Mode, part way through the liquidation sequence
+   * @return totals from batch liquidate
    */
   function _getTotalFromBatchLiquidate_RecoveryMode(
     IActivePool _activePool,
     IDefaultPool _defaultPool,
     uint256 _YUSDInStabPool,
+    uint256 _systemCollVC,
+    uint256 _systemDebt,
     address[] memory _troveArray
   ) internal returns (LiquidationTotals memory totals) {
     LocalVariables_LiquidationSequence memory vars;
@@ -255,9 +278,6 @@ contract TroveManagerLiquidations is
 
     vars.remainingYUSDInStabPool = _YUSDInStabPool;
     vars.backToNormalMode = false;
-    vars.entireSystemDebt = getEntireSystemDebt();
-    // get total VC
-    vars.entireSystemColl = getEntireSystemColl();
     uint256 troveArrayLen = _troveArray.length;
     for (vars.i = 0; vars.i < troveArrayLen; ++vars.i) {
       vars.user = _troveArray[vars.i];
@@ -275,10 +295,7 @@ contract TroveManagerLiquidations is
           continue;
         }
 
-        uint256 TCR = LiquityMath._computeCR(
-          vars.entireSystemColl,
-          vars.entireSystemDebt
-        );
+        uint256 TCR = _computeCR(_systemCollVC, _systemDebt);
 
         singleLiquidation = _liquidateRecoveryMode(
           _activePool,
@@ -294,16 +311,7 @@ contract TroveManagerLiquidations is
           singleLiquidation.debtToOffset
         );
 
-        // If wrapped assets exist then update the reward to this contract temporarily
-        _updateWAssetsRewardOwner(
-          singleLiquidation.collGasCompensation,
-          vars.user,
-          address(this)
-        );
-
-        vars.entireSystemDebt = vars.entireSystemDebt.sub(
-          singleLiquidation.debtToOffset
-        );
+        _systemDebt = _systemDebt.sub(singleLiquidation.debtToOffset);
 
         uint256 collToSendToSpVc = _getVCColls(
           singleLiquidation.collToSendToSP
@@ -313,18 +321,18 @@ contract TroveManagerLiquidations is
         );
         uint256 collSurplusTotal = _getVCColls(singleLiquidation.collSurplus);
 
-        vars.entireSystemColl = vars
-          .entireSystemColl
-          .sub(collToSendToSpVc)
-          .sub(collGasCompensationTotal)
-          .sub(collSurplusTotal);
+        // Two calls stack too deep
+        _systemCollVC = _systemCollVC.sub(collToSendToSpVc).sub(
+          collGasCompensationTotal
+        );
+        _systemCollVC = _systemCollVC.sub(collSurplusTotal);
 
         // Add liquidation values to their respective running totals
         totals = _addLiquidationValuesToTotals(totals, singleLiquidation);
 
         vars.backToNormalMode = !_checkPotentialRecoveryMode(
-          vars.entireSystemColl,
-          vars.entireSystemDebt
+          _systemCollVC,
+          _systemDebt
         );
       } else if (vars.backToNormalMode && vars.ICR < MCR) {
         singleLiquidation = _liquidateNormalMode(
@@ -337,19 +345,16 @@ contract TroveManagerLiquidations is
           singleLiquidation.debtToOffset
         );
 
-        // If wrapped assets exist then update the reward to this contract temporarily
-        _updateWAssetsRewardOwner(
-          singleLiquidation.collGasCompensation,
-          vars.user,
-          address(this)
-        );
-
         // Add liquidation values to their respective running totals
         totals = _addLiquidationValuesToTotals(totals, singleLiquidation);
       } else continue; // In Normal Mode skip troves with ICR >= MCR
     }
   }
 
+  /**
+   * @notice This function is used when the batch liquidation sequence starts during Normal Mode
+   * @return totals from batch liquidate
+   */
   function _getTotalsFromBatchLiquidate_NormalMode(
     IActivePool _activePool,
     IDefaultPool _defaultPool,
@@ -375,20 +380,16 @@ contract TroveManagerLiquidations is
           singleLiquidation.debtToOffset
         );
 
-        // If wrapped assets exist then update the reward to this contract temporarily
-        _updateWAssetsRewardOwner(
-          singleLiquidation.collGasCompensation,
-          vars.user,
-          address(this)
-        );
-
         // Add liquidation values to their respective running totals
         totals = _addLiquidationValuesToTotals(totals, singleLiquidation);
       }
     }
   }
 
-  // Liquidate one trove, in Normal Mode.
+  /**
+   * @notice Liquidate one trove, in Normal Mode
+   * @return singleLiquidation values
+   */
   function _liquidateNormalMode(
     IActivePool _activePool,
     IDefaultPool _defaultPool,
@@ -396,7 +397,6 @@ contract TroveManagerLiquidations is
     uint256 _YUSDInStabPool
   ) internal returns (LiquidationValues memory singleLiquidation) {
     LocalVariables_InnerSingleLiquidateFunction memory vars;
-
     (
       singleLiquidation.entireTroveDebt,
       singleLiquidation.entireTroveColl.tokens,
@@ -406,15 +406,14 @@ contract TroveManagerLiquidations is
       vars.pendingCollReward.amounts
     ) = troveManager.getEntireDebtAndColls(_borrower);
 
-    troveManager.movePendingTroveRewardsToActivePool(
+    _movePendingTroveRewardsToActivePool(
       _activePool,
       _defaultPool,
       vars.pendingDebtReward,
       vars.pendingCollReward.tokens,
-      vars.pendingCollReward.amounts,
-      _borrower
+      vars.pendingCollReward.amounts
     );
-    troveManager.removeStakeTLR(_borrower);
+    troveManager.removeStake(_borrower);
 
     singleLiquidation.collGasCompensation = _getCollGasCompensation(
       singleLiquidation.entireTroveColl
@@ -438,19 +437,11 @@ contract TroveManagerLiquidations is
       _YUSDInStabPool
     );
 
-    newColls memory collsToUpdate = _sumColls(
-      or_vals.collToSendToSP,
-      or_vals.collToRedistribute
-    );
-    // rewards for WAssets sent to SP and collToRedistribute will
-    // accrue to Yeti Finance Treasury until the assets are claimed
-    _updateWAssetsRewardOwner(collsToUpdate, _borrower, yetiFinanceTreasury);
-
     singleLiquidation = _updateSingleLiquidation(or_vals, singleLiquidation);
     troveManager.closeTroveLiquidation(_borrower);
 
     if (_collsIsNonZero(singleLiquidation.collSurplus)) {
-      troveManager.collSurplusUpdate(
+      collSurplusPool.accountSurplus(
         _borrower,
         singleLiquidation.collSurplus.tokens,
         singleLiquidation.collSurplus.amounts
@@ -472,7 +463,10 @@ contract TroveManagerLiquidations is
     );
   }
 
-  // Liquidate one trove, in Recovery Mode.
+  /**
+   * @notice Liquidate one trove, in Recovery Mode
+   * @return singleLiquidation Liquidation Values
+   */
   function _liquidateRecoveryMode(
     IActivePool _activePool,
     IDefaultPool _defaultPool,
@@ -514,16 +508,14 @@ contract TroveManagerLiquidations is
 
     // If ICR <= 100%, purely redistribute the Trove across all active Troves
     if (_ICR <= _100pct) {
-      troveManager.movePendingTroveRewardsToActivePool(
+      _movePendingTroveRewardsToActivePool(
         _activePool,
         _defaultPool,
         vars.pendingDebtReward,
         vars.pendingCollReward.tokens,
-        vars.pendingCollReward.amounts,
-        _borrower
+        vars.pendingCollReward.amounts
       );
-      // troveManager.movePendingTroveRewardsToActivePool(_activePool, _defaultPool, vars.pendingDebtReward, singleLiquidation.entireTroveColl.tokens, singleLiquidation.entireTroveColl.amounts);
-      troveManager.removeStakeTLR(_borrower);
+      troveManager.removeStake(_borrower);
 
       singleLiquidation.debtToOffset = 0;
       newColls memory emptyColls;
@@ -531,21 +523,13 @@ contract TroveManagerLiquidations is
       singleLiquidation.debtToRedistribute = singleLiquidation.entireTroveDebt;
       singleLiquidation.collToRedistribute = vars.collToLiquidate;
 
-      // WAsset rewards for collToRedistribute will accrue to
-      // Yeti Finance Treasury until the WAssets are claimed by troves
-      _updateWAssetsRewardOwner(
-        singleLiquidation.collToRedistribute,
-        _borrower,
-        yetiFinanceTreasury
-      );
-
       troveManager.closeTroveLiquidation(_borrower);
       emit TroveLiquidated(
         _borrower,
         singleLiquidation.entireTroveDebt,
         TroveManagerOperation.liquidateInRecoveryMode
       );
-      newColls memory borrowerColls; // = troveManager.getTroveColls(_borrower);
+      newColls memory borrowerColls;
       emit TroveUpdated(
         _borrower,
         0,
@@ -557,30 +541,21 @@ contract TroveManagerLiquidations is
       // If 100% < ICR < MCR, offset as much as possible, and redistribute the remainder
       // ICR > 100% is implied by prevoius state.
     } else if (_ICR < MCR) {
-      troveManager.movePendingTroveRewardsToActivePool(
+      _movePendingTroveRewardsToActivePool(
         _activePool,
         _defaultPool,
         vars.pendingDebtReward,
         vars.pendingCollReward.tokens,
-        vars.pendingCollReward.amounts,
-        _borrower
+        vars.pendingCollReward.amounts
       );
 
-      troveManager.removeStakeTLR(_borrower);
+      troveManager.removeStake(_borrower);
 
       LocalVariables_ORVals memory or_vals = _getOffsetAndRedistributionVals(
         singleLiquidation.entireTroveDebt,
         vars.collToLiquidate,
         _YUSDInStabPool
       );
-
-      newColls memory collsToUpdate = _sumColls(
-        or_vals.collToSendToSP,
-        or_vals.collToRedistribute
-      );
-      // rewards for WAssets sent to SP and collToRedistribute will
-      // accrue to Yeti Finance Treasury until the assets are claimed
-      _updateWAssetsRewardOwner(collsToUpdate, _borrower, yetiFinanceTreasury);
 
       singleLiquidation = _updateSingleLiquidation(or_vals, singleLiquidation);
 
@@ -590,7 +565,7 @@ contract TroveManagerLiquidations is
         singleLiquidation.entireTroveDebt,
         TroveManagerOperation.liquidateInRecoveryMode
       );
-      newColls memory borrowerColls; // = troveManager.getTroveColls(_borrower);
+      newColls memory borrowerColls;
       emit TroveUpdated(
         _borrower,
         0,
@@ -599,42 +574,39 @@ contract TroveManagerLiquidations is
         TroveManagerOperation.liquidateInRecoveryMode
       );
       /*
-       * If 110% <= ICR < current TCR (accounting for the preceding liquidations in the current sequence)
+       * If 110% <= AICR < current TCR (accounting for the preceding liquidations in the current sequence)
        * and there is YUSD in the Stability Pool, only offset, with no redistribution,
        * but at a capped rate of 1.1 and only if the whole debt can be liquidated.
        * The remainder due to the capped rate will be claimable as collateral surplus.
-       * ICR >= 110% is implied from last else if statement.
+       * ICR >= 110% is implied from last else if statement. AICR is always >= ICR since that is a rule of
+       * the recovery ratio.
+       * We use AICR here instead of ICR since for troves with stablecoins or anything
+       * with recovery ratio > safety ratio, liquidating a trove with ICR < TCR may not increase the TCR
+       * since recovery ratios are used to calculate the TCR. The purpose of recovery mode is to increase the
+       * TCR and this may put all stablecoin troves at risk of liquidation instantly if we used ICR. So, we only
+       * do actions which will increase the TCR.
        */
     } else if (
-      (_ICR < _TCR) && (singleLiquidation.entireTroveDebt <= _YUSDInStabPool)
+      (troveManager.getCurrentAICR(_borrower) < _TCR) &&
+      (singleLiquidation.entireTroveDebt <= _YUSDInStabPool)
     ) {
-      troveManager.movePendingTroveRewardsToActivePool(
+      _movePendingTroveRewardsToActivePool(
         _activePool,
         _defaultPool,
         vars.pendingDebtReward,
         vars.pendingCollReward.tokens,
-        vars.pendingCollReward.amounts,
-        _borrower
+        vars.pendingCollReward.amounts
       );
 
-      require(_YUSDInStabPool != 0, "TML: zero YUSD in Stab Pool");
-
-      troveManager.removeStakeTLR(_borrower);
+      troveManager.removeStake(_borrower);
 
       singleLiquidation = _getCappedOffsetVals(
         singleLiquidation.entireTroveDebt,
-        singleLiquidation.entireTroveColl.tokens,
+        vars.collToLiquidate.tokens,
+        vars.collToLiquidate.amounts,
         singleLiquidation.entireTroveColl.amounts,
-        MCR
+        singleLiquidation.collGasCompensation.amounts
       );
-
-      newColls memory collsToUpdate = _sumColls(
-        singleLiquidation.collToSendToSP,
-        singleLiquidation.collToRedistribute
-      );
-      // rewards for WAssets sent to SP and collToRedistribute will
-      // accrue to Yeti Finance Treasury until the assets are claimed
-      _updateWAssetsRewardOwner(collsToUpdate, _borrower, yetiFinanceTreasury);
 
       troveManager.closeTroveLiquidation(_borrower);
 
@@ -652,13 +624,13 @@ contract TroveManagerLiquidations is
         TroveManagerOperation.liquidateInRecoveryMode
       );
     } else {
-      // if (_ICR >= MCR && ( _ICR >= _TCR || singleLiquidation.entireTroveDebt > _YUSDInStabPool))
+      // if (_ICR >= MCR && ( AICR >= _TCR || singleLiquidation.entireTroveDebt > _YUSDInStabPool))
       LiquidationValues memory zeroVals;
       return zeroVals;
     }
 
     if (_collsIsNonZero(singleLiquidation.collSurplus)) {
-      troveManager.collSurplusUpdate(
+      collSurplusPool.accountSurplus(
         _borrower,
         singleLiquidation.collSurplus.tokens,
         singleLiquidation.collSurplus.amounts
@@ -678,13 +650,29 @@ contract TroveManagerLiquidations is
     return singleLiquidation;
   }
 
-  /* In a full liquidation, returns the values for a trove's coll and debt to be offset, and coll and debt to be
-   * redistributed to active troves. _colls parameters is the _colls to be liquidated (total trove colls minus collateral for gas compensation)
-   * collsToRedistribute.tokens and collsToRedistribute.amounts should be the same length
-   * and should be the same length as _colls.tokens and _colls.amounts.
+  /**
+   * @notice Move a Trove's pending debt and collateral rewards from distributions, from the Default Pool to the Active Pool
+   */
+  function _movePendingTroveRewardsToActivePool(
+    IActivePool _activePool,
+    IDefaultPool _defaultPool,
+    uint256 _YUSD,
+    address[] memory _tokens,
+    uint256[] memory _amounts
+  ) internal {
+    _defaultPool.decreaseYUSDDebt(_YUSD);
+    _activePool.increaseYUSDDebt(_YUSD);
+    _defaultPool.sendCollsToActivePool(_tokens, _amounts);
+  }
+
+  /**
+   * @notice In a full liquidation, returns the values for a trove's coll and debt to be offset, and coll and debt to be redistributed to active troves
+   * @dev _colls parameters is the _colls to be liquidated (total trove colls minus collateral for gas compensation)
+   * collsToRedistribute.tokens and collsToRedistribute.amounts should be the same length and should be the same length as _colls.tokens and _colls.amounts.
    * If there is any colls redistributed to stability pool, collsToSendToSP.tokens and collsToSendToSP.amounts
    * will be length equal to _colls.tokens and _colls.amounts. However, if no colls are redistributed to stability pool (which is the case when _YUSDInStabPool == 0),
    * then collsToSendToSP.tokens and collsToSendToSP.amounts will be empty.
+   * @return or_vals Values for trove's collateral and debt to be offset
    */
   function _getOffsetAndRedistributionVals(
     uint256 _entireTroveDebt,
@@ -717,10 +705,7 @@ contract TroveManagerLiquidations is
       or_vals.collSurplus.tokens = _collsToLiquidate.tokens;
       or_vals.collSurplus.amounts = new uint256[](collsToLiquidateLen);
 
-      or_vals.debtToOffset = LiquityMath._min(
-        _entireTroveDebt,
-        _YUSDInStabPool
-      );
+      or_vals.debtToOffset = YetiMath._min(_entireTroveDebt, _YUSDInStabPool);
 
       or_vals.debtToRedistribute = _entireTroveDebt.sub(or_vals.debtToOffset);
 
@@ -728,19 +713,18 @@ contract TroveManagerLiquidations is
 
       // collOffsetRatio: max percentage of the collateral that can be sent to the SP as offsetting collateral
       // collOffsetRatio = percentage of the trove's debt that can be offset by the stability pool
-      uint256 collOffsetRatio = _100pct
-        .mul(_100pct)
-        .mul(or_vals.debtToOffset)
-        .div(_entireTroveDebt);
+      uint256 collOffsetRatio = SPRatioPrecision.mul(or_vals.debtToOffset).div(
+        _entireTroveDebt
+      );
 
       // SPRatio: percentage of liquidated collateral that needs to be sent to SP in order to give SP depositors
       // $110 of collateral for every 100 YUSD they are using to liquidate.
-      uint256 SPRatio = or_vals.debtToOffset.mul(_100pct).mul(MCR).div(
+      uint256 SPRatio = or_vals.debtToOffset.mul(1e9).mul(MCR).div(
         toLiquidateCollValueUSD
       );
 
       // But SP ratio is capped at collOffsetRatio:
-      SPRatio = LiquityMath._min(collOffsetRatio, SPRatio);
+      SPRatio = YetiMath._min(collOffsetRatio, SPRatio);
 
       // if there is extra collateral left in the offset portion of the collateral after
       // giving stability pool holders $110 of collateral for every 100 YUSD that is taken from them,
@@ -751,14 +735,12 @@ contract TroveManagerLiquidations is
         or_vals.collToSendToSP.amounts[i] = _collsToLiquidate
           .amounts[i]
           .mul(SPRatio)
-          .div(_100pct)
-          .div(_100pct);
+          .div(SPRatioPrecision);
 
         or_vals.collSurplus.amounts[i] = _collsToLiquidate
           .amounts[i]
           .mul(collSurplusRatio)
-          .div(_100pct)
-          .div(_100pct);
+          .div(SPRatioPrecision);
 
         // remaining collateral is redistributed:
         or_vals.collToRedistribute.amounts[i] = _collsToLiquidate
@@ -776,6 +758,9 @@ contract TroveManagerLiquidations is
     }
   }
 
+  /**
+   * @notice Adds liquidation values to totals
+   */
   function _addLiquidationValuesToTotals(
     LiquidationTotals memory oldTotals,
     LiquidationValues memory singleLiquidation
@@ -812,29 +797,30 @@ contract TroveManagerLiquidations is
     );
   }
 
-  /*
-   *  Get its offset coll/debt and Collateral gas comp, and close the trove.
+  /**
+   * @notice Get its offset coll/debt and Collateral gas comp, and close the trove
    */
   function _getCappedOffsetVals(
     uint256 _entireTroveDebt,
     address[] memory _troveTokens,
-    uint256[] memory _troveAmounts,
-    uint256 _MCR
+    uint256[] memory _troveAmountsToLiquidate,
+    uint256[] memory _entireTroveAmounts,
+    uint256[] memory _collGasCompensation
   ) internal view returns (LiquidationValues memory singleLiquidation) {
-    newColls memory _entireTroveColl;
-    _entireTroveColl.tokens = _troveTokens;
-    _entireTroveColl.amounts = _troveAmounts;
+    uint256 USD_Value_To_Send_To_SP_Base_100 = MCR.mul(_entireTroveDebt);
+    uint256 USD_Value_of_Trove_Colls = _getUSDColls(
+      newColls(_troveTokens, _troveAmountsToLiquidate)
+    );
 
-    uint256 USD_Value_To_Send_To_SP = _MCR.mul(_entireTroveDebt).div(_100pct);
-    uint256 USD_Value_of_Trove_Colls = _getUSDColls(_entireTroveColl);
-
-    uint256 SPRatio = USD_Value_To_Send_To_SP.mul(_100pct).div(
+    uint256 SPRatio = USD_Value_To_Send_To_SP_Base_100.mul(1e9).div(
       USD_Value_of_Trove_Colls
     );
-    SPRatio = LiquityMath._min(SPRatio, _100pct);
+    // Min between 100% with extra 1e9 precision, and SPRatio.
+    SPRatio = YetiMath._min(SPRatio, SPRatioPrecision);
 
     singleLiquidation.entireTroveDebt = _entireTroveDebt;
-    singleLiquidation.entireTroveColl = _entireTroveColl;
+    singleLiquidation.entireTroveColl.tokens = _troveTokens;
+    singleLiquidation.entireTroveColl.amounts = _entireTroveAmounts;
 
     singleLiquidation.YUSDGasCompensation = YUSD_GAS_COMPENSATION;
 
@@ -850,18 +836,15 @@ contract TroveManagerLiquidations is
     singleLiquidation.collSurplus.amounts = new uint256[](troveTokensLen);
 
     singleLiquidation.collGasCompensation.tokens = _troveTokens;
-    singleLiquidation.collGasCompensation.amounts = new uint256[](
-      troveTokensLen
-    );
+    singleLiquidation.collGasCompensation.amounts = _collGasCompensation;
 
     for (uint256 i; i < troveTokensLen; ++i) {
-      uint256 _cappedCollAmount = SPRatio.mul(_troveAmounts[i]).div(_100pct);
-      uint256 _gasComp = _cappedCollAmount.div(PERCENT_DIVISOR);
-      uint256 _toSP = _cappedCollAmount.sub(_gasComp);
-      uint256 _collSurplus = _troveAmounts[i].sub(_cappedCollAmount);
+      uint256 _cappedCollAmount = SPRatio.mul(_troveAmountsToLiquidate[i]).div(
+        SPRatioPrecision
+      );
+      uint256 _collSurplus = _troveAmountsToLiquidate[i].sub(_cappedCollAmount);
 
-      singleLiquidation.collGasCompensation.amounts[i] = _gasComp;
-      singleLiquidation.collToSendToSP.amounts[i] = _toSP;
+      singleLiquidation.collToSendToSP.amounts[i] = _cappedCollAmount;
       singleLiquidation.collSurplus.amounts[i] = _collSurplus;
     }
   }
@@ -877,46 +860,21 @@ contract TroveManagerLiquidations is
       yusdTokenContract.returnFromPool(gasPoolAddress, _liquidator, _YUSD);
     }
 
-    // This contract owns the rewards temporarily until the liquidation is complete
-    _activePool.sendCollateralsUnwrap(
-      address(this),
-      _liquidator,
-      _tokens,
-      _amounts
-    );
-  }
-
-  /*
-   * Update rewards tracking so future rewards go to Yeti Finance Treasury
-   * for the trove's asset that have been liquidated and moved to either the
-   * Stability Pool or Default Pool
-   */
-  function _updateWAssetsRewardOwner(
-    newColls memory _colls,
-    address _borrower,
-    address _newOwner
-  ) internal {
-    uint256 collsLen = _colls.tokens.length;
-    for (uint256 i; i < collsLen; ++i) {
-      address token = _colls.tokens[i];
-      if (whitelist.isWrapped(token)) {
-        IWAsset(token).updateReward(_borrower, _newOwner, _colls.amounts[i]);
-      }
-    }
+    _activePool.sendCollateralsUnwrap(_liquidator, _tokens, _amounts);
   }
 
   function _requireCallerisTroveManager() internal view {
-    require(msg.sender == troveManagerAddress, "Caller not TM");
+    require(msg.sender == address(troveManager), "Caller not TM");
   }
 
-  // Return the amount of collateral to be drawn from a trove's collateral and sent as gas compensation.
+  /**
+   * @notice Return the amount of collateral to be drawn from a trove's collateral and sent as gas compensation
+   */
   function _getCollGasCompensation(newColls memory _coll)
     internal
     pure
     returns (newColls memory)
   {
-    require(_coll.tokens.length == _coll.amounts.length, "Not same length");
-
     uint256[] memory amounts = new uint256[](_coll.tokens.length);
     for (uint256 i; i < _coll.tokens.length; ++i) {
       amounts[i] = _coll.amounts[i] / PERCENT_DIVISOR;
@@ -924,13 +882,17 @@ contract TroveManagerLiquidations is
     return newColls(_coll.tokens, amounts);
   }
 
-  // Check whether or not the system *would be* in Recovery Mode, given the entire system coll and debt.
-  // returns true if the system would be in recovery mode and false if not
+  /**
+   * @notice Check whether or not the system *would be* in Recovery Mode, given the entire system coll and debt
+   * @param _entireSystemColl The collateral of the entire system
+   * @param _entireSystemDebt The debt of the entire system
+   * @return returns true if the system would be in recovery mode and false if not
+   */
   function _checkPotentialRecoveryMode(
     uint256 _entireSystemColl,
     uint256 _entireSystemDebt
   ) internal pure returns (bool) {
-    uint256 TCR = LiquityMath._computeCR(_entireSystemColl, _entireSystemDebt);
+    uint256 TCR = _computeCR(_entireSystemColl, _entireSystemDebt);
 
     return TCR < CCR;
   }

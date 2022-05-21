@@ -8,19 +8,17 @@ import "../Interfaces/ICollSurplusPool.sol";
 import "../Interfaces/IYUSDToken.sol";
 import "../Interfaces/ISortedTroves.sol";
 import "../Interfaces/IYETIToken.sol";
-import "../Interfaces/ISYETI.sol";
 import "../Interfaces/IActivePool.sol";
 import "../Interfaces/ITroveManagerLiquidations.sol";
 import "../Interfaces/ITroveManagerRedemptions.sol";
 import "./LiquityBase.sol";
-import "./Ownable.sol";
 
 /**
  * Contains shared functionality of TroveManagerLiquidations, TroveManagerRedemptions, and TroveManager.
  * Keeps addresses to cache, events, structs, status, etc. Also keeps Trove struct.
  */
 
-contract TroveManagerBase is LiquityBase, Ownable {
+contract TroveManagerBase is LiquityBase {
   // --- Connected contract declarations ---
 
   // A doubly linked list of Troves, sorted by their sorted by their individual collateral ratios
@@ -29,16 +27,10 @@ contract TroveManagerBase is LiquityBase, Ownable {
     IActivePool activePool;
     IDefaultPool defaultPool;
     IYUSDToken yusdToken;
-    ISYETI sYETI;
     ISortedTroves sortedTroves;
     ICollSurplusPool collSurplusPool;
     address gasPoolAddress;
-  }
-
-  struct SingleRedemptionValues {
-    uint256 YUSDLot;
-    newColls CollLot;
-    bool cancelledPartial;
+    IYetiController controller;
   }
 
   enum Status {
@@ -72,4 +64,10 @@ contract TroveManagerBase is LiquityBase, Ownable {
     uint256[] _amounts,
     TroveManagerOperation operation
   );
+  /**
+   * @dev This empty reserved space is put in place to allow future versions to add new
+   * variables without shifting down storage in the inheritance chain.
+   * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+   */
+  uint256[50] private __gap;
 }

@@ -2,50 +2,67 @@
 
 pragma solidity 0.6.11;
 
-import "./Interfaces/ITroveManager.sol";
-import "./Interfaces/IStabilityPool.sol";
-import "./Interfaces/ICollSurplusPool.sol";
-import "./Interfaces/IYUSDToken.sol";
-import "./Interfaces/ISortedTroves.sol";
-import "./Interfaces/IYETIToken.sol";
-import "./Interfaces/ISYETI.sol";
-import "./Interfaces/IWhitelist.sol";
-import "./Interfaces/ITroveManagerLiquidations.sol";
-import "./Interfaces/ITroveManagerRedemptions.sol";
-import "./Interfaces/IERC20.sol";
-import "./Dependencies/TroveManagerBase.sol";
-import "./Dependencies/ReentrancyGuard.sol";
+import "../Interfaces/ITroveManager.sol";
+import "../Interfaces/ISortedTroves.sol";
+import "../Interfaces/IYetiController.sol";
+import "../Interfaces/ITroveManagerLiquidations.sol";
+import "../Interfaces/ITroveManagerRedemptions.sol";
+import "../Interfaces/IERC20.sol";
+import "../Dependencies/TroveManagerBase.sol";
+import "../Dependencies/ReentrancyGuardUpgradeable.sol";
+
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&@@@@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&   ,.@@@@@@@@@@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@@@&&&.,,      ,,**.&&&&&@@@@@@@@@@@@@@
+// @@@@@@@@@@@@@@@@@@@@@@,               ..,,,,,,,,,&@@@@@@@@@@
+// @@@@@@,,,,,,&@@@@@@@@&                       ,,,,,&@@@@@@@@@
+// @@@&,,,,,,,,@@@@@@@@@                        ,,,,,*@@@/@@@@@
+// @@,*,*,*,*#,,*,&@@@@@   $$          $$       *,,,  ***&@@@@@
+// @&***********(@@@@@@&   $$          $$       ,,,%&. & %@@@@@
+// @(*****&**     &@@@@#                        *,,%  ,#%@*&@@@
+// @... &             &                         **,,*&,(@*,*,&@
+// @&,,.              &                         *,*       **,,@
+// @@@,,,.            *                         **         ,*,,
+// @@@@@,,,...   .,,,,&                        .,%          *,*
+// @@@@@@@&/,,,,,,,,,,,,&,,,,,.         .,,,,,,,,.           *,
+// @@@@@@@@@@@@&&@(,,,,,(@&&@@&&&&&%&&&&&%%%&,,,&            .(
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&,,,,,,,,,,,,,,&             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/,,,,,,,,,,,,&             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@/            &             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&              &             &
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&      ,,,@@@&  &  &&  .&( &#%
+// @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@&&&&&%#**@@@&*&*******,,,,,**
+//
+//  $$\     $$\          $$\     $$\       $$$$$$$$\ $$\
+//  \$$\   $$  |         $$ |    \__|      $$  _____|\__|
+//   \$$\ $$  /$$$$$$\ $$$$$$\   $$\       $$ |      $$\ $$$$$$$\   $$$$$$\  $$$$$$$\   $$$$$$$\  $$$$$$\
+//    \$$$$  /$$  __$$\\_$$  _|  $$ |      $$$$$\    $$ |$$  __$$\  \____$$\ $$  __$$\ $$  _____|$$  __$$\
+//     \$$  / $$$$$$$$ | $$ |    $$ |      $$  __|   $$ |$$ |  $$ | $$$$$$$ |$$ |  $$ |$$ /      $$$$$$$$ |
+//      $$ |  $$   ____| $$ |$$\ $$ |      $$ |      $$ |$$ |  $$ |$$  __$$ |$$ |  $$ |$$ |      $$   ____|
+//      $$ |  \$$$$$$$\  \$$$$  |$$ |      $$ |      $$ |$$ |  $$ |\$$$$$$$ |$$ |  $$ |\$$$$$$$\ \$$$$$$$\
+//      \__|   \_______|  \____/ \__|      \__|      \__|\__|  \__| \_______|\__|  \__| \_______| \_______|
 
 /**
- * Trove Manager is the contract which deals with the state of a user's trove. It has all the
- * external functions for liquidations, redemptions, as well as functions called by
- * BorrowerOperations function calls.
+ * @title Deals with state of all system troves
+ * @notice It has all the external functions for liquidations, redemptions,
+ * as well as functions called by BorrowerOperations function calls.
  */
 
-contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
+contract TroveManager is
+  TroveManagerBase,
+  ITroveManager,
+  ReentrancyGuardUpgradeable
+{
   address internal borrowerOperationsAddress;
 
-  IStabilityPool internal stabilityPoolContract;
-
   ITroveManager internal troveManager;
-
-  IYUSDToken internal yusdTokenContract;
-
-  IYETIToken internal yetiTokenContract;
-
-  ISYETI internal sYETIContract;
 
   ITroveManagerRedemptions internal troveManagerRedemptions;
 
   ITroveManagerLiquidations internal troveManagerLiquidations;
 
-  address internal gasPoolAddress;
-  address internal troveManagerRedemptionsAddress;
-  address internal troveManagerLiquidationsAddress;
-
   ISortedTroves internal sortedTroves;
-
-  ICollSurplusPool internal collSurplusPool;
 
   bytes32 public constant NAME = "TroveManager";
 
@@ -58,19 +75,21 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
    * (1/2) = d^720 => d = (1/2)^(1/720)
    */
   uint256 public constant MINUTE_DECAY_FACTOR = 999037758833783000;
-  uint256 public constant MAX_BORROWING_FEE = (DECIMAL_PRECISION / 100) * 5; // 5%
+  uint256 public constant MAX_BORROWING_FEE = (DECIMAL_PRECISION * 5) / 100; // 5%
 
   // During bootsrap period redemptions are not allowed
   uint256 public constant BOOTSTRAP_PERIOD = 14 days;
 
+  // See documentation for explanation of baseRate
   uint256 public baseRate;
 
   // The timestamp of the latest fee operation (redemption or new YUSD issuance)
   uint256 public lastFeeOperationTime;
 
+  // Mapping of all troves in the system
   mapping(address => Trove) Troves;
 
-  // uint public totalStakes;
+  // Total stakes keeps track of the sum of all stakes for each collateral, across all users.
   mapping(address => uint256) public totalStakes;
 
   // Snapshot of the value of totalStakes, taken immediately after the latest liquidation
@@ -89,7 +108,7 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
    *
    * Where L_Coll[coll](0) and L_YUSDDebt(0) are snapshots of L_Coll[coll] and L_YUSDDebt for the active Trove taken at the instant the stake was made
    */
-  mapping(address => uint256) private L_Coll;
+  mapping(address => uint256) public L_Coll;
   mapping(address => uint256) public L_YUSDDebt;
 
   // Map addresses with active troves to their RewardSnapshot
@@ -102,7 +121,7 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
   }
 
   // Array of all active trove addresses - used to to compute an approximate hint off-chain, for the sorted list insertion
-  address[] private TroveOwners;
+  address[] public TroveOwners;
 
   // Error trackers for the trove redistribution calculation
   mapping(address => uint256) public lastCollError_Redistribution;
@@ -146,42 +165,208 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     TroveManagerOperation operation
   );
 
+  bool private addressSet;
+
   function setAddresses(
     address _borrowerOperationsAddress,
     address _activePoolAddress,
     address _defaultPoolAddress,
-    address _stabilityPoolAddress,
-    address _gasPoolAddress,
-    address _collSurplusPoolAddress,
-    address _yusdTokenAddress,
     address _sortedTrovesAddress,
-    address _yetiTokenAddress,
-    address _sYETIAddress,
-    address _whitelistAddress,
+    address _controllerAddress,
     address _troveManagerRedemptionsAddress,
     address _troveManagerLiquidationsAddress
-  ) external override onlyOwner {
+  ) external override {
+    require(addressSet == false, "Addresses already set");
+    addressSet = true;
+    __ReentrancyGuard_init();
+
     borrowerOperationsAddress = _borrowerOperationsAddress;
     activePool = IActivePool(_activePoolAddress);
     defaultPool = IDefaultPool(_defaultPoolAddress);
-    stabilityPoolContract = IStabilityPool(_stabilityPoolAddress);
-    whitelist = IWhitelist(_whitelistAddress);
-    gasPoolAddress = _gasPoolAddress;
-    collSurplusPool = ICollSurplusPool(_collSurplusPoolAddress);
-    yusdTokenContract = IYUSDToken(_yusdTokenAddress);
+    controller = IYetiController(_controllerAddress);
     sortedTroves = ISortedTroves(_sortedTrovesAddress);
-    yetiTokenContract = IYETIToken(_yetiTokenAddress);
-    sYETIContract = ISYETI(_sYETIAddress);
-
-    troveManagerRedemptionsAddress = _troveManagerRedemptionsAddress;
-    troveManagerLiquidationsAddress = _troveManagerLiquidationsAddress;
     troveManagerRedemptions = ITroveManagerRedemptions(
       _troveManagerRedemptionsAddress
     );
     troveManagerLiquidations = ITroveManagerLiquidations(
       _troveManagerLiquidationsAddress
     );
-    _renounceOwnership();
+  }
+
+  // --- Trove Liquidation functions ---
+
+  /**
+   * @notice Single liquidation function. Closes the trove if its ICR is lower than the minimum collateral ratio.
+   * @param _borrower The address of the Trove owner
+   */
+  function liquidate(address _borrower) external override nonReentrant {
+    _requireTroveIsActive(_borrower);
+
+    address[] memory borrowers = new address[](1);
+    borrowers[0] = _borrower;
+    troveManagerLiquidations.batchLiquidateTroves(borrowers, msg.sender);
+  }
+
+  /**
+   * @notice Attempt to liquidate a custom list of troves provided by the caller.
+   * @param _troveArray The list of Troves' Addresses
+   * @param _liquidator The address of the liquidator
+   */
+  function batchLiquidateTroves(
+    address[] memory _troveArray,
+    address _liquidator
+  ) external override nonReentrant {
+    troveManagerLiquidations.batchLiquidateTroves(_troveArray, _liquidator);
+  }
+
+  // --- Liquidation helper functions ---
+
+  /**
+   * @notice Move a Trove's pending debt and collateral rewards from distributions, from the Default Pool to the Active Pool
+   */
+  function _movePendingTroveRewardsToActivePool(
+    IActivePool _activePool,
+    IDefaultPool _defaultPool,
+    uint256 _YUSD,
+    address[] memory _tokens,
+    uint256[] memory _amounts
+  ) internal {
+    _defaultPool.decreaseYUSDDebt(_YUSD);
+    _activePool.increaseYUSDDebt(_YUSD);
+    _defaultPool.sendCollsToActivePool(_tokens, _amounts);
+  }
+
+  /**
+   * @notice Update position for a set of troves using latest price data. This can be called by anyone.
+   * Yeti Finance will also be running a bot to assist with keeping the list from becoming too stale.
+   * @param _borrowers The list of addresses of the troves to update
+   * @param _lowerHints The list of lower hints for the troves which are to be updated
+   * @param _upperHints The list of upper hints for the troves which are to be updated
+   */
+  function updateTroves(
+    address[] calldata _borrowers,
+    address[] calldata _lowerHints,
+    address[] calldata _upperHints
+  ) external override {
+    uint256 lowerHintsLen = _lowerHints.length;
+    _revertLenInput(
+      _borrowers.length == lowerHintsLen && lowerHintsLen == _upperHints.length
+    );
+
+    uint256[] memory AICRList = new uint256[](lowerHintsLen);
+
+    for (uint256 i; i < lowerHintsLen; ++i) {
+      (
+        address[] memory tokens,
+        uint256[] memory amounts,
+        uint256 debt
+      ) = _getCurrentTroveState(_borrowers[i]);
+      AICRList[i] = _getAICR(tokens, amounts, debt);
+    }
+    sortedTroves.reInsertMany(_borrowers, AICRList, _lowerHints, _upperHints);
+  }
+
+  /**
+   * @notice Update a particular trove address in the underCollateralized troves list
+   * @dev This function is called by the UpdateTroves bot if there are many underCollateralized troves
+   * during congested network conditions where potentially it is tough to liquidate them all.
+   * In this case, the function adds to the underCollateralizedTroves list so no SP withdrawal can happen.
+   * If the trove is no longer underCollateralized then this function will remove
+   * it from the list. This function calls sortedTroves' updateUnderCollateralizedTrove function.
+   * Intended to be a cheap function call since it is going to be called when liquidations are not possible
+   * @param _ids Trove ids
+   */
+  function updateUnderCollateralizedTroves(address[] memory _ids)
+    external
+    override
+  {
+    uint256 len = _ids.length;
+    for (uint256 i; i < len; i++) {
+      uint256 ICR = getCurrentICR(_ids[i]);
+      // If ICR < MCR, is undercollateralized
+      _updateUnderCollateralizedTrove(_ids[i], ICR < MCR);
+    }
+  }
+
+  /**
+   * @notice Send _YUSDamount YUSD to the system and redeem the corresponding amount of collateral
+   * from as many Troves as are needed to fill the redemption request. Applies pending rewards to a Trove before reducing its debt and coll.
+   * @dev if _amount is very large, this function can run out of gas, specially if traversed troves are small. This can be easily avoided by
+   * splitting the total _amount in appropriate chunks and calling the function multiple times.
+   *
+   * Param `_maxIterations` can also be provided, so the loop through Troves is capped (if it’s zero, it will be ignored).This makes it easier to
+   * avoid OOG for the frontend, as only knowing approximately the average cost of an iteration is enough, without needing to know the “topology”
+   * of the trove list. It also avoids the need to set the cap in stone in the contract, nor doing gas calculations, as both gas price and opcode
+   * costs can vary.
+   *
+   * All Troves that are redeemed from -- with the likely exception of the last one -- will end up with no debt left, therefore they will be closed.
+   * If the last Trove does have some remaining debt, it has a finite ICR, and the reinsertion could be anywhere in the list, therefore it requires a hint.
+   * A frontend should use getRedemptionHints() to calculate what the ICR of this Trove will be after redemption, and pass a hint for its position
+   * in the sortedTroves list along with the ICR value that the hint was found for.
+   *
+   * If another transaction modifies the list between calling getRedemptionHints() and passing the hints to redeemCollateral(), it is very
+   * likely that the last (partially) redeemed Trove would end up with a different ICR than what the hint is for. In this case the redemption
+   * will stop after the last completely redeemed Trove and the sender will keep the remaining YUSD amount, which they can attempt to redeem later.
+   * @param _YUSDamount The intended amount of YUSD to redeem
+   * @param _YUSDMaxFee The maximum accepted fee in YUSD the user is willing to pay
+   * @param _firstRedemptionHint The hint for the position of the first redeemed Trove in the sortedTroves list
+   * @param _upperPartialRedemptionHint The upper hint for the position of the last partially redeemed Trove in the sortedTroves list
+   * @param _lowerPartialRedemptionHint The lower hint for the position of the last partially redeemed Trove in the sortedTroves list
+   * @param _partialRedemptionHintAICR The AICR of the last partially redeemed Trove in the sortedTroves list
+   * @param _maxIterations The maximum number of iterations to perform. If zero, the function will run until it runs out of gas.
+   */
+  function redeemCollateral(
+    uint256 _YUSDamount,
+    uint256 _YUSDMaxFee,
+    address _firstRedemptionHint,
+    address _upperPartialRedemptionHint,
+    address _lowerPartialRedemptionHint,
+    uint256 _partialRedemptionHintAICR,
+    uint256 _maxIterations
+  ) external override nonReentrant {
+    troveManagerRedemptions.redeemCollateral(
+      _YUSDamount,
+      _YUSDMaxFee,
+      _firstRedemptionHint,
+      _upperPartialRedemptionHint,
+      _lowerPartialRedemptionHint,
+      _partialRedemptionHintAICR,
+      _maxIterations,
+      msg.sender
+    );
+  }
+
+  /**
+   * @notice Secondary function for redeeming collateral. See above for how YUSDMaxFee is calculated.
+            Redeems one collateral type from only one trove. Included for gas efficiency of arbitrages.
+     * @param _YUSDamount is equal to the amount of YUSD to actually redeem.
+     * @param _YUSDMaxFee is equal to the max fee in YUSD that the sender is willing to pay
+     * @param _target is the hint for the single trove to redeem against
+     * @param _upperHint is the upper hint for reinsertion of the trove
+     * @param _lowerHint is the lower hint for reinsertion of the trove
+     * @param _hintAICR is the target hint AICR for the the trove redeemed
+     * @param _collToRedeem is the collateral address to redeem. Only this token.
+     * _YUSDamount + _YUSDMaxFee must be less than the balance of the sender.
+     */
+  function redeemCollateralSingle(
+    uint256 _YUSDamount,
+    uint256 _YUSDMaxFee,
+    address _target,
+    address _upperHint,
+    address _lowerHint,
+    uint256 _hintAICR,
+    address _collToRedeem
+  ) external override nonReentrant {
+    troveManagerRedemptions.redeemCollateralSingle(
+      _YUSDamount,
+      _YUSDMaxFee,
+      _target,
+      _upperHint,
+      _lowerHint,
+      _hintAICR,
+      _collToRedeem,
+      msg.sender
+    );
   }
 
   // --- Getters ---
@@ -199,213 +384,90 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     return TroveOwners[_index];
   }
 
-  // --- Trove Liquidation functions ---
-
-  // Single liquidation function. Closes the trove if its ICR is lower than the minimum collateral ratio.
-  function liquidate(address _borrower) external override nonReentrant {
-    _requireTroveIsActive(_borrower);
-
-    address[] memory borrowers = new address[](1);
-    borrowers[0] = _borrower;
-    troveManagerLiquidations.batchLiquidateTroves(borrowers, msg.sender);
-  }
-
-  /*
-   * Attempt to liquidate a custom list of troves provided by the caller.
-   */
-  function batchLiquidateTroves(
-    address[] memory _troveArray,
-    address _liquidator
-  ) external override nonReentrant {
-    troveManagerLiquidations.batchLiquidateTroves(_troveArray, _liquidator);
-  }
-
-  // --- Liquidation helper functions ---
-
-  /*
-   * This function is called only by TroveManagerLiquidations.sol during a liquidation in recovery mode where
-   * the trove has TCR > ICR >= MCR. In this case, the liquidation occurs. 110% of the debt in
-   * collateral is sent to the stability pool and any surplus is sent to the collateral surplus pool
-   */
-  function collSurplusUpdate(
-    address _account,
-    address[] memory _tokens,
-    uint256[] memory _amounts
-  ) external override {
-    _requireCallerIsTML();
-    collSurplusPool.accountSurplus(_account, _tokens, _amounts);
-  }
-
-  // Move a Trove's pending debt and collateral rewards from distributions, from the Default Pool to the Active Pool
-  function movePendingTroveRewardsToActivePool(
-    IActivePool _activePool,
-    IDefaultPool _defaultPool,
-    uint256 _YUSD,
-    address[] memory _tokens,
-    uint256[] memory _amounts,
-    address _borrower
-  ) external override {
-    _requireCallerIsTML();
-    _movePendingTroveRewardsToActivePool(
-      _activePool,
-      _defaultPool,
-      _YUSD,
-      _tokens,
-      _amounts,
-      _borrower
-    );
-  }
-
-  function _movePendingTroveRewardsToActivePool(
-    IActivePool _activePool,
-    IDefaultPool _defaultPool,
-    uint256 _YUSD,
-    address[] memory _tokens,
-    uint256[] memory _amounts,
-    address _borrower
-  ) internal {
-    _defaultPool.decreaseYUSDDebt(_YUSD);
-    _activePool.increaseYUSDDebt(_YUSD);
-    _defaultPool.sendCollsToActivePool(_tokens, _amounts, _borrower);
-  }
-
-  // Update position of given trove
-  function _updateTrove(
-    address _borrower,
-    address _lowerHint,
-    address _upperHint
-  ) internal {
-    (
-      uint256 debt,
-      address[] memory tokens,
-      uint256[] memory amounts,
-      ,
-      ,
-
-    ) = getEntireDebtAndColls(_borrower);
-
-    newColls memory troveColl;
-    troveColl.tokens = tokens;
-    troveColl.amounts = amounts;
-
-    uint256 RICR = _getRICRColls(troveColl, debt);
-    sortedTroves.reInsert(_borrower, RICR, _lowerHint, _upperHint);
-  }
-
-  // Update position for a set of troves using latest price data. This can be called by anyone.
-  // Yeti Finance will also be running a bot to assist with keeping the list from becoming
-  // too stale.
-  function updateTroves(
-    address[] calldata _borrowers,
-    address[] calldata _lowerHints,
-    address[] calldata _upperHints
-  ) external {
-    uint256 lowerHintsLen = _lowerHints.length;
-    require(
-      _borrowers.length == lowerHintsLen,
-      "TM: borrowers length mismatch"
-    );
-    require(lowerHintsLen == _upperHints.length, "TM: hints length mismatch");
-
-    for (uint256 i; i < lowerHintsLen; ++i) {
-      _updateTrove(_borrowers[i], _lowerHints[i], _upperHints[i]);
-    }
-  }
-
-  /* Send _YUSDamount YUSD to the system and redeem the corresponding amount of collateral from as many Troves as are needed to fill the redemption
-   * request.  Applies pending rewards to a Trove before reducing its debt and coll.
-   *
-   * Note that if _amount is very large, this function can run out of gas, specially if traversed troves are small. This can be easily avoided by
-   * splitting the total _amount in appropriate chunks and calling the function multiple times.
-   *
-   * Param `_maxIterations` can also be provided, so the loop through Troves is capped (if it’s zero, it will be ignored).This makes it easier to
-   * avoid OOG for the frontend, as only knowing approximately the average cost of an iteration is enough, without needing to know the “topology”
-   * of the trove list. It also avoids the need to set the cap in stone in the contract, nor doing gas calculations, as both gas price and opcode
-   * costs can vary.
-   *
-   * All Troves that are redeemed from -- with the likely exception of the last one -- will end up with no debt left, therefore they will be closed.
-   * If the last Trove does have some remaining debt, it has a finite ICR, and the reinsertion could be anywhere in the list, therefore it requires a hint.
-   * A frontend should use getRedemptionHints() to calculate what the ICR of this Trove will be after redemption, and pass a hint for its position
-   * in the sortedTroves list along with the ICR value that the hint was found for.
-   *
-   * If another transaction modifies the list between calling getRedemptionHints() and passing the hints to redeemCollateral(), it
-   * is very likely that the last (partially) redeemed Trove would end up with a different ICR than what the hint is for. In this case the
-   * redemption will stop after the last completely redeemed Trove and the sender will keep the remaining YUSD amount, which they can attempt
-   * to redeem later.
-   */
-  function redeemCollateral(
-    uint256 _YUSDamount,
-    uint256 _YUSDMaxFee,
-    address _firstRedemptionHint,
-    address _upperPartialRedemptionHint,
-    address _lowerPartialRedemptionHint,
-    uint256 _partialRedemptionHintICR,
-    uint256 _maxIterations
-  ) external override nonReentrant {
-    troveManagerRedemptions.redeemCollateral(
-      _YUSDamount,
-      _YUSDMaxFee,
-      _firstRedemptionHint,
-      _upperPartialRedemptionHint,
-      _lowerPartialRedemptionHint,
-      _partialRedemptionHintICR,
-      _maxIterations,
-      msg.sender
-    );
-  }
-
   // --- Helper functions ---
 
-  // Return the current individual collateral ratio (ICR) of a given Trove.
-  // Takes a trove's pending coll and debt rewards from redistributions into account.
+  /**
+   * @notice Helper function to return the current individual collateral ratio (ICR) of a given Trove.
+   * @dev Takes a trove's pending coll and debt rewards from redistributions into account.
+   * @param _borrower The address of the Trove to get the ICR
+   * @return ICR
+   */
   function getCurrentICR(address _borrower)
-    external
+    public
     view
     override
     returns (uint256 ICR)
   {
-    (newColls memory colls, uint256 currentYUSDDebt) = _getCurrentTroveState(
-      _borrower
-    );
+    (
+      address[] memory tokens,
+      uint256[] memory amounts,
+      uint256 currentYUSDDebt
+    ) = _getCurrentTroveState(_borrower);
 
-    ICR = _getICRColls(colls, currentYUSDDebt);
+    ICR = _getICR(tokens, amounts, currentYUSDDebt);
   }
 
-  // Return the current recovery individual collateral ratio (ICR) of a given Trove.
-  // Takes a trove's pending coll and debt rewards from redistributions into account.
-  function getCurrentRICR(address _borrower)
+  /**
+   *   @notice Helper function to return the current recovery individual collateral ratio (AICR) of a given Trove.
+   *           AICR uses recovery ratios which are higher for more stable assets like stablecoins.
+   *   @dev Takes a trove's pending coll and debt rewards from redistributions into account.
+   *   @param _borrower The address of the Trove to get the AICR
+   *   @return AICR
+   */
+  function getCurrentAICR(address _borrower)
     external
     view
     override
-    returns (uint256 RICR)
+    returns (uint256 AICR)
   {
-    (newColls memory colls, uint256 currentYUSDDebt) = _getCurrentTroveState(
-      _borrower
-    );
+    (
+      address[] memory tokens,
+      uint256[] memory amounts,
+      uint256 currentYUSDDebt
+    ) = _getCurrentTroveState(_borrower);
 
-    RICR = _getRICRColls(colls, currentYUSDDebt);
+    AICR = _getAICR(tokens, amounts, currentYUSDDebt);
   }
 
-  // Gets current trove state as colls and debt.
+  /**
+   *   @notice Gets current trove state as colls and debt.
+   *   @param _borrower The address of the Trove
+   *   @return colls -- newColls of the trove tokens and amounts
+   *   @return YUSDdebt -- the current debt of the trove
+   */
   function _getCurrentTroveState(address _borrower)
     internal
     view
-    returns (newColls memory colls, uint256 YUSDdebt)
+    returns (
+      address[] memory,
+      uint256[] memory,
+      uint256
+    )
   {
     newColls memory pendingCollReward = _getPendingCollRewards(_borrower);
     uint256 pendingYUSDDebtReward = getPendingYUSDDebtReward(_borrower);
 
-    YUSDdebt = Troves[_borrower].debt.add(pendingYUSDDebtReward);
-    colls = _sumColls(Troves[_borrower].colls, pendingCollReward);
+    uint256 YUSDdebt = Troves[_borrower].debt.add(pendingYUSDDebtReward);
+    newColls memory colls = _sumColls(
+      Troves[_borrower].colls,
+      pendingCollReward
+    );
+    return (colls.tokens, colls.amounts, YUSDdebt);
   }
 
-  // Add the borrowers's coll and debt rewards earned from redistributions, to their Trove
+  /**
+   * @notice Add the borrowers's coll and debt rewards earned from redistributions, to their Trove
+   * @param _borrower The address of the Trove
+   */
   function applyPendingRewards(address _borrower) external override {
     _requireCallerIsBOorTMR();
     return _applyPendingRewards(activePool, defaultPool, _borrower);
   }
 
-  // Add the borrowers's coll and debt rewards earned from redistributions, to their Trove
+  /**
+   * @notice Add the borrowers's coll and debt rewards earned from redistributions, to their Trove
+   * @param _borrower The address of the Trove
+   */
   function _applyPendingRewards(
     IActivePool _activePool,
     IDefaultPool _defaultPool,
@@ -435,8 +497,7 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
         _defaultPool,
         pendingYUSDDebtReward,
         pendingCollReward.tokens,
-        pendingCollReward.amounts,
-        _borrower
+        pendingCollReward.amounts
       );
 
       emit TroveUpdated(
@@ -449,12 +510,20 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     }
   }
 
-  // Update borrower's snapshots of L_Coll and L_YUSDDebt to reflect the current values
+  /**
+   * @notice Update borrower's snapshots of L_Coll and L_YUSDDebt to reflect the current values
+   * @param _borrower The address of the Trove
+   */
   function updateTroveRewardSnapshots(address _borrower) external override {
     _requireCallerIsBorrowerOperations();
     _updateTroveRewardSnapshots(_borrower);
   }
 
+  /**
+   * @notice Internal function to update borrower's snapshots of L_Coll and L_YUSDDebt to reflect the current values
+   *         Called when updating trove reward snapshots or when applying pending rewards
+   * @param _borrower The address of the Trove
+   */
   function _updateTroveRewardSnapshots(address _borrower) internal {
     address[] memory allColls = Troves[_borrower].colls.tokens;
     uint256 allCollsLen = allColls.length;
@@ -466,8 +535,13 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     emit TroveSnapshotsUpdated(block.timestamp);
   }
 
-  // Get the borrower's pending accumulated Coll rewards, earned by their stake
-  // Returned tokens and amounts are the length of whitelist.getValidCollateral();;
+  /**
+   * @notice Get the borrower's pending accumulated Coll rewards, earned by their stake
+   * @dev Returned tokens and amounts are the length of controller.getValidCollateral()
+   * @param _borrower The address of the Trove
+   * @return The borrower's pending accumulated Coll rewards tokens
+   * @return The borrower's pending accumulated Coll rewards amounts
+   */
   function getPendingCollRewards(address _borrower)
     external
     view
@@ -478,7 +552,11 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     return (pendingCollRewards.tokens, pendingCollRewards.amounts);
   }
 
-  // Get the borrower's pending accumulated Coll rewards, earned by their stake
+  /**
+   * @notice Get the borrower's pending accumulated Coll rewards, earned by their stake
+   * @param _borrower The address of the Trove
+   * @return pendingCollRewards
+   */
   function _getPendingCollRewards(address _borrower)
     internal
     view
@@ -505,11 +583,14 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
       uint256 stake = Troves[_borrower].stakes[coll];
       uint256 dec = IERC20(coll).decimals();
       uint256 assetCollReward = stake.mul(rewardPerUnitStaked).div(10**dec);
-      pendingCollRewards.amounts[i] = assetCollReward; // i is correct index here
+      pendingCollRewards.amounts[i] = assetCollReward;
     }
   }
 
-  // Get the borrower's pending accumulated YUSD reward, earned by their stake
+  /**
+   * @notice : Get the borrower's pending accumulated YUSD reward, earned by their stake
+   * @param _borrower The address of the Trove
+   */
   function getPendingYUSDDebtReward(address _borrower)
     public
     view
@@ -533,25 +614,25 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
       }
 
       uint256 stake = Troves[_borrower].stakes[coll];
-
-      uint256 assetYUSDDebtReward = stake.mul(rewardPerUnitStaked).div(
-        DECIMAL_PRECISION
-      );
+      uint256 dec = IERC20(coll).decimals();
+      uint256 assetYUSDDebtReward = stake.mul(rewardPerUnitStaked).div(10**dec);
       pendingYUSDDebtReward = pendingYUSDDebtReward.add(assetYUSDDebtReward);
     }
   }
 
+  /**
+   * @notice Checks if borrower has pending rewards
+   * @dev A Trove has pending rewards if its snapshot is less than the current rewards per-unit-staked sum:
+   * this indicates that rewards have occured since the snapshot was made, and the user therefore has pending rewards
+   * @param _borrower The address of the Trove
+   * @return True if Trove has pending rewards, False if Trove doesn't have pending rewards
+   */
   function hasPendingRewards(address _borrower)
     public
     view
     override
     returns (bool)
   {
-    /*
-     * A Trove has pending rewards if its snapshot is less than the current rewards per-unit-staked sum:
-     * this indicates that rewards have occured since the snapshot was made, and the user therefore has
-     * pending rewards
-     */
     if (Troves[_borrower].status != Status.active) {
       return false;
     }
@@ -566,9 +647,13 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     return false;
   }
 
-  // Returns debt, collsTokens, collsAmounts, pendingYUSDDebtReward, pendingRewardTokens, pendingRewardAmouns
+  /**
+   * @notice Gets the entire debt and collateral of a borrower
+   * @param _borrower The address of the Trove
+   * @return debt, collsTokens, collsAmounts, pendingYUSDDebtReward, pendingRewardTokens, pendingRewardAmouns
+   */
   function getEntireDebtAndColls(address _borrower)
-    public
+    external
     view
     override
     returns (
@@ -601,13 +686,20 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     );
   }
 
-  // Borrower operations remove stake sum.
-  function removeStake(address _borrower) external override {
+  /**
+   * @notice Borrower operations remove stake sum
+   * @param _borrower The address of the Trove
+   */
+  function removeStakeAndCloseTrove(address _borrower) external override {
     _requireCallerIsBorrowerOperations();
-    return _removeStake(_borrower);
+    _removeStake(_borrower);
+    _closeTrove(_borrower, Status.closedByOwner);
   }
 
-  // Remove borrower's stake from the totalStakes sum, and set their stake to 0
+  /**
+   * @notice Remove borrower's stake from the totalStakes sum, and set their stake to 0
+   * @param _borrower The address of the Trove
+   */
   function _removeStake(address _borrower) internal {
     address[] memory borrowerColls = Troves[_borrower].colls.tokens;
     uint256 borrowerCollsLen = borrowerColls.length;
@@ -617,13 +709,6 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
       totalStakes[coll] = totalStakes[coll].sub(stake);
       Troves[_borrower].stakes[coll] = 0;
     }
-  }
-
-  // Update borrower's stake based on their latest collateral value
-  // computed at time function is called based on current price of collateral
-  function updateStakeAndTotalStakes(address _borrower) external override {
-    _requireCallerIsBOorTMR();
-    _updateStakeAndTotalStakes(_borrower);
   }
 
   function _updateStakeAndTotalStakes(address _borrower) internal {
@@ -642,7 +727,16 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     }
   }
 
-  // Calculate a new stake based on the snapshots of the totalStakes and totalCollateral taken at the last liquidation
+  /**
+   * @notice Calculate a new stake based on the snapshots of the totalStakes and totalCollateral taken at the last liquidation
+     * @dev The following assert() holds true because:
+        - The system always contains >= 1 trove
+        - When we close or liquidate a trove, we redistribute the pending rewards, so if all troves were closed/liquidated,
+        rewards would’ve been emptied and totalCollateralSnapshot would be zero too.
+     * @param token The token
+     * @param _coll The collateral
+     * @return The New stake
+     */
   function _computeNewStake(address token, uint256 _coll)
     internal
     view
@@ -652,13 +746,7 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     if (totalCollateralSnapshot[token] == 0) {
       stake = _coll;
     } else {
-      /*
-       * The following assert() holds true because:
-       * - The system always contains >= 1 trove
-       * - When we close or liquidate a trove, we redistribute the pending rewards, so if all troves were closed/liquidated,
-       * rewards would’ve been emptied and totalCollateralSnapshot would be zero too.
-       */
-      require(totalStakesSnapshot[token] != 0, "TM: stake must be > 0");
+      require(totalStakesSnapshot[token] != 0, "TM:stake=0");
       stake = _coll.mul(totalStakesSnapshot[token]).div(
         totalCollateralSnapshot[token]
       );
@@ -666,6 +754,21 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     return stake;
   }
 
+  /**
+   * @notice Add distributed coll and debt rewards-per-unit-staked to the running totals. Division uses a "feedback"
+        error correction, to keep the cumulative error low in the running totals L_Coll and L_YUSDDebt:
+     * @dev
+        This function is only called in batchLiquidateTroves() in TroveManagerLiquidations.
+        Debt that cannot be offset from the stability pool has to be redistributed to other troves.
+        The collateral that backs this debt also gets redistributed to these troves.
+
+
+        1) Form numerators which compensate for the floor division errors that occurred the last time this
+        2) Calculate "per-unit-staked" ratios.
+        3) Multiply each ratio back by its denominator, to reveal the current floor division error.
+        4) Store these errors for use in the next correction when this function is called.
+        5) Note: static analysis tools complain about this "division before multiplication", however, it is intended.
+     */
   function redistributeDebtAndColl(
     IActivePool _activePool,
     IDefaultPool _defaultPool,
@@ -675,57 +778,78 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
   ) external override {
     _requireCallerIsTML();
     uint256 tokensLen = _tokens.length;
-    require(tokensLen == _amounts.length, "TM: len tokens amounts");
+    _revertLenInput(tokensLen == _amounts.length);
+
     if (_debt == 0) {
       return;
     }
-    /*
-     * Add distributed coll and debt rewards-per-unit-staked to the running totals. Division uses a "feedback"
-     * error correction, to keep the cumulative error low in the running totals L_Coll and L_YUSDDebt:
-     *
-     * 1) Form numerators which compensate for the floor division errors that occurred the last time this
-     * function was called.
-     * 2) Calculate "per-unit-staked" ratios.
-     * 3) Multiply each ratio back by its denominator, to reveal the current floor division error.
-     * 4) Store these errors for use in the next correction when this function is called.
-     * 5) Note: static analysis tools complain about this "division before multiplication", however, it is intended.
-     */
-    uint256 totalCollateralVC = _getVC(_tokens, _amounts); // total collateral value in VC terms
 
+    uint256 totalCollateralVC = _getVC(_tokens, _amounts); // total collateral value in VC terms
+    uint256[] memory collateralsVC = controller.getValuesVCIndividual(
+      _tokens,
+      _amounts
+    ); // collaterals in VC terms
     for (uint256 i; i < tokensLen; ++i) {
       address token = _tokens[i];
-      uint256 amount = _amounts[i];
+
       // Prorate debt per collateral by dividing each collateral value by cumulative collateral value and multiply by outstanding debt
-      uint256 collateralVC = whitelist.getValueVC(token, amount);
-      uint256 proratedDebtForCollateral = collateralVC.mul(_debt).div(
-        totalCollateralVC
+      uint256 proratedDebt = collateralsVC[i].mul(_debt).div(totalCollateralVC);
+      uint256 debtNumerator = proratedDebt.mul(DECIMAL_PRECISION).add(
+        lastYUSDDebtError_Redistribution[token]
       );
-      uint256 dec = IERC20(token).decimals();
-      uint256 CollNumerator = amount.mul(10**dec).add(
-        lastCollError_Redistribution[token]
-      );
-      uint256 YUSDDebtNumerator = proratedDebtForCollateral
-        .mul(DECIMAL_PRECISION)
-        .add(lastYUSDDebtError_Redistribution[token]);
+
       if (totalStakes[token] != 0) {
-        // Get the per-unit-staked terms
-        uint256 thisTotalStakes = totalStakes[token];
-        uint256 CollRewardPerUnitStaked = CollNumerator.div(thisTotalStakes);
-        uint256 YUSDDebtRewardPerUnitStaked = YUSDDebtNumerator.div(
-          thisTotalStakes.mul(10**(18 - dec))
+        _updateStakesOnRedistribution(token, _amounts[i], debtNumerator, true);
+      } else {
+        // no other troves in the system with this collateral.
+        // In this case we distribute the debt across
+        // the absorptionCollaterals according to absorptionWeight
+
+        (address[] memory absColls, uint256[] memory absWeights) = controller
+          .getAbsorptionCollParams();
+        uint256 unAllocatedAbsWeight;
+
+        for (uint256 j; j < absColls.length; ++j) {
+          // Also can't redistribute to this token, save it for later.
+          if (totalStakes[absColls[j]] == 0) {
+            unAllocatedAbsWeight += absWeights[j];
+            absWeights[j] = 0;
+          }
+        }
+
+        // Should not be empty, and unallocated should not be all weight.
+        require(
+          absColls.length != 0 && unAllocatedAbsWeight != 1e18,
+          "TM:absCollsInvalid"
         );
 
-        lastCollError_Redistribution[token] = CollNumerator.sub(
-          CollRewardPerUnitStaked.mul(thisTotalStakes)
-        );
-        lastYUSDDebtError_Redistribution[token] = YUSDDebtNumerator.sub(
-          YUSDDebtRewardPerUnitStaked.mul(thisTotalStakes.mul(10**(18 - dec)))
+        for (uint256 j; j < absColls.length; ++j) {
+          // If there is no debt to be distributed for this abs coll, continue to next
+          if (absWeights[j] == 0) {
+            continue;
+          }
+          address absToken = absColls[j];
+          // First found eligible redistribute-able token, so give unallocated weight here.
+          if (unAllocatedAbsWeight != 0) {
+            absWeights[j] += unAllocatedAbsWeight;
+            unAllocatedAbsWeight = 0;
+          }
+          debtNumerator = proratedDebt.mul(absWeights[j]).add(
+            lastYUSDDebtError_Redistribution[absToken]
+          );
+
+          _updateStakesOnRedistribution(absToken, 0, debtNumerator, false);
+        }
+
+        // send the collateral that can't be redistributed to anyone, to the claimAddress
+        activePool.sendSingleCollateral(
+          controller.getClaimAddress(),
+          token,
+          _amounts[i]
         );
 
-        // Add per-unit-staked terms to the running totals
-        L_Coll[token] = L_Coll[token].add(CollRewardPerUnitStaked);
-        L_YUSDDebt[token] = L_YUSDDebt[token].add(YUSDDebtRewardPerUnitStaked);
-        emit LTermsUpdated(token, L_Coll[token], L_YUSDDebt[token]);
+        // this collateral should no longer be sent from the active pool to the default pool:
+        _amounts[i] = 0;
       }
     }
 
@@ -735,16 +859,62 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     _activePool.sendCollaterals(address(_defaultPool), _tokens, _amounts);
   }
 
-  function closeTrove(address _borrower) external override {
-    _requireCallerIsBorrowerOperations();
-    return _closeTrove(_borrower, Status.closedByOwner);
+  function _updateStakesOnRedistribution(
+    address _token,
+    uint256 _amount,
+    uint256 _debtNumerator,
+    bool _updateColl
+  ) internal {
+    uint256 dec = IERC20(_token).decimals();
+    uint256 thisTotalStakes = totalStakes[_token];
+    uint256 adjustedTotalStakes;
+    if (dec > 18) {
+      adjustedTotalStakes = thisTotalStakes.div(10**(dec - 18));
+    } else {
+      adjustedTotalStakes = thisTotalStakes.mul(10**(18 - dec));
+    }
+
+    uint256 YUSDDebtRewardPerUnitStaked = _debtNumerator.div(
+      adjustedTotalStakes
+    );
+
+    lastYUSDDebtError_Redistribution[_token] = _debtNumerator.sub(
+      YUSDDebtRewardPerUnitStaked.mul(adjustedTotalStakes)
+    );
+
+    L_YUSDDebt[_token] = L_YUSDDebt[_token].add(YUSDDebtRewardPerUnitStaked);
+
+    if (_updateColl) {
+      uint256 CollNumerator = _amount.mul(DECIMAL_PRECISION).add(
+        lastCollError_Redistribution[_token]
+      );
+
+      uint256 CollRewardPerUnitStaked = CollNumerator.div(adjustedTotalStakes);
+
+      lastCollError_Redistribution[_token] = CollNumerator.sub(
+        CollRewardPerUnitStaked.mul(adjustedTotalStakes)
+      );
+
+      // Add per-unit-staked terms to the running totals
+      L_Coll[_token] = L_Coll[_token].add(CollRewardPerUnitStaked);
+    }
+
+    emit LTermsUpdated(_token, L_Coll[_token], L_YUSDDebt[_token]);
   }
 
+  /**
+   * @notice Closes trove by liquidation
+   * @param _borrower The address of the Trove
+   */
   function closeTroveLiquidation(address _borrower) external override {
     _requireCallerIsTML();
     return _closeTrove(_borrower, Status.closedByLiquidation);
   }
 
+  /**
+   * @notice Closes trove by redemption
+   * @param _borrower The address of the Trove
+   */
   function closeTroveRedemption(address _borrower) external override {
     _requireCallerIsTMR();
     return _closeTrove(_borrower, Status.closedByRedemption);
@@ -753,13 +923,17 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
   function _closeTrove(address _borrower, Status closedStatus) internal {
     require(
       closedStatus != Status.nonExistent && closedStatus != Status.active,
-      "Status must be active and exists"
+      "TM:invalid trove"
     );
+
+    // Remove from UnderCollateralizedTroves if it was there.
+    _updateUnderCollateralizedTrove(_borrower, false);
 
     uint256 TroveOwnersArrayLength = TroveOwners.length;
     _requireMoreThanOneTroveInSystem(TroveOwnersArrayLength);
     newColls memory emptyColls;
 
+    // Zero all collaterals owned by the user and snapshots
     address[] memory allColls = Troves[_borrower].colls.tokens;
     uint256 allCollsLen = allColls.length;
     for (uint256 i; i < allCollsLen; ++i) {
@@ -776,64 +950,57 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     sortedTroves.remove(_borrower);
   }
 
-  /*
-   * Updates snapshots of system total stakes and total collateral, excluding a given collateral remainder from the calculation.
-   * Used in a liquidation sequence.
-   *
-   * The calculation excludes a portion of collateral that is in the ActivePool:
-   *
-   * the total Coll gas compensation from the liquidation sequence
-   *
-   * The Coll as compensation must be excluded as it is always sent out at the very end of the liquidation sequence.
-   */
+  /**
+   * @notice Updates snapshots of system total stakes and total collateral,
+     *  excluding a given collateral remainder from the calculation. Used in a liquidation sequence.
+     * @dev The calculation excludes a portion of collateral that is in the ActivePool:
+        the total Coll gas compensation from the liquidation sequence
+        The Coll as compensation must be excluded as it is always sent out at the very end of the liquidation sequence.
+     */
   function updateSystemSnapshots_excludeCollRemainder(
     IActivePool _activePool,
     address[] memory _tokens,
     uint256[] memory _amounts
   ) external override {
     _requireCallerIsTML();
-    uint256 tokensLen = _tokens.length;
-    for (uint256 i; i < tokensLen; ++i) {
+    // Collect Active pool + Default pool balances of the passed in tokens and update snapshots accordingly
+    uint256[] memory activeAndLiquidatedColl = _activePool
+      .getAmountsSubsetSystem(_tokens);
+    for (uint256 i; i < _tokens.length; ++i) {
       address token = _tokens[i];
       totalStakesSnapshot[token] = totalStakes[token];
-
-      uint256 _tokenRemainder = _amounts[i];
-      uint256 activeColl = _activePool.getCollateral(token);
-      uint256 liquidatedColl = defaultPool.getCollateral(token);
-      totalCollateralSnapshot[token] = activeColl.sub(_tokenRemainder).add(
-        liquidatedColl
+      totalCollateralSnapshot[token] = activeAndLiquidatedColl[i].sub(
+        _amounts[i]
       );
     }
     emit SystemSnapshotsUpdated(block.timestamp);
   }
 
-  // Push the owner's address to the Trove owners list, and record the corresponding array index on the Trove struct
+  /**
+   * @notice Push the owner's address to the Trove owners list, and record the corresponding array index on the Trove struct
+     * @dev Max array size is 2**128 - 1, i.e. ~3e30 troves. No risk of overflow, since troves have minimum YUSD
+        debt of liquidation reserve plus MIN_NET_DEBT. 3e30 YUSD dwarfs the value of all wealth in the world ( which is < 1e15 USD).
+     * @param _borrower The address of the Trove
+     * @return index Push Trove Owner to array
+     */
   function addTroveOwnerToArray(address _borrower)
     external
     override
     returns (uint256)
   {
     _requireCallerIsBorrowerOperations();
-    return _addTroveOwnerToArray(_borrower);
-  }
-
-  function _addTroveOwnerToArray(address _borrower)
-    internal
-    returns (uint128 index)
-  {
-    /* Max array size is 2**128 - 1, i.e. ~3e30 troves. No risk of overflow, since troves have minimum YUSD
-        debt of liquidation reserve plus MIN_NET_DEBT. 3e30 YUSD dwarfs the value of all wealth in the world ( which is < 1e15 USD). */
-    // Push the Troveowner to the array
     TroveOwners.push(_borrower);
 
     // Record the index of the new Troveowner on their Trove struct
-    index = uint128(TroveOwners.length.sub(1));
+    uint128 index = uint128(TroveOwners.length.sub(1));
     Troves[_borrower].arrayIndex = index;
+    return uint256(index);
   }
 
-  /*
-   * Remove a Trove owner from the TroveOwners array, not preserving array order. Removing owner 'B' does the following:
-   * [A B C D E] => [A E C D], and updates E's Trove struct to point to its new array index.
+  /**
+   * @notice Remove a Trove owner from the TroveOwners array, not preserving array order.
+   * @dev Removing owner 'B' does the following: [A B C D E] => [A E C D], and updates E's Trove struct to point to its new array index.
+   * @param _borrower THe address of the Trove
    */
   function _removeTroveOwner(address _borrower, uint256 TroveOwnersArrayLength)
     internal
@@ -842,14 +1009,14 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     // It’s set in caller function `_closeTrove`
     require(
       troveStatus != Status.nonExistent && troveStatus != Status.active,
-      "TM: trove !exists or !active"
+      "TM:invalid trove"
     );
 
     uint128 index = Troves[_borrower].arrayIndex;
     uint256 length = TroveOwnersArrayLength;
     uint256 idxLast = length.sub(1);
 
-    require(index <= idxLast, "TM: index must be > last index");
+    require(index <= idxLast, "TM:index>last");
 
     address addressToMove = TroveOwners[idxLast];
 
@@ -862,25 +1029,33 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
 
   // --- Recovery Mode and TCR functions ---
 
+  // @notice Helper function for calculating TCR of the system
   function getTCR() external view override returns (uint256) {
     return _getTCR();
   }
 
+  // @notice Helper function for checking recovery mode
+  // @return True if in recovery mode, false otherwise
   function checkRecoveryMode() external view override returns (bool) {
     return _checkRecoveryMode();
   }
 
   // --- Redemption fee functions ---
 
+  /**
+   * @notice Updates base rate via redemption, called from TMR
+   * @param newBaseRate The new base rate
+   */
   function updateBaseRate(uint256 newBaseRate) external override {
     _requireCallerIsTMR();
-    require(newBaseRate != 0, "TM: newBaseRate must be > 0");
+    // After redemption, new base rate is always > 0
+    require(newBaseRate != 0, "TM:BR!=0");
     baseRate = newBaseRate;
     emit BaseRateUpdated(newBaseRate);
     _updateLastFeeOpTime();
   }
 
-  function getRedemptionRate() public view override returns (uint256) {
+  function getRedemptionRate() external view override returns (uint256) {
     return _calcRedemptionRate(baseRate);
   }
 
@@ -894,18 +1069,10 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     returns (uint256)
   {
     return
-      LiquityMath._min(
+      YetiMath._min(
         REDEMPTION_FEE_FLOOR.add(_baseRate),
         DECIMAL_PRECISION // cap at a maximum of 100%
       );
-  }
-
-  function _getRedemptionFee(uint256 _YUSDRedeemed)
-    internal
-    view
-    returns (uint256)
-  {
-    return _calcRedemptionFee(getRedemptionRate(), _YUSDRedeemed);
   }
 
   function getRedemptionFeeWithDecay(uint256 _YUSDRedeemed)
@@ -925,7 +1092,7 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     uint256 redemptionFee = _redemptionRate.mul(_YUSDRedeemed).div(
       DECIMAL_PRECISION
     );
-    require(redemptionFee < _YUSDRedeemed, "TM:Fee>returned colls");
+    require(redemptionFee < _YUSDRedeemed, "TM:RedempFee>colls");
     return redemptionFee;
   }
 
@@ -944,8 +1111,7 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     pure
     returns (uint256)
   {
-    return
-      LiquityMath._min(BORROWING_FEE_FLOOR.add(_baseRate), MAX_BORROWING_FEE);
+    return YetiMath._min(BORROWING_FEE_FLOOR.add(_baseRate), MAX_BORROWING_FEE);
   }
 
   function getBorrowingFee(uint256 _YUSDDebt)
@@ -974,25 +1140,28 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     return _borrowingRate.mul(_YUSDDebt).div(DECIMAL_PRECISION);
   }
 
-  // Updates the baseRate state variable based on time elapsed since the last redemption or YUSD borrowing operation.
-  function decayBaseRateFromBorrowing() external override {
+  // @notice Updates the baseRate state variable based on time elapsed since the last redemption
+  // or YUSD borrowing operation
+  function decayBaseRateFromBorrowingAndCalculateFee(uint256 _YUSDDebt)
+    external
+    override
+    returns (uint256)
+  {
     _requireCallerIsBorrowerOperations();
 
     uint256 decayedBaseRate = calcDecayedBaseRate();
-    require(
-      decayedBaseRate <= DECIMAL_PRECISION,
-      "TM: decayed base rate too small"
-    ); // The baseRate can decay to 0
+    require(decayedBaseRate <= DECIMAL_PRECISION, "TM:BR>1e18"); // The baseRate can decay to 0
 
     baseRate = decayedBaseRate;
     emit BaseRateUpdated(decayedBaseRate);
 
     _updateLastFeeOpTime();
+    return _calcBorrowingFee(getBorrowingRate(), _YUSDDebt);
   }
 
   // --- Internal fee functions ---
 
-  // Update the last fee operation time only if time passed >= decay interval. This prevents base rate griefing.
+  // @notice Update the last fee operation time only if time passed >= decay interval. This prevents base rate griefing.
   function _updateLastFeeOpTime() internal {
     uint256 timePassed = block.timestamp.sub(lastFeeOperationTime);
 
@@ -1004,10 +1173,7 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
 
   function calcDecayedBaseRate() public view override returns (uint256) {
     uint256 minutesPassed = _minutesPassedSinceLastFeeOp();
-    uint256 decayFactor = LiquityMath._decPow(
-      MINUTE_DECAY_FACTOR,
-      minutesPassed
-    );
+    uint256 decayFactor = YetiMath._decPow(MINUTE_DECAY_FACTOR, minutesPassed);
 
     return baseRate.mul(decayFactor).div(DECIMAL_PRECISION);
   }
@@ -1028,39 +1194,51 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
   function _requireCallerIsBOorTMR() internal view {
     if (
       msg.sender != borrowerOperationsAddress &&
-      msg.sender != troveManagerRedemptionsAddress
+      msg.sender != address(troveManagerRedemptions)
     ) {
       _revertWrongFuncCaller();
     }
   }
 
   function _requireCallerIsTMR() internal view {
-    if (msg.sender != troveManagerRedemptionsAddress) {
+    if (msg.sender != address(troveManagerRedemptions)) {
       _revertWrongFuncCaller();
     }
   }
 
   function _requireCallerIsTML() internal view {
-    if (msg.sender != troveManagerLiquidationsAddress) {
+    if (msg.sender != address(troveManagerLiquidations)) {
       _revertWrongFuncCaller();
     }
   }
 
-  function _revertWrongFuncCaller() internal pure {
-    revert("TM: External caller not allowed");
+  function _requireCallerIsTMLorTMR() internal view {
+    if (
+      msg.sender != address(troveManagerLiquidations) &&
+      msg.sender != address(troveManagerRedemptions)
+    ) {
+      _revertWrongFuncCaller();
+    }
   }
 
   function _requireTroveIsActive(address _borrower) internal view {
-    require(Troves[_borrower].status == Status.active, "TM: trove must exist");
+    require(Troves[_borrower].status == Status.active, "TM:trove inactive");
   }
 
   function _requireMoreThanOneTroveInSystem(uint256 TroveOwnersArrayLength)
     internal
-    view
+    pure
   {
-    require(
-      TroveOwnersArrayLength > 1 && sortedTroves.getSize() > 1,
-      "TM: last trove"
+    require(TroveOwnersArrayLength > 1, "TM:last trove");
+  }
+
+  function _updateUnderCollateralizedTrove(
+    address _borrower,
+    bool _isUnderCollateralized
+  ) internal {
+    sortedTroves.updateUnderCollateralizedTrove(
+      _borrower,
+      _isUnderCollateralized
     );
   }
 
@@ -1139,7 +1317,11 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     return rewardSnapshots[_borrower].YUSDDebts[_token];
   }
 
-  // recomputes VC given current prices and returns it
+  /**
+   * @notice recomputes VC given current prices and returns it
+   * @param _borrower The address of the Trove
+   * @return The Trove's VC
+   */
   function getTroveVC(address _borrower)
     external
     view
@@ -1168,10 +1350,7 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
       uint256
     )
   {
-    (newColls memory colls, uint256 currentYUSDDebt) = _getCurrentTroveState(
-      _borrower
-    );
-    return (colls.tokens, colls.amounts, currentYUSDDebt);
+    return _getCurrentTroveState(_borrower);
   }
 
   // --- Called by TroveManagerRedemptions Only ---
@@ -1181,27 +1360,8 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     Troves[_borrower].debt = debt;
   }
 
-  function updateTroveCollTMR(
-    address _borrower,
-    address[] memory addresses,
-    uint256[] memory amounts
-  ) external override {
-    _requireCallerIsTMR();
-    (Troves[_borrower].colls.tokens, Troves[_borrower].colls.amounts) = (
-      addresses,
-      amounts
-    );
-  }
-
-  function removeStakeTMR(address _borrower) external override {
-    _requireCallerIsTMR();
-    _removeStake(_borrower);
-  }
-
-  // --- Called by TroverManagerLiquidations Only ---
-
-  function removeStakeTLR(address _borrower) external override {
-    _requireCallerIsTML();
+  function removeStake(address _borrower) external override {
+    _requireCallerIsTMLorTMR();
     _removeStake(_borrower);
   }
 
@@ -1212,15 +1372,26 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     Troves[_borrower].status = Status(_num);
   }
 
-  function updateTroveColl(
+  /**
+   * @notice Update borrower's stake based on their latest collateral value. Also update their
+   * trove state with new tokens and amounts. Called by BO or TMR
+   * @dev computed at time function is called based on current price of collateral
+   * @param _borrower The address of the Trove
+   * @param _tokens The array of tokens to set to the borrower's trove
+   * @param _amounts The array of amounts to set to the borrower's trove
+   */
+  function updateTroveCollAndStakeAndTotalStakes(
     address _borrower,
     address[] memory _tokens,
     uint256[] memory _amounts
   ) external override {
-    _requireCallerIsBorrowerOperations();
-    require(_tokens.length == _amounts.length, "TM: length mismatch");
-    Troves[_borrower].colls.tokens = _tokens;
-    Troves[_borrower].colls.amounts = _amounts;
+    _requireCallerIsBOorTMR();
+    _revertLenInput(_tokens.length == _amounts.length);
+    (Troves[_borrower].colls.tokens, Troves[_borrower].colls.amounts) = (
+      _tokens,
+      _amounts
+    );
+    _updateStakeAndTotalStakes(_borrower);
   }
 
   function increaseTroveDebt(address _borrower, uint256 _debtIncrease)
@@ -1245,21 +1416,33 @@ contract TroveManager is TroveManagerBase, ITroveManager, ReentrancyGuard {
     return newDebt;
   }
 
-  // --- contract getters ---
-
-  function stabilityPool() external view override returns (IStabilityPool) {
-    return stabilityPoolContract;
+  function _revertLenInput(bool _lenInput) internal pure {
+    require(_lenInput, "TM:Len input");
   }
 
-  function yusdToken() external view override returns (IYUSDToken) {
-    return yusdTokenContract;
+  // --- System param getter functions ---
+
+  function getMCR() external view override returns (uint256) {
+    return MCR;
   }
 
-  function yetiToken() external view override returns (IYETIToken) {
-    return yetiTokenContract;
+  function getCCR() external view override returns (uint256) {
+    return CCR;
   }
 
-  function sYETI() external view override returns (ISYETI) {
-    return sYETIContract;
+  function getYUSD_GAS_COMPENSATION() external view override returns (uint256) {
+    return YUSD_GAS_COMPENSATION;
+  }
+
+  function getMIN_NET_DEBT() external view override returns (uint256) {
+    return MIN_NET_DEBT;
+  }
+
+  function getBORROWING_FEE_FLOOR() external view override returns (uint256) {
+    return BORROWING_FEE_FLOOR;
+  }
+
+  function getREDEMPTION_FEE_FLOOR() external view override returns (uint256) {
+    return REDEMPTION_FEE_FLOOR;
   }
 }

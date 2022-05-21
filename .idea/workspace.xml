@@ -1,31 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="8acb2d09-a8be-4973-9dea-044c162d1acd" name="Changes" comment="reformat code to match newest Solidity standards">
-      <change afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiLever.sol" afterDir="false" />
+    <list default="true" id="8acb2d09-a8be-4973-9dea-044c162d1acd" name="Changes" comment="updated to BorrowerOperations.sol">
+      <change afterPath="$PROJECT_DIR$/contracts/contracts/YETI/veYETIEmissions.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/BorrowerOperations.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/BorrowerOperations.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/Address.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/Address.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/LiquityBase.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/LiquityBase.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/YetiCustomBase.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/YetiCustomBase.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/YetiMath.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/YetiMath.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IActivePool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IActivePool.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IBorrowerOperations.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IBorrowerOperations.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICollSurplusPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICollSurplusPool.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICollateralReceiver.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICollateralReceiver.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IDefaultPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IDefaultPool.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ILiquityBase.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ILiquityBase.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPool.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPriceFeed.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPriceFeed.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ISortedTroves.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ISortedTroves.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IStabilityPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IStabilityPool.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ITroveManager.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ITroveManager.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYETIToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYETIToken.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYUSDToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYUSDToken.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiController.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiController.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiVaultToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiVaultToken.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IveYETI.sol" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/YUSDToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/YUSDToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/CollSurplusPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/CollSurplusPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/DefaultPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/DefaultPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/TroveManagerBase.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/TroveManagerBase.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TroveManager.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TroveManager.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TroveManagerLiquidations.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TroveManagerLiquidations.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TroveManagerRedemptions.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TroveManagerRedemptions.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/CommunityIssuance.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/YETI/CommunityIssuance.sol" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -88,7 +73,7 @@
       <workItem from="1653039910301" duration="1463000" />
       <workItem from="1653041389983" duration="3100000" />
       <workItem from="1653132954149" duration="269000" />
-      <workItem from="1653137620031" duration="1459000" />
+      <workItem from="1653137620031" duration="3746000" />
     </task>
     <task id="LOCAL-00001" summary="reformat code to match newest Solidity standards">
       <created>1653137819775</created>
@@ -97,7 +82,14 @@
       <option name="project" value="LOCAL" />
       <updated>1653137819775</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="updated to BorrowerOperations.sol">
+      <created>1653139219181</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1653139219181</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -116,7 +108,8 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="reformat code to match newest Solidity standards" />
-    <option name="LAST_COMMIT_MESSAGE" value="reformat code to match newest Solidity standards" />
+    <MESSAGE value="updated to BorrowerOperations.sol" />
+    <option name="LAST_COMMIT_MESSAGE" value="updated to BorrowerOperations.sol" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />
