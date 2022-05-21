@@ -52,21 +52,23 @@ contract YETIToken is CheckContract, IYETIToken {
 
     // --- ERC20 Data ---
 
-    bytes32 constant internal _NAME = "YETI";
-    bytes32 constant internal _SYMBOL = "YETI";
-    bytes32 constant internal _VERSION = "1";
-    uint8 constant internal  _DECIMALS = 18;
+    bytes32 internal constant _NAME = "YETI";
+    bytes32 internal constant _SYMBOL = "YETI";
+    bytes32 internal constant _VERSION = "1";
+    uint8 internal constant _DECIMALS = 18;
 
-    mapping (address => uint256) private _balances;
-    mapping (address => mapping (address => uint256)) private _allowances;
-    uint private _totalSupply;
+    mapping(address => uint256) private _balances;
+    mapping(address => mapping(address => uint256)) private _allowances;
+    uint256 private _totalSupply;
 
     // --- EIP 2612 Data ---
 
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
-    bytes32 private constant _PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+    bytes32 private constant _PERMIT_TYPEHASH =
+        0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     // keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
-    bytes32 private constant _TYPE_HASH = 0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
+    bytes32 private constant _TYPE_HASH =
+        0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f;
 
     // Cache the domain separator as an immutable value, but also store the chain id that it corresponds to, in order to
     // invalidate the cached domain separator if the chain id changes.
@@ -75,23 +77,23 @@ contract YETIToken is CheckContract, IYETIToken {
 
     bytes32 private immutable _HASHED_NAME;
     bytes32 private immutable _HASHED_VERSION;
-    
-    mapping (address => uint256) private _nonces;
+
+    mapping(address => uint256) private _nonces;
 
     // --- YETIToken specific data ---
 
-    uint public constant ONE_YEAR_IN_SECONDS = 31536000;  // 60 * 60 * 24 * 365
+    uint256 public constant ONE_YEAR_IN_SECONDS = 31536000; // 60 * 60 * 24 * 365
 
     // uint for use with SafeMath
-    uint internal _1_MILLION = 1e24;    // 1e6 * 1e18 = 1e24
+    uint256 internal _1_MILLION = 1e24; // 1e6 * 1e18 = 1e24
 
-    uint internal immutable deploymentStartTime;
+    uint256 internal immutable deploymentStartTime;
     address public immutable multisigAddress;
 
     address public immutable communityIssuanceAddress;
     address public immutable sYETIAddress;
 
-    uint internal immutable lpRewardsEntitlement;
+    uint256 internal immutable lpRewardsEntitlement;
 
     ILockupContractFactory public immutable lockupContractFactory;
 
@@ -99,28 +101,27 @@ contract YETIToken is CheckContract, IYETIToken {
 
     event CommunityIssuanceAddressSet(address _communityIssuanceAddress);
     event SYETIAddressSet(address _sYETIAddress);
-    event LockupContractFactoryAddressSet(address _lockupContractFactoryAddress);
+    event LockupContractFactoryAddressSet(
+        address _lockupContractFactoryAddress
+    );
 
     // --- Functions ---
 
-    constructor
-    (
-        address _communityIssuanceAddress, 
+    constructor(
+        address _communityIssuanceAddress,
         address _sYETIAddress,
         address _lockupFactoryAddress,
         address _bountyAddress,
         address _lpRewardsAddress,
         address _multisigAddress
-    ) 
-        public 
-    {
+    ) public {
         checkContract(_communityIssuanceAddress);
         checkContract(_sYETIAddress);
         checkContract(_lockupFactoryAddress);
 
         multisigAddress = _multisigAddress;
-        deploymentStartTime  = block.timestamp;
-        
+        deploymentStartTime = block.timestamp;
+
         communityIssuanceAddress = _communityIssuanceAddress;
         sYETIAddress = _sYETIAddress;
         lockupContractFactory = ILockupContractFactory(_lockupFactoryAddress);
@@ -131,22 +132,27 @@ contract YETIToken is CheckContract, IYETIToken {
         _HASHED_NAME = hashedName;
         _HASHED_VERSION = hashedVersion;
         _CACHED_CHAIN_ID = _chainID();
-        _CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator(_TYPE_HASH, hashedName, hashedVersion);
-        
+        _CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator(
+            _TYPE_HASH,
+            hashedName,
+            hashedVersion
+        );
+
         // --- Initial YETI allocations ---
         // TODO: @KingYeti-change allocations
-        uint bountyEntitlement = _1_MILLION.mul(27); // Allocate 27 million for bounties/hackathons
+        uint256 bountyEntitlement = _1_MILLION.mul(27); // Allocate 27 million for bounties/hackathons
         _mint(_bountyAddress, bountyEntitlement);
 
-        uint depositorsAndFrontEndsEntitlement = _1_MILLION.mul(50); // Allocate 50 million to the algorithmic issuance schedule
+        uint256 depositorsAndFrontEndsEntitlement = _1_MILLION.mul(50); // Allocate 50 million to the algorithmic issuance schedule
         _mint(_communityIssuanceAddress, depositorsAndFrontEndsEntitlement);
 
-        uint _lpRewardsEntitlement = _1_MILLION.mul(3);  // Allocate 3 million for LP rewards
+        uint256 _lpRewardsEntitlement = _1_MILLION.mul(3); // Allocate 3 million for LP rewards
         lpRewardsEntitlement = _lpRewardsEntitlement;
         _mint(_lpRewardsAddress, _lpRewardsEntitlement);
-        
+
         // Allocate the remainder to the YETI Multisig: (100 - 3 - 27 - 50) million = 20
-        uint multisigEntitlement = _1_MILLION.mul(100)
+        uint256 multisigEntitlement = _1_MILLION
+            .mul(100)
             .sub(bountyEntitlement)
             .sub(depositorsAndFrontEndsEntitlement)
             .sub(_lpRewardsEntitlement);
@@ -160,7 +166,12 @@ contract YETIToken is CheckContract, IYETIToken {
         return _totalSupply;
     }
 
-    function balanceOf(address account) external view override returns (uint256) {
+    function balanceOf(address account)
+        external
+        view
+        override
+        returns (uint256)
+    {
         return _balances[account];
     }
 
@@ -168,11 +179,20 @@ contract YETIToken is CheckContract, IYETIToken {
         return deploymentStartTime;
     }
 
-    function getLpRewardsEntitlement() external view override returns (uint256) {
+    function getLpRewardsEntitlement()
+        external
+        view
+        override
+        returns (uint256)
+    {
         return lpRewardsEntitlement;
     }
 
-    function transfer(address recipient, uint256 amount) external override returns (bool) {
+    function transfer(address recipient, uint256 amount)
+        external
+        override
+        returns (bool)
+    {
         // Restrict the multisig's transfers in first year
         if (_callerIsMultisig() && _isFirstYear()) {
             _requireRecipientIsRegisteredLC(recipient);
@@ -185,81 +205,144 @@ contract YETIToken is CheckContract, IYETIToken {
         return true;
     }
 
-    function allowance(address owner, address spender) external view override returns (uint256) {
+    function allowance(address owner, address spender)
+        external
+        view
+        override
+        returns (uint256)
+    {
         return _allowances[owner][spender];
     }
 
-    function approve(address spender, uint256 amount) external override returns (bool) {
-        if (_isFirstYear()) { _requireCallerIsNotMultisig(); }
+    function approve(address spender, uint256 amount)
+        external
+        override
+        returns (bool)
+    {
+        if (_isFirstYear()) {
+            _requireCallerIsNotMultisig();
+        }
 
         _approve(msg.sender, spender, amount);
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) external override returns (bool) {
-        if (_isFirstYear()) { _requireSenderIsNotMultisig(sender); }
-        
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external override returns (bool) {
+        if (_isFirstYear()) {
+            _requireSenderIsNotMultisig(sender);
+        }
+
         _requireValidRecipient(recipient);
 
         _transfer(sender, recipient, amount);
-        _approve(sender, msg.sender, _allowances[sender][msg.sender].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        _approve(
+            sender,
+            msg.sender,
+            _allowances[sender][msg.sender].sub(
+                amount,
+                "ERC20: transfer amount exceeds allowance"
+            )
+        );
         return true;
     }
 
-    function increaseAllowance(address spender, uint256 addedValue) external override returns (bool) {
-        if (_isFirstYear()) { _requireCallerIsNotMultisig(); }
-        
-        _approve(msg.sender, spender, _allowances[msg.sender][spender].add(addedValue));
+    function increaseAllowance(address spender, uint256 addedValue)
+        external
+        override
+        returns (bool)
+    {
+        if (_isFirstYear()) {
+            _requireCallerIsNotMultisig();
+        }
+
+        _approve(
+            msg.sender,
+            spender,
+            _allowances[msg.sender][spender].add(addedValue)
+        );
         return true;
     }
 
-    function decreaseAllowance(address spender, uint256 subtractedValue) external override returns (bool) {
-        if (_isFirstYear()) { _requireCallerIsNotMultisig(); }
-        
-        _approve(msg.sender, spender, _allowances[msg.sender][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+    function decreaseAllowance(address spender, uint256 subtractedValue)
+        external
+        override
+        returns (bool)
+    {
+        if (_isFirstYear()) {
+            _requireCallerIsNotMultisig();
+        }
+
+        _approve(
+            msg.sender,
+            spender,
+            _allowances[msg.sender][spender].sub(
+                subtractedValue,
+                "ERC20: decreased allowance below zero"
+            )
+        );
         return true;
     }
 
     function sendToSYETI(address _sender, uint256 _amount) external override {
         _requireCallerIsSYETI();
-        if (_isFirstYear()) { _requireSenderIsNotMultisig(_sender); }  // Prevent the multisig from staking YETI
+        if (_isFirstYear()) {
+            _requireSenderIsNotMultisig(_sender);
+        } // Prevent the multisig from staking YETI
         _transfer(_sender, sYETIAddress, _amount);
     }
 
     // --- EIP 2612 functionality ---
 
-    function domainSeparator() public view override returns (bytes32) {    
+    function domainSeparator() public view override returns (bytes32) {
         if (_chainID() == _CACHED_CHAIN_ID) {
             return _CACHED_DOMAIN_SEPARATOR;
         } else {
-            return _buildDomainSeparator(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION);
+            return
+                _buildDomainSeparator(
+                    _TYPE_HASH,
+                    _HASHED_NAME,
+                    _HASHED_VERSION
+                );
         }
     }
 
-    function permit
-    (
-        address owner, 
-        address spender, 
-        uint amount, 
-        uint deadline, 
-        uint8 v, 
-        bytes32 r, 
+    function permit(
+        address owner,
+        address spender,
+        uint256 amount,
+        uint256 deadline,
+        uint8 v,
+        bytes32 r,
         bytes32 s
-    ) 
-        external 
-        override 
-    {            
-        require(deadline >= now, 'YETI: expired deadline');
-        bytes32 digest = keccak256(abi.encodePacked('\x19\x01', 
-                         domainSeparator(), keccak256(abi.encode(
-                         _PERMIT_TYPEHASH, owner, spender, amount, 
-                         _nonces[owner]++, deadline))));
+    ) external override {
+        require(deadline >= now, "YETI: expired deadline");
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                "\x19\x01",
+                domainSeparator(),
+                keccak256(
+                    abi.encode(
+                        _PERMIT_TYPEHASH,
+                        owner,
+                        spender,
+                        amount,
+                        _nonces[owner]++,
+                        deadline
+                    )
+                )
+            )
+        );
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress == owner, 'YETI: invalid signature');
+        require(recoveredAddress == owner, "YETI: invalid signature");
         _approve(owner, spender, amount);
     }
 
-    function nonces(address owner) external view override returns (uint256) { // FOR EIP 2612
+    function nonces(address owner) external view override returns (uint256) {
+        // FOR EIP 2612
         return _nonces[owner];
     }
 
@@ -271,15 +354,29 @@ contract YETIToken is CheckContract, IYETIToken {
         }
     }
 
-    function _buildDomainSeparator(bytes32 typeHash, bytes32 name, bytes32 version) private view returns (bytes32) {
-        return keccak256(abi.encode(typeHash, name, version, _chainID(), address(this)));
+    function _buildDomainSeparator(
+        bytes32 typeHash,
+        bytes32 name,
+        bytes32 version
+    ) private view returns (bytes32) {
+        return
+            keccak256(
+                abi.encode(typeHash, name, version, _chainID(), address(this))
+            );
     }
 
-    function _transfer(address sender, address recipient, uint256 amount) internal {
+    function _transfer(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
 
-        _balances[sender] = _balances[sender].sub(amount, "ERC20: transfer amount exceeds balance");
+        _balances[sender] = _balances[sender].sub(
+            amount,
+            "ERC20: transfer amount exceeds balance"
+        );
         _balances[recipient] = _balances[recipient].add(amount);
         emit Transfer(sender, recipient, amount);
     }
@@ -292,14 +389,18 @@ contract YETIToken is CheckContract, IYETIToken {
         emit Transfer(address(0), account, amount);
     }
 
-    function _approve(address owner, address spender, uint256 amount) internal {
+    function _approve(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
         _allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
-    
+
     // --- Helper functions ---
 
     function _callerIsMultisig() internal view returns (bool) {
@@ -311,35 +412,45 @@ contract YETIToken is CheckContract, IYETIToken {
     }
 
     // --- 'require' functions ---
-    
+
     function _requireValidRecipient(address _recipient) internal view {
         require(
-            _recipient != address(0) && 
-            _recipient != address(this),
+            _recipient != address(0) && _recipient != address(this),
             "YETI: Cannot transfer tokens directly to the YETI token contract or the zero address"
         );
         require(
             _recipient != communityIssuanceAddress &&
-            _recipient != sYETIAddress,
+                _recipient != sYETIAddress,
             "YETI: Cannot transfer tokens directly to the community issuance or staking contract"
         );
     }
 
     function _requireRecipientIsRegisteredLC(address _recipient) internal view {
-        require(lockupContractFactory.isRegisteredLockup(_recipient), 
-        "YETIToken: recipient must be a LockupContract registered in the Factory");
+        require(
+            lockupContractFactory.isRegisteredLockup(_recipient),
+            "YETIToken: recipient must be a LockupContract registered in the Factory"
+        );
     }
 
     function _requireSenderIsNotMultisig(address _sender) internal view {
-        require(_sender != multisigAddress, "YETIToken: sender must not be the multisig");
+        require(
+            _sender != multisigAddress,
+            "YETIToken: sender must not be the multisig"
+        );
     }
 
     function _requireCallerIsNotMultisig() internal view {
-        require(!_callerIsMultisig(), "YETIToken: caller must not be the multisig");
+        require(
+            !_callerIsMultisig(),
+            "YETIToken: caller must not be the multisig"
+        );
     }
 
     function _requireCallerIsSYETI() internal view {
-         require(msg.sender == sYETIAddress, "YETIToken: caller must be the SYETI contract");
+        require(
+            msg.sender == sYETIAddress,
+            "YETIToken: caller must be the SYETI contract"
+        );
     }
 
     // --- Optional functions ---

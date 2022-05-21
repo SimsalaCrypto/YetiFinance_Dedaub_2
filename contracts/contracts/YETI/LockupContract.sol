@@ -6,76 +6,88 @@ import "../Dependencies/SafeMath.sol";
 import "../Interfaces/IYETIToken.sol";
 
 /*
-* The lockup contract architecture utilizes a single LockupContract, with an unlockTime. The unlockTime is passed as an argument 
-* to the LockupContract's constructor. The contract's balance can be withdrawn by the beneficiary when block.timestamp > unlockTime. 
-* At construction, the contract checks that unlockTime is at least one year later than the Liquity system's deployment time. 
-*/
+ * The lockup contract architecture utilizes a single LockupContract, with an unlockTime. The unlockTime is passed as an argument
+ * to the LockupContract's constructor. The contract's balance can be withdrawn by the beneficiary when block.timestamp > unlockTime.
+ * At construction, the contract checks that unlockTime is at least one year later than the Liquity system's deployment time.
+ */
 contract LockupContract {
-    using SafeMath for uint;
+  using SafeMath for uint256;
 
-    // --- Data ---
-    bytes32 constant public NAME = "LockupContract";
+  // --- Data ---
+  bytes32 public constant NAME = "LockupContract";
 
-    uint constant public SECONDS_IN_ONE_YEAR = 31536000;
+  uint256 public constant SECONDS_IN_ONE_YEAR = 31536000;
 
-    address public immutable beneficiary;
+  address public immutable beneficiary;
 
-    IYETIToken public immutable yetiToken;
+  IYETIToken public immutable yetiToken;
 
-    // Unlock time is the Unix point in time at which the beneficiary can withdraw.
-    uint public unlockTime;
+  // Unlock time is the Unix point in time at which the beneficiary can withdraw.
+  uint256 public unlockTime;
 
-    // --- Events ---
+  // --- Events ---
 
-    event LockupContractCreated(address _beneficiary, uint _unlockTime);
-    event LockupContractEmptied(uint _YETIwithdrawal);
+  event LockupContractCreated(address _beneficiary, uint256 _unlockTime);
+  event LockupContractEmptied(uint256 _YETIwithdrawal);
 
-    // --- Functions ---
+  // --- Functions ---
 
-    constructor 
-    (
-        address _yetiTokenAddress,
-        address _beneficiary, 
-        uint _unlockTime
-    )
-        public 
-    {
-        IYETIToken cachedYetiToken = IYETIToken(_yetiTokenAddress);
-        yetiToken = cachedYetiToken;
+  constructor(
+    address _yetiTokenAddress,
+    address _beneficiary,
+    uint256 _unlockTime
+  ) public {
+    IYETIToken cachedYetiToken = IYETIToken(_yetiTokenAddress);
+    yetiToken = cachedYetiToken;
 
-        /*
-        * Set the unlock time to a chosen instant in the future, as long as it is at least 1 year after
-        * the system was deployed 
-        */
-        _requireUnlockTimeIsAtLeastOneYearAfterSystemDeployment(_unlockTime, cachedYetiToken);
-        unlockTime = _unlockTime;
-        
-        beneficiary =  _beneficiary;
-        emit LockupContractCreated(_beneficiary, _unlockTime);
-    }
+    /*
+     * Set the unlock time to a chosen instant in the future, as long as it is at least 1 year after
+     * the system was deployed
+     */
+    _requireUnlockTimeIsAtLeastOneYearAfterSystemDeployment(
+      _unlockTime,
+      cachedYetiToken
+    );
+    unlockTime = _unlockTime;
 
-    function withdrawYETI() external {
-        _requireCallerIsBeneficiary();
-        _requireLockupDurationHasPassed();
+    beneficiary = _beneficiary;
+    emit LockupContractCreated(_beneficiary, _unlockTime);
+  }
 
-        IYETIToken yetiTokenCached = yetiToken;
-        uint YETIBalance = yetiTokenCached.balanceOf(address(this));
-        yetiTokenCached.transfer(beneficiary, YETIBalance);
-        emit LockupContractEmptied(YETIBalance);
-    }
+  function withdrawYETI() external {
+    _requireCallerIsBeneficiary();
+    _requireLockupDurationHasPassed();
 
-    // --- 'require' functions ---
+    IYETIToken yetiTokenCached = yetiToken;
+    uint256 YETIBalance = yetiTokenCached.balanceOf(address(this));
+    yetiTokenCached.transfer(beneficiary, YETIBalance);
+    emit LockupContractEmptied(YETIBalance);
+  }
 
-    function _requireCallerIsBeneficiary() internal view {
-        require(msg.sender == beneficiary, "LockupContract: caller is not the beneficiary");
-    }
+  // --- 'require' functions ---
 
-    function _requireLockupDurationHasPassed() internal view {
-        require(block.timestamp >= unlockTime, "LockupContract: The lockup duration must have passed");
-    }
+  function _requireCallerIsBeneficiary() internal view {
+    require(
+      msg.sender == beneficiary,
+      "LockupContract: caller is not the beneficiary"
+    );
+  }
 
-    function _requireUnlockTimeIsAtLeastOneYearAfterSystemDeployment(uint _unlockTime, IYETIToken _yetiToken) internal view {
-        uint systemDeploymentTime = _yetiToken.getDeploymentStartTime();
-        require(_unlockTime >= systemDeploymentTime.add(SECONDS_IN_ONE_YEAR), "LockupContract: unlock time must be at least one year after system deployment");
-    }
+  function _requireLockupDurationHasPassed() internal view {
+    require(
+      block.timestamp >= unlockTime,
+      "LockupContract: The lockup duration must have passed"
+    );
+  }
+
+  function _requireUnlockTimeIsAtLeastOneYearAfterSystemDeployment(
+    uint256 _unlockTime,
+    IYETIToken _yetiToken
+  ) internal view {
+    uint256 systemDeploymentTime = _yetiToken.getDeploymentStartTime();
+    require(
+      _unlockTime >= systemDeploymentTime.add(SECONDS_IN_ONE_YEAR),
+      "LockupContract: unlock time must be at least one year after system deployment"
+    );
+  }
 }

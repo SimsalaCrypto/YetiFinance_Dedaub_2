@@ -2,7 +2,6 @@
 
 pragma solidity 0.6.11;
 
-
 /**
  * The purpose of this contract is to hold YUSD tokens for gas compensation:
  * https://github.com/liquity/dev#gas-compensation
@@ -14,5 +13,5 @@ pragma solidity 0.6.11;
  * See this issue for more context: https://github.com/liquity/dev/issues/186
  */
 contract GasPool {
-    // do nothing, as the core contracts have permission to send to and burn from this address
+  // do nothing, as the core contracts have permission to send to and burn from this address
 }

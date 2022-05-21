@@ -26,24 +26,26 @@ contract Swapper is Ownable {
         address _troveManagerAddress,
         address _stabilityPoolAddress,
         address _defaultPoolAddress
-    )
-    external
-    onlyOwner
-    {
+    ) external onlyOwner {
         borrowerOperationsAddress = _borrowerOperationsAddress;
         troveManagerAddress = _troveManagerAddress;
         stabilityPoolAddress = _stabilityPoolAddress;
         defaultPoolAddress = _defaultPoolAddress;
     }
 
-
     // pulls in _amount of _token from _from address, then converts it to AVAX with TJ Zapper
     // then sends received AVAX to _to address
     // reverts if received AVAX < _minReceived or if sending AVAX failed
     // _from address needs to approve this contract before the swap can occur
-    function TJSwaptoAvax(address _from, address _to, IERC20 _token, uint _amount, uint _minReceived) external returns (uint) {
+    function TJSwaptoAvax(
+        address _from,
+        address _to,
+        IERC20 _token,
+        uint256 _amount,
+        uint256 _minReceived
+    ) external returns (uint256) {
         _requireFromYetiContract();
-        uint initAVAXBalance = address(this).balance;
+        uint256 initAVAXBalance = address(this).balance;
 
         // transfer token in
         _token.transferFrom(_from, address(this), _amount);
@@ -53,10 +55,10 @@ contract Swapper is Ownable {
         // any ERC20 as well as properly handle converting JLP tokens to AVAX:
         TJZap.zapOut(address(_token), _amount);
 
-        uint finalAVAXBalance = address(this).balance;
-        uint diff = finalAVAXBalance.sub(initAVAXBalance);
+        uint256 finalAVAXBalance = address(this).balance;
+        uint256 diff = finalAVAXBalance.sub(initAVAXBalance);
         require(diff >= _minReceived);
-        (bool success, ) = _to.call{ value: diff }("");
+        (bool success, ) = _to.call{value: diff}("");
         require(success, "failed to send AVAX");
         return diff;
     }

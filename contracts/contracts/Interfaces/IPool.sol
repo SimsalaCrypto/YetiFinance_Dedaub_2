@@ -6,28 +6,35 @@ import "./ICollateralReceiver.sol";
 
 // Common interface for the Pools.
 interface IPool is ICollateralReceiver {
+  // --- Events ---
 
-    // --- Events ---
+  event ETHBalanceUpdated(uint256 _newBalance);
+  event YUSDBalanceUpdated(uint256 _newBalance);
+  event EtherSent(address _to, uint256 _amount);
+  event CollateralSent(address _collateral, address _to, uint256 _amount);
 
-    event ETHBalanceUpdated(uint _newBalance);
-    event YUSDBalanceUpdated(uint _newBalance);
-    event EtherSent(address _to, uint _amount);
-    event CollateralSent(address _collateral, address _to, uint _amount);
+  // --- Functions ---
 
-    // --- Functions ---
+  function getVC() external view returns (uint256 totalVC);
 
-    function getVC() external view returns (uint totalVC);
+  function getVCAndRVC()
+    external
+    view
+    returns (uint256 totalVC, uint256 totalRVC);
 
-    function getVCAndRVC() external view returns (uint totalVC, uint totalRVC);
+  function getCollateral(address collateralAddress)
+    external
+    view
+    returns (uint256);
 
-    function getCollateral(address collateralAddress) external view returns (uint);
+  function getAllCollateral()
+    external
+    view
+    returns (address[] memory, uint256[] memory);
 
-    function getAllCollateral() external view returns (address[] memory, uint256[] memory);
+  function getYUSDDebt() external view returns (uint256);
 
-    function getYUSDDebt() external view returns (uint);
+  function increaseYUSDDebt(uint256 _amount) external;
 
-    function increaseYUSDDebt(uint _amount) external;
-
-    function decreaseYUSDDebt(uint _amount) external;
-
+  function decreaseYUSDDebt(uint256 _amount) external;
 }

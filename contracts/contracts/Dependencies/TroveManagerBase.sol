@@ -15,57 +15,61 @@ import "../Interfaces/ITroveManagerRedemptions.sol";
 import "./LiquityBase.sol";
 import "./Ownable.sol";
 
-/** 
- * Contains shared functionality of TroveManagerLiquidations, TroveManagerRedemptions, and TroveManager. 
- * Keeps addresses to cache, events, structs, status, etc. Also keeps Trove struct. 
+/**
+ * Contains shared functionality of TroveManagerLiquidations, TroveManagerRedemptions, and TroveManager.
+ * Keeps addresses to cache, events, structs, status, etc. Also keeps Trove struct.
  */
 
 contract TroveManagerBase is LiquityBase, Ownable {
+  // --- Connected contract declarations ---
 
-    // --- Connected contract declarations ---
+  // A doubly linked list of Troves, sorted by their sorted by their individual collateral ratios
 
-    // A doubly linked list of Troves, sorted by their sorted by their individual collateral ratios
+  struct ContractsCache {
+    IActivePool activePool;
+    IDefaultPool defaultPool;
+    IYUSDToken yusdToken;
+    ISYETI sYETI;
+    ISortedTroves sortedTroves;
+    ICollSurplusPool collSurplusPool;
+    address gasPoolAddress;
+  }
 
-    struct ContractsCache {
-        IActivePool activePool;
-        IDefaultPool defaultPool;
-        IYUSDToken yusdToken;
-        ISYETI sYETI;
-        ISortedTroves sortedTroves;
-        ICollSurplusPool collSurplusPool;
-        address gasPoolAddress;
-    }
+  struct SingleRedemptionValues {
+    uint256 YUSDLot;
+    newColls CollLot;
+    bool cancelledPartial;
+  }
 
-    struct SingleRedemptionValues {
-        uint YUSDLot;
-        newColls CollLot;
-        bool cancelledPartial;
-    }
+  enum Status {
+    nonExistent,
+    active,
+    closedByOwner,
+    closedByLiquidation,
+    closedByRedemption
+  }
 
-    enum Status {
-        nonExistent,
-        active,
-        closedByOwner,
-        closedByLiquidation,
-        closedByRedemption
-    }
+  enum TroveManagerOperation {
+    applyPendingRewards,
+    liquidateInNormalMode,
+    liquidateInRecoveryMode,
+    redeemCollateral
+  }
 
-    enum TroveManagerOperation {
-        applyPendingRewards,
-        liquidateInNormalMode,
-        liquidateInRecoveryMode,
-        redeemCollateral
-    }
+  // Store the necessary data for a trove
+  struct Trove {
+    newColls colls;
+    uint256 debt;
+    mapping(address => uint256) stakes;
+    Status status;
+    uint128 arrayIndex;
+  }
 
-    // Store the necessary data for a trove
-    struct Trove {
-        newColls colls;
-        uint debt;
-        mapping(address => uint) stakes;
-        Status status;
-        uint128 arrayIndex;
-    }
-
-
-    event TroveUpdated(address indexed _borrower, uint _debt, address[] _tokens, uint[] _amounts, TroveManagerOperation operation);
+  event TroveUpdated(
+    address indexed _borrower,
+    uint256 _debt,
+    address[] _tokens,
+    uint256[] _amounts,
+    TroveManagerOperation operation
+  );
 }

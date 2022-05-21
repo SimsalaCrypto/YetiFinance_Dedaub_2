@@ -4,9 +4,10 @@
 pragma solidity 0.6.11;
 
 interface AggregatorV3Interface {
-
   function decimals() external view returns (uint8);
+
   function description() external view returns (string memory);
+
   function version() external view returns (uint256);
 
   // getRoundData and latestRoundData should both raise "No data present"

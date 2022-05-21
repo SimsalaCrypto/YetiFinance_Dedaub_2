@@ -2,19 +2,21 @@
 
 pragma solidity 0.6.11;
 
-interface ICommunityIssuance { 
-    
-    // --- Events ---
-    
-    event YETITokenAddressSet(address _yetiTokenAddress);
-    event StabilityPoolAddressSet(address _stabilityPoolAddress);
-    event TotalYETIIssuedUpdated(uint _totalYETIIssued);
+interface ICommunityIssuance {
+  // --- Events ---
 
-    // --- Functions ---
+  event YETITokenAddressSet(address _yetiTokenAddress);
+  event StabilityPoolAddressSet(address _stabilityPoolAddress);
+  event TotalYETIIssuedUpdated(uint256 _totalYETIIssued);
 
-    function setAddresses(address _yetiTokenAddress, address _stabilityPoolAddress) external;
+  // --- Functions ---
 
-    function issueYETI() external returns (uint);
+  function setAddresses(
+    address _yetiTokenAddress,
+    address _stabilityPoolAddress
+  ) external;
 
-    function sendYETI(address _account, uint _YETIamount) external;
+  function issueYETI() external returns (uint256);
+
+  function sendYETI(address _account, uint256 _YETIamount) external;
 }

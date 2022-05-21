@@ -5,39 +5,47 @@ pragma solidity 0.6.11;
 import "../Dependencies/YetiCustomBase.sol";
 import "./ICollateralReceiver.sol";
 
-
 interface ICollSurplusPool is ICollateralReceiver {
+  // --- Events ---
 
-    // --- Events ---
-    
-    event BorrowerOperationsAddressChanged(address _newBorrowerOperationsAddress);
-    event TroveManagerAddressChanged(address _newTroveManagerAddress);
-    event ActivePoolAddressChanged(address _newActivePoolAddress);
+  event BorrowerOperationsAddressChanged(address _newBorrowerOperationsAddress);
+  event TroveManagerAddressChanged(address _newTroveManagerAddress);
+  event ActivePoolAddressChanged(address _newActivePoolAddress);
 
-    event CollBalanceUpdated(address indexed _account);
-    event CollateralSent(address _to);
+  event CollBalanceUpdated(address indexed _account);
+  event CollateralSent(address _to);
 
-    // --- Contract setters ---
+  // --- Contract setters ---
 
-    function setAddresses(
-        address _borrowerOperationsAddress,
-        address _troveManagerAddress,
-        address _troveManagerRedemptionsAddress,
-        address _activePoolAddress,
-        address _whitelistAddress
-    ) external;
+  function setAddresses(
+    address _borrowerOperationsAddress,
+    address _troveManagerAddress,
+    address _troveManagerRedemptionsAddress,
+    address _activePoolAddress,
+    address _whitelistAddress
+  ) external;
 
-    function getCollVC() external view returns (uint);
+  function getCollVC() external view returns (uint256);
 
-    function getAmountClaimable(address _account, address _collateral) external view returns (uint);
+  function getAmountClaimable(address _account, address _collateral)
+    external
+    view
+    returns (uint256);
 
-    function getCollateral(address _collateral) external view returns (uint);
+  function getCollateral(address _collateral) external view returns (uint256);
 
-    function getAllCollateral() external view returns (address[] memory, uint256[] memory);
+  function getAllCollateral()
+    external
+    view
+    returns (address[] memory, uint256[] memory);
 
-    function accountSurplus(address _account, address[] memory _tokens, uint[] memory _amounts) external;
+  function accountSurplus(
+    address _account,
+    address[] memory _tokens,
+    uint256[] memory _amounts
+  ) external;
 
-    function claimColl(address _account) external;
+  function claimColl(address _account) external;
 
-    function addCollateralType(address _collateral) external;
+  function addCollateralType(address _collateral) external;
 }

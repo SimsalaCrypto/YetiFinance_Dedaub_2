@@ -51,4 +51,4 @@ tests/simulation.csv
 # flattened contracts
 flattened/*.flat
 
-node_modules/
+/node_modules/

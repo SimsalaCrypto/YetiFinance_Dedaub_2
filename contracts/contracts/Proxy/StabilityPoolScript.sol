@@ -5,22 +5,21 @@ pragma solidity 0.6.11;
 import "../Dependencies/CheckContract.sol";
 import "../Interfaces/IStabilityPool.sol";
 
-
 contract StabilityPoolScript is CheckContract {
-    bytes32 constant public NAME = "StabilityPoolScript";
+  bytes32 public constant NAME = "StabilityPoolScript";
 
-    IStabilityPool immutable stabilityPool;
+  IStabilityPool immutable stabilityPool;
 
-    constructor(IStabilityPool _stabilityPool) public {
-        checkContract(address(_stabilityPool));
-        stabilityPool = _stabilityPool;
-    }
+  constructor(IStabilityPool _stabilityPool) public {
+    checkContract(address(_stabilityPool));
+    stabilityPool = _stabilityPool;
+  }
 
-    function provideToSP(uint _amount, address _frontEndTag) external {
-        stabilityPool.provideToSP(_amount, _frontEndTag);
-    }
+  function provideToSP(uint256 _amount, address _frontEndTag) external {
+    stabilityPool.provideToSP(_amount, _frontEndTag);
+  }
 
-    function withdrawFromSP(uint _amount) external {
-        stabilityPool.withdrawFromSP(_amount);
-    }
+  function withdrawFromSP(uint256 _amount) external {
+    stabilityPool.withdrawFromSP(_amount);
+  }
 }
