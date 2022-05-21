@@ -1,9 +1,9 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: MIT
 
 pragma solidity 0.6.11;
 
-import "../Dependencies/SafeMath.sol";
-import "../Interfaces/IYETIToken.sol";
+import "./SafeMath.sol";
+import "./IYETIToken.sol";
 
 
 /*
@@ -47,7 +47,7 @@ contract YETIToken is IYETIToken {
 
     // --- EIP 2612 Data ---
 
-    bytes32 private immutable _PERMIT_TYPEHASH;
+    bytes32 private constant _PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 private constant _TYPE_HASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
     // Cache the domain separator as an immutable value, but also store the chain id that it corresponds to, in order to
@@ -80,7 +80,6 @@ contract YETIToken is IYETIToken {
     )
     public
     {
-        _PERMIT_TYPEHASH = keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
         deploymentStartTime  = block.timestamp;
 
         sYETIAddress = _sYETIAddress;
@@ -168,13 +167,13 @@ contract YETIToken is IYETIToken {
     external
     override
     {
-        require(deadline >= block.timestamp, 'YETI: expired deadline');
+        require(deadline >= now, 'YETI: expired deadline');
         bytes32 digest = keccak256(abi.encodePacked('\x19\x01',
             domainSeparator(), keccak256(abi.encode(
                 _PERMIT_TYPEHASH, owner, spender, amount,
                 _nonces[owner]++, deadline))));
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress == owner || recoveredAddress != address(0) , 'YUSD: invalid signature');
+        require(recoveredAddress == owner, 'YETI: invalid signature');
         _approve(owner, spender, amount);
     }
 
@@ -262,13 +261,4 @@ contract YETIToken is IYETIToken {
         return _PERMIT_TYPEHASH;
     }
 
-    //  Functions Below Testing Purposes Only (not deployed):
-
-    function _mint(address account, uint256 amount) internal {
-        require(account != address(0), "ERC20: mint to the zero address");
-
-        _totalSupply = _totalSupply.add(amount);
-        _balances[account] = _balances[account].add(amount);
-        emit Transfer(address(0), account, amount);
-    }
 }

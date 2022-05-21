@@ -2,16 +2,19 @@
 
 pragma solidity 0.6.11;
 
-import "./BaseMath.sol";
 import "./SafeMath.sol";
 import "../Interfaces/IERC20.sol";
-import "../Interfaces/IWhitelist.sol";
+import "../Interfaces/IYetiController.sol";
 
+/**
+ * Contains shared functionality for many of the system files
+ * YetiCustomBase is inherited by PoolBase2 and LiquityBase
+ */
 
-contract YetiCustomBase is BaseMath {
+contract YetiCustomBase {
     using SafeMath for uint256;
 
-    IWhitelist whitelist;
+    IYetiController internal controller;
 
     struct newColls {
         // tokens and amounts should be the same length
@@ -19,69 +22,128 @@ contract YetiCustomBase is BaseMath {
         uint256[] amounts;
     }
 
-    // Collateral math
+    uint256 public constant DECIMAL_PRECISION = 1e18;
 
-    // gets the sum of _coll1 and _coll2
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     * See https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+     */
+    uint256[49] private __gap;
+
+    /**
+     * @notice Returns _coll1.amounts plus _coll2.amounts
+     * @dev Invariant that _coll1.tokens and _coll2.tokens are sorted by whitelist order of token indices from the YetiController.
+     *    So, if WAVAX is whitelisted first, then WETH, then USDC, then [WAVAX, USDC] is a valid input order but [USDC, WAVAX] is not.
+     *    This is done for gas efficiency. We use a sliding window approach to increment the indices of the tokens we are adding together
+     *    from _coll1 and from _coll2. We will start at tokenIndex1 and tokenIndex2. To keep the invariant of ordered collateral in
+     *    each trove, we need to merge coll1 and coll2 in order based on the YetiController whitelist order. If the token indices
+     *    line up, then they are the same and we add the sum. Otherwise we add the smaller index to keep them in order and move on.
+     *    Once we reach the end of either tokens1 or tokens2, we add the remaining ones to the sum individually without summing.
+     *    n is the number of tokens in the coll1, and m is the number of tokens in the coll2. k is defined as the number of tokens
+     *    in the summed version. k = n + m - (overlap). The time complexity here depends on O(n + m) in the first loop and tail calls,
+     *    and O(k) in the last loop. The total time complexity is O(n + m + k). If we assume that n is bigger than m(arbitrary between
+     *    n and m), then since k is bounded by n we can say the time complexity is O(3n). This does not depend on all whitelisted tokens.
+     */
     function _sumColls(newColls memory _coll1, newColls memory _coll2)
-        internal
-        view
-        returns (newColls memory finalColls)
+    internal
+    view
+    returns (newColls memory finalColls)
     {
         uint256 coll2Len = _coll2.tokens.length;
+        uint256 coll1Len = _coll1.tokens.length;
+        // If either is 0 then just return the other one.
         if (coll2Len == 0) {
             return _coll1;
+        } else if (coll1Len == 0) {
+            return _coll2;
         }
+        // Create temporary n + m sized array.
         newColls memory coll3;
+        coll3.tokens = new address[](coll1Len + coll2Len);
+        coll3.amounts = new uint256[](coll1Len + coll2Len);
 
-        coll3.tokens = whitelist.getValidCollateral();
-        uint256 coll1Len = _coll1.tokens.length;
-        uint256 coll3Len = coll3.tokens.length;
-        coll3.amounts = new uint256[](coll3Len);
+        // Tracker for the coll1 array.
+        uint256 i = 0;
+        // Tracker for the coll2 array.
+        uint256 j = 0;
+        // Tracker for nonzero entries.
+        uint256 k = 0;
 
-        uint256 n;
-        for (uint256 i; i < coll1Len; ++i) {
-            uint256 tokenIndex = whitelist.getIndex(_coll1.tokens[i]);
-            if (_coll1.amounts[i] != 0) {
-                n++;
-                coll3.amounts[tokenIndex] = _coll1.amounts[i];
-            }
-        }
+        uint256[] memory tokenIndices1 = controller.getIndices(_coll1.tokens);
+        uint256[] memory tokenIndices2 = controller.getIndices(_coll2.tokens);
 
-        for (uint256 i; i < coll2Len; ++i) {
-            uint256 tokenIndex = whitelist.getIndex(_coll2.tokens[i]);
-            if (_coll2.amounts[i] != 0) {
-                if (coll3.amounts[tokenIndex] == 0) {
-                    coll3.amounts[tokenIndex] = _coll2.amounts[i];
-                    n++;
-                } else {
-                    coll3.amounts[tokenIndex] = coll3.amounts[tokenIndex].add(_coll2.amounts[i]);
+        // Tracker for token whitelist index for all coll1
+        uint256 tokenIndex1 = tokenIndices1[i];
+        // Tracker for token whitelist index for all coll2
+        uint256 tokenIndex2 = tokenIndices2[j];
+
+        // This loop will break out if either token index reaches the end inside the conditions.
+        while (true) {
+            if (tokenIndex1 < tokenIndex2) {
+                // If tokenIndex1 is less than tokenIndex2 then that means it should be added first by itself.
+                coll3.tokens[k] = _coll1.tokens[i];
+                coll3.amounts[k] = _coll1.amounts[i];
+                ++i;
+                // If we reached the end of coll1 then we exit out.
+                if (i == coll1Len) {
+                    break;
                 }
+                tokenIndex1 = tokenIndices1[i];
+            } else if (tokenIndex2 < tokenIndex1) {
+                // If tokenIndex2 is less than tokenIndex1 then that means it should be added first by itself.
+                coll3.tokens[k] = _coll2.tokens[j];
+                coll3.amounts[k] = _coll2.amounts[j];
+                ++j;
+                // If we reached the end of coll2 then we exit out.
+                if (j == coll2Len) {
+                    break;
+                }
+                tokenIndex2 = tokenIndices2[j];
+            } else {
+                // If the token indices match up then they are the same token, so we add them together.
+                coll3.tokens[k] = _coll1.tokens[i];
+                coll3.amounts[k] = _coll1.amounts[i].add(_coll2.amounts[j]);
+                ++i;
+                ++j;
+                // If we reached the end of coll1 or coll2 then we exit out.
+                if (i == coll1Len || j == coll2Len) {
+                    break;
+                }
+                tokenIndex1 = tokenIndices1[i];
+                tokenIndex2 = tokenIndices2[j];
             }
+            ++k;
+        }
+        ++k;
+        // Add remaining tokens from coll1 if we reached the end of coll2 inside the previous loop.
+        while (i < coll1Len) {
+            coll3.tokens[k] = _coll1.tokens[i];
+            coll3.amounts[k] = _coll1.amounts[i];
+            ++i;
+            ++k;
+        }
+        // Add remaining tokens from coll2 if we reached the end of coll1 inside the previous loop.
+        while (j < coll2Len) {
+            coll3.tokens[k] = _coll2.tokens[j];
+            coll3.amounts[k] = _coll2.amounts[j];
+            ++j;
+            ++k;
         }
 
-        address[] memory sumTokens = new address[](n);
-        uint256[] memory sumAmounts = new uint256[](n);
-        uint256 j;
-
-        // should only find n amounts over 0
-        for (uint256 i; i < coll3Len; ++i) {
-            if (coll3.amounts[i] != 0) {
-                sumTokens[j] = coll3.tokens[i];
-                sumAmounts[j] = coll3.amounts[i];
-                j++;
-            }
+        // K is the resulting amount of nonzero entries that are in coll3, so we add them to finalTokens and return.
+        address[] memory sumTokens = new address[](k);
+        uint256[] memory sumAmounts = new uint256[](k);
+        for (i = 0; i < k; ++i) {
+            sumTokens[i] = coll3.tokens[i];
+            sumAmounts[i] = coll3.amounts[i];
         }
+
         finalColls.tokens = sumTokens;
         finalColls.amounts = sumAmounts;
     }
 
-
-    function _getArrayCopy(uint[] memory _arr) internal pure returns (uint[] memory){
-        uint256 arrLen = _arr.length;
-        uint[] memory copy = new uint[](arrLen);
-        for (uint256 i; i < arrLen; ++i) {
-            copy[i] = _arr[i];
-        }
-        return copy;
+    function _revertWrongFuncCaller() internal pure {
+        revert("WFC");
     }
 }
