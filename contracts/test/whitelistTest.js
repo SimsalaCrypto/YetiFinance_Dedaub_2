@@ -6,7 +6,7 @@ const Whitelist = artifacts.require("./Whitelist.sol")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
 const NonPayable = artifacts.require('NonPayable.sol')
 const TroveManagerTester = artifacts.require("TroveManagerTester")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester")
 
 const th = testHelpers.TestHelper
 
@@ -19,10 +19,10 @@ const ZERO_ADDRESS = th.ZERO_ADDRESS
 const assertRevert = th.assertRevert
 const WAVAX_ADDRESS = ZERO_ADDRESS;
 
-/* NOTE: Some of the borrowing tests do not test for specific YUSD fee values. They only test that the
+/* NOTE: Some of the borrowing tests do not test for specific PUSD fee values. They only test that the
  * fees are non-zero when they should occur, and that they decay over time.
  *
- * Specific YUSD fee values will depend on the final fee schedule used, and the final choice for
+ * Specific PUSD fee values will depend on the final fee schedule used, and the final choice for
  *  the parameter MINUTE_DECAY_FACTOR in the TroveManager, which is still TBD based on economic
  * modelling.
  * 
@@ -42,19 +42,19 @@ contract('newBorrowerOperations', async accounts => {
 
     let priceFeedAVAX
     let priceFeedETH
-    let yusdToken
+    let pusdToken
     let sortedTroves
     let troveManager
     let activePool
     let stabilityPool
     let defaultPool
     let borrowerOperations
-    let sYETI
-    let yetiToken
+    let sPREON
+    let preonToken
 
     let contracts
 
-    const getOpenTroveYUSDAmount = async (totalDebt) => th.getOpenTroveYUSDAmount(contracts, totalDebt)
+    const getOpenTrovePUSDAmount = async (totalDebt) => th.getOpenTrovePUSDAmount(contracts, totalDebt)
     const getNetBorrowingAmount = async (debtWithFee) => th.getNetBorrowingAmount(contracts, debtWithFee)
     const getActualDebtFromComposite = async (compositeDebt) => th.getActualDebtFromComposite(compositeDebt, contracts)
     const openTrove = async (params) => th.openTrove(contracts, params)
@@ -62,7 +62,7 @@ contract('newBorrowerOperations', async accounts => {
     const getTroveEntireDebt = async (trove) => th.getTroveEntireDebt(contracts, trove)
     const getTroveStake = async (trove) => th.getTroveStake(contracts, trove)
 
-    let YUSD_GAS_COMPENSATION
+    let PUSD_GAS_COMPENSATION
     let MIN_NET_DEBT
     let BORROWING_FEE_FLOOR
 
@@ -78,22 +78,22 @@ contract('newBorrowerOperations', async accounts => {
             contracts = await deploymentHelper.deployLiquityCore()
             contracts.borrowerOperations = await BorrowerOperationsTester.new()
             contracts.troveManager = await TroveManagerTester.new()
-            contracts = await deploymentHelper.deployYUSDTokenTester(contracts)
-            const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+            contracts = await deploymentHelper.deployPUSDTokenTester(contracts)
+            const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
-            await deploymentHelper.connectYETIContracts(YETIContracts)
-            await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-            await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+            await deploymentHelper.connectPREONContracts(PREONContracts)
+            await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+            await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
             if (withProxy) {
                 const users = [alice, bob, carol, dennis, whale, A, B, C, D, E]
-                await deploymentHelper.deployProxyScripts(contracts, YETIContracts, owner, users)
+                await deploymentHelper.deployProxyScripts(contracts, PREONContracts, owner, users)
             }
 
             // priceFeed = contracts.priceFeedTestnet
             priceFeedAVAX = contracts.priceFeedAVAX
             priceFeedETH = contracts.priceFeedETH
-            yusdToken = contracts.yusdToken
+            pusdToken = contracts.pusdToken
             sortedTroves = contracts.sortedTroves
             troveManager = contracts.troveManager
             activePool = contracts.activePool
@@ -104,10 +104,10 @@ contract('newBorrowerOperations', async accounts => {
             whitelist = contracts.whitelist
             weth = contracts.weth
             wavax = contracts.wavax
-            sYETI = YETIContracts.sYETI
-            yetiToken = YETIContracts.yetiToken
-            communityIssuance = YETIContracts.communityIssuance
-            lockupContractFactory = YETIContracts.lockupContractFactory
+            sPREON = PREONContracts.sPREON
+            preonToken = PREONContracts.preonToken
+            communityIssuance = PREONContracts.communityIssuance
+            lockupContractFactory = PREONContracts.lockupContractFactory
 
             var params = {
                 _collateral: contracts.weth.address,
@@ -125,7 +125,7 @@ contract('newBorrowerOperations', async accounts => {
                 _priceCurve: contracts.PriceCurveAVAX.address
             }
 
-            YUSD_GAS_COMPENSATION = await borrowerOperations.YUSD_GAS_COMPENSATION()
+            PUSD_GAS_COMPENSATION = await borrowerOperations.PUSD_GAS_COMPENSATION()
             MIN_NET_DEBT = await borrowerOperations.MIN_NET_DEBT()
             BORROWING_FEE_FLOOR = await borrowerOperations.BORROWING_FEE_FLOOR()
 
@@ -461,10 +461,10 @@ contract('newBorrowerOperations', async accounts => {
 
             console.log('aliceDebt: ', aliceCTS[2].toString())
 
-            console.log((await yusdToken.balanceOf(alice)).toString())
-            await yusdToken.unprotectedMint(alice, toBN(dec(1300, 18)))
-            await yusdToken.approve(borrowerOperations.address, toBN(dec(1300, 18)), {from: alice});
-            console.log((await yusdToken.balanceOf(alice)).toString())
+            console.log((await pusdToken.balanceOf(alice)).toString())
+            await pusdToken.unprotectedMint(alice, toBN(dec(1300, 18)))
+            await pusdToken.approve(borrowerOperations.address, toBN(dec(1300, 18)), {from: alice});
+            console.log((await pusdToken.balanceOf(alice)).toString())
             const txAlice = await borrowerOperations.closeTrove({ from: alice })
             assert.isTrue(txAlice.receipt.status)
 
@@ -479,7 +479,7 @@ contract('newBorrowerOperations', async accounts => {
             assert.equal(entireSystemAVAX, A_amounts[0].add(th.applyLiquidationFee(C_amounts[1])))
 
 
-            assert.equal((await yusdToken.balanceOf(owner)).toString(), dec(200, 18))
+            assert.equal((await pusdToken.balanceOf(owner)).toString(), dec(200, 18))
         })
         it("Check undeprecate collateral and if that is still relevant with new system of indexing", async () => {
             const validCollateral = await whitelist.getValidCollateral();

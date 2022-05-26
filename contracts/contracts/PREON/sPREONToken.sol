@@ -7,10 +7,10 @@ import "./BoringCrypto/Domain.sol";
 import "./BoringCrypto/ERC20.sol";
 import "./BoringCrypto/IERC20.sol";
 import "./BoringCrypto/BoringOwnable.sol";
-import "./IsYETIRouter.sol";
+import "./IsPREONRouter.sol";
 
-interface IYETIToken is IERC20 {
-  function sendToSYETI(address _sender, uint256 _amount) external;
+interface IPREONToken is IERC20 {
+  function sendToSPREON(address _sender, uint256 _amount) external;
 
   function transfer(address recipient, uint256 amount) external returns (bool);
 }
@@ -18,30 +18,30 @@ interface IYETIToken is IERC20 {
 // Staking in sSpell inspired by Chef Nomi's SushiBar - MIT license (originally WTFPL)
 // modified by BoringCrypto for DictatorDAO
 
-// Use effective yetibalance, which updates on rebase. Rebase occurs every 8
-// Each rebase increases the effective yetibalance by a certain amount of the total value
-// of the contract, which is equal to the yusd balance + the last price which the buyback
-// was executed at, multiplied by the YETI balance. Then, a portion of the value, say 1/200
-// of the total value of the contract is added to the effective yetibalance. Also updated on
+// Use effective preonbalance, which updates on rebase. Rebase occurs every 8
+// Each rebase increases the effective preonbalance by a certain amount of the total value
+// of the contract, which is equal to the pusd balance + the last price which the buyback
+// was executed at, multiplied by the PREON balance. Then, a portion of the value, say 1/200
+// of the total value of the contract is added to the effective preonbalance. Also updated on
 // mint and withdraw, because that is actual value that is added to the contract.
 
-contract sYETIToken is IERC20, Domain, BoringOwnable {
+contract sPREONToken is IERC20, Domain, BoringOwnable {
   using BoringMath for uint256;
   using BoringMath128 for uint128;
   using BoringERC20 for IERC20;
 
-  string public constant symbol = "sYETI";
-  string public constant name = "Staked YETI Tokens";
+  string public constant symbol = "sPREON";
+  string public constant name = "Staked PREON Tokens";
   uint8 public constant decimals = 18;
   uint256 public override totalSupply;
   uint256 private constant LOCK_TIME = 69 hours;
-  uint256 public effectiveYetiTokenBalance;
+  uint256 public effectivePreonTokenBalance;
   uint256 public lastBuybackTime;
   uint256 public lastBuybackPrice;
   uint256 public lastRebaseTime;
   uint256 public transferRatio; // 100% = 1e18. Amount to transfer over each rebase.
-  IYETIToken public yetiToken;
-  IERC20 public yusdToken;
+  IPREONToken public preonToken;
+  IERC20 public pusdToken;
   bool private addressesSet;
 
   // Internal mapping to keep track of valid routers. Find the one with least slippage off chain
@@ -66,17 +66,17 @@ contract sYETIToken is IERC20, Domain, BoringOwnable {
     address indexed _spender,
     uint256 _value
   );
-  event BuyBackExecuted(uint256 YUSDToSell, uint256 amounts0, uint256 amounts1);
-  event Rebase(uint256 additionalYetiTokenBalance);
+  event BuyBackExecuted(uint256 PUSDToSell, uint256 amounts0, uint256 amounts1);
+  event Rebase(uint256 additionalPreonTokenBalance);
 
   function balanceOf(address user) public view override returns (uint256) {
     return users[user].balance;
   }
 
-  function setAddresses(IYETIToken _yeti, IERC20 _yusd) external onlyOwner {
+  function setAddresses(IPREONToken _preon, IERC20 _pusd) external onlyOwner {
     require(!addressesSet, "addresses already set");
-    yetiToken = _yeti;
-    yusdToken = _yusd;
+    preonToken = _preon;
+    pusdToken = _pusd;
     addressesSet = true;
   }
 
@@ -222,14 +222,14 @@ contract sYETIToken is IERC20, Domain, BoringOwnable {
 
     uint256 shares = totalSupply == 0
       ? amount
-      : (amount * totalSupply) / effectiveYetiTokenBalance;
+      : (amount * totalSupply) / effectivePreonTokenBalance;
     user.balance += shares.to128();
     user.lockedUntil = (block.timestamp + LOCK_TIME).to128();
     users[msg.sender] = user;
     totalSupply += shares;
 
-    yetiToken.sendToSYETI(msg.sender, amount);
-    effectiveYetiTokenBalance = effectiveYetiTokenBalance.add(amount);
+    preonToken.sendToSPREON(msg.sender, amount);
+    effectivePreonTokenBalance = effectivePreonTokenBalance.add(amount);
 
     emit Transfer(address(0), msg.sender, shares);
     return true;
@@ -243,12 +243,12 @@ contract sYETIToken is IERC20, Domain, BoringOwnable {
     require(to != address(0), "Zero address");
     User memory user = users[from];
     require(block.timestamp >= user.lockedUntil, "Locked");
-    uint256 amount = (shares * effectiveYetiTokenBalance) / totalSupply;
+    uint256 amount = (shares * effectivePreonTokenBalance) / totalSupply;
     users[from].balance = user.balance.sub(shares.to128()); // Must check underflow
     totalSupply -= shares;
 
-    yetiToken.transfer(to, amount);
-    effectiveYetiTokenBalance = effectiveYetiTokenBalance.sub(amount);
+    preonToken.transfer(to, amount);
+    effectivePreonTokenBalance = effectivePreonTokenBalance.sub(amount);
 
     emit Transfer(from, address(0), shares);
   }
@@ -273,102 +273,102 @@ contract sYETIToken is IERC20, Domain, BoringOwnable {
    */
   function buyBack(
     address _routerAddress,
-    uint256 _YUSDToSell,
-    uint256 _YETIOutMin
+    uint256 _PUSDToSell,
+    uint256 _PREONOutMin
   ) external onlyOwner {
-    require(_YUSDToSell != 0, "Zero amount");
+    require(_PUSDToSell != 0, "Zero amount");
     require(
-      yusdToken.balanceOf(address(this)) >= _YUSDToSell,
-      "Not enough YUSD in contract"
+      pusdToken.balanceOf(address(this)) >= _PUSDToSell,
+      "Not enough PUSD in contract"
     );
-    _buyBack(_routerAddress, _YUSDToSell, _YETIOutMin);
+    _buyBack(_routerAddress, _PUSDToSell, _PREONOutMin);
   }
 
   /**
    * Public function for doing buybacks, eligible every 169 hours. This is so that there are some guaranteed rewards to be distributed if the team multisig is lost.
-   * Has a max amount of YUSD to sell at 5% of the YUSD in the contract, which should be enough to cover the amount. Uses the default router which has a time lock
+   * Has a max amount of PUSD to sell at 5% of the PUSD in the contract, which should be enough to cover the amount. Uses the default router which has a time lock
    * in order to activate.
-   * No YUSDToSell param since this just does 5% of the YUSD in the contract.
+   * No PUSDToSell param since this just does 5% of the PUSD in the contract.
    */
   function publicBuyBack(address _routerAddress) external {
-    uint256 YUSDBalance = yusdToken.balanceOf(address(this));
-    require(YUSDBalance != 0, "No YUSD in contract");
+    uint256 PUSDBalance = pusdToken.balanceOf(address(this));
+    require(PUSDBalance != 0, "No PUSD in contract");
     require(
       lastBuybackTime + 169 hours < block.timestamp,
       "Can only publicly buy back every 169 hours"
     );
-    // Get 5% of the YUSD in the contract
-    // Always enough YUSD in the contract to cover the 5% of the YUSD in the contract
-    uint256 YUSDToSell = div(YUSDBalance.mul(5), 100);
-    _buyBack(_routerAddress, YUSDToSell, 0);
+    // Get 5% of the PUSD in the contract
+    // Always enough PUSD in the contract to cover the 5% of the PUSD in the contract
+    uint256 PUSDToSell = div(PUSDBalance.mul(5), 100);
+    _buyBack(_routerAddress, PUSDToSell, 0);
   }
 
-  // Internal function calls the router function for buyback and emits event with amount of YETI bought and YUSD spent.
+  // Internal function calls the router function for buyback and emits event with amount of PREON bought and PUSD spent.
   function _buyBack(
     address _routerAddress,
-    uint256 _YUSDToSell,
-    uint256 _YETIOutMin
+    uint256 _PUSDToSell,
+    uint256 _PREONOutMin
   ) internal {
     // Checks internal mapping to see if router is valid
     require(validRouters[_routerAddress] == true, "Invalid router passed in");
-    require(yusdToken.approve(_routerAddress, 0));
-    require(yusdToken.increaseAllowance(_routerAddress, _YUSDToSell));
+    require(pusdToken.approve(_routerAddress, 0));
+    require(pusdToken.increaseAllowance(_routerAddress, _PUSDToSell));
     lastBuybackTime = block.timestamp;
-    uint256[] memory amounts = IsYETIRouter(_routerAddress).swap(
-      _YUSDToSell,
-      _YETIOutMin,
+    uint256[] memory amounts = IsPREONRouter(_routerAddress).swap(
+      _PUSDToSell,
+      _PREONOutMin,
       address(this)
     );
-    // amounts[0] is the amount of YUSD that was sold, and amounts[1] is the amount of YETI that was gained in return. So the price is amounts[0] / amounts[1]
+    // amounts[0] is the amount of PUSD that was sold, and amounts[1] is the amount of PREON that was gained in return. So the price is amounts[0] / amounts[1]
     lastBuybackPrice = div(amounts[0].mul(1e18), amounts[1]);
-    emit BuyBackExecuted(_YUSDToSell, amounts[0], amounts[1]);
+    emit BuyBackExecuted(_PUSDToSell, amounts[0], amounts[1]);
   }
 
-  // Rebase function for adding new value to the sYETI - YETI ratio.
+  // Rebase function for adding new value to the sPREON - PREON ratio.
   function rebase() external {
     require(
       block.timestamp >= lastRebaseTime + 8 hours,
       "Can only rebase every 8 hours"
     );
-    // Use last buyback price to transfer some of the actual YETI Tokens that this contract owns
-    // to the effective yeti token balance. Transfer a portion of the value over to the effective balance
+    // Use last buyback price to transfer some of the actual PREON Tokens that this contract owns
+    // to the effective preon token balance. Transfer a portion of the value over to the effective balance
 
     // raw balance of the contract
-    uint256 yetiTokenBalance = yetiToken.balanceOf(address(this));
-    // amount of YETI free / available to give out
-    uint256 adjustedYetiTokenBalance = yetiTokenBalance.sub(
-      effectiveYetiTokenBalance
+    uint256 preonTokenBalance = preonToken.balanceOf(address(this));
+    // amount of PREON free / available to give out
+    uint256 adjustedPreonTokenBalance = preonTokenBalance.sub(
+      effectivePreonTokenBalance
     );
-    // in YETI, amount that should be eligible to give out.
-    uint256 valueOfContract = _getValueOfContract(adjustedYetiTokenBalance);
-    // in YETI, amount to rebase
-    uint256 amountYetiToRebase = div(valueOfContract.mul(transferRatio), 1e18);
-    // Ensure that the amount of YETI tokens effectively added is >= the amount we have repurchased.
-    // Amount available = adjustdYetiTokenBalance, amount to distribute is amountYetiToRebase
-    if (amountYetiToRebase > adjustedYetiTokenBalance) {
-      amountYetiToRebase = adjustedYetiTokenBalance;
+    // in PREON, amount that should be eligible to give out.
+    uint256 valueOfContract = _getValueOfContract(adjustedPreonTokenBalance);
+    // in PREON, amount to rebase
+    uint256 amountPreonToRebase = div(valueOfContract.mul(transferRatio), 1e18);
+    // Ensure that the amount of PREON tokens effectively added is >= the amount we have repurchased.
+    // Amount available = adjustdPreonTokenBalance, amount to distribute is amountPreonToRebase
+    if (amountPreonToRebase > adjustedPreonTokenBalance) {
+      amountPreonToRebase = adjustedPreonTokenBalance;
     }
     // rebase amount joins the effective supply.
-    effectiveYetiTokenBalance = effectiveYetiTokenBalance.add(
-      amountYetiToRebase
+    effectivePreonTokenBalance = effectivePreonTokenBalance.add(
+      amountPreonToRebase
     );
     // update rebase time
     lastRebaseTime = block.timestamp;
-    emit Rebase(amountYetiToRebase);
+    emit Rebase(amountPreonToRebase);
   }
 
-  // Sums YUSD balance + old price.
-  // Should take add the YUSD balance / last buyback price to get value of the YUSD in YETI
-  // added to the YETI balance of the contract. Essentially the amount it is eligible to give out.
-  function _getValueOfContract(uint256 _adjustedYetiTokenBalance)
+  // Sums PUSD balance + old price.
+  // Should take add the PUSD balance / last buyback price to get value of the PUSD in PREON
+  // added to the PREON balance of the contract. Essentially the amount it is eligible to give out.
+  function _getValueOfContract(uint256 _adjustedPreonTokenBalance)
     internal
     view
     returns (uint256)
   {
-    uint256 yusdTokenBalance = yusdToken.balanceOf(address(this));
+    uint256 pusdTokenBalance = pusdToken.balanceOf(address(this));
     return
-      div(yusdTokenBalance.mul(1e18), lastBuybackPrice).add(
-        _adjustedYetiTokenBalance
+      div(pusdTokenBalance.mul(1e18), lastBuybackPrice).add(
+        _adjustedPreonTokenBalance
       );
   }
 

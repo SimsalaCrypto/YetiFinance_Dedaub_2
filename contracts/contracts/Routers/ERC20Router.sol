@@ -2,31 +2,31 @@
 
 pragma solidity 0.6.11;
 
-import "../Interfaces/IYetiRouter.sol";
+import "../Interfaces/IPreonRouter.sol";
 import "../Interfaces/IERC20.sol";
 import "../Dependencies/SafeMath.sol";
-import "../YUSDToken.sol";
+import "../PUSDToken.sol";
 import "../Dependencies/SafeERC20.sol";
 
-// ERC20 router contract to be used for routing YUSD -> ERC20 and then wrapping.
+// ERC20 router contract to be used for routing PUSD -> ERC20 and then wrapping.
 // simple router using TJ router.
-contract ERC20Router is IYetiRouter {
+contract ERC20Router is IPreonRouter {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
   address internal immutable activePoolAddress;
   address internal immutable traderJoeRouter;
-  address internal immutable yusdTokenAddress;
-  string constant name = "YUSDRouter";
+  address internal immutable pusdTokenAddress;
+  string constant name = "PUSDRouter";
 
   constructor(
     address _activePoolAddress,
     address _traderJoeRouter,
-    address _yusdTokenAddress
+    address _pusdTokenAddress
   ) public {
     activePoolAddress = _activePoolAddress;
     traderJoeRouter = _traderJoeRouter;
-    yusdTokenAddress = _yusdTokenAddress;
+    pusdTokenAddress = _pusdTokenAddress;
   }
 
   // Takes the address of the token in, and gives a certain amount of token out.
@@ -39,13 +39,13 @@ contract ERC20Router is IYetiRouter {
     uint256 _minSwapAmount
   ) external override returns (uint256) {
     require(
-      _startingTokenAddress == yusdTokenAddress,
-      "Cannot route from a token other than YUSD"
+      _startingTokenAddress == pusdTokenAddress,
+      "Cannot route from a token other than PUSD"
     );
     address[] memory path = new address[](2);
-    path[0] = yusdTokenAddress;
+    path[0] = pusdTokenAddress;
     path[1] = _endingTokenAddress;
-    IERC20(yusdTokenAddress).safeApprove(traderJoeRouter, _amount);
+    IERC20(pusdTokenAddress).safeApprove(traderJoeRouter, _amount);
     uint256[] memory amounts = IRouter(traderJoeRouter)
       .swapExactTokensForTokens(
         _amount,
@@ -70,12 +70,12 @@ contract ERC20Router is IYetiRouter {
     uint256 _minSwapAmount
   ) external override returns (uint256) {
     require(
-      _endingTokenAddress == yusdTokenAddress,
-      "Cannot unroute from a token other than YUSD"
+      _endingTokenAddress == pusdTokenAddress,
+      "Cannot unroute from a token other than PUSD"
     );
     address[] memory path = new address[](2);
     path[0] = _startingTokenAddress;
-    path[1] = yusdTokenAddress;
+    path[1] = pusdTokenAddress;
     IERC20(_startingTokenAddress).safeApprove(traderJoeRouter, _amount);
     uint256[] memory amounts = IRouter(traderJoeRouter)
       .swapExactTokensForTokens(_amount, 1, path, _targetUser, block.timestamp);
@@ -88,7 +88,7 @@ contract ERC20Router is IYetiRouter {
   }
 }
 
-// Router for Uniswap V2, performs YUSD -> YETI swaps
+// Router for Uniswap V2, performs PUSD -> PREON swaps
 interface IRouter {
   function swapExactTokensForTokens(
     uint256 amountIn,

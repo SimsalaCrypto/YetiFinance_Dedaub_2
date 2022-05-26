@@ -1,8 +1,8 @@
 const { artifacts, ethers, assert } = require("hardhat")
 const deploymentHelper = require("../utils/deploymentHelpers.js")
 const testHelpers = require("../utils/testHelpers.js")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester.sol")
-const YetiTokenTester = artifacts.require("./YETITokenTester.sol")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester.sol")
+const PreonTokenTester = artifacts.require("./PREONTokenTester.sol")
 let joeRouter
 let joeZap
 let joeMasterChef
@@ -28,10 +28,10 @@ const assertRevert = th.assertRevert
 const mv = testHelpers.MoneyValues
 const MAXINT= dec(10,36)
 
-const YUSDToken = artifacts.require("YUSDToken")
-const YetiToken = artifacts.require("YETIToken")
-const sYETIToken = artifacts.require("./sYETIToken.sol")
-const sYETITokenTester = artifacts.require("./sYETITokenTester.sol")
+const PUSDToken = artifacts.require("PUSDToken")
+const PreonToken = artifacts.require("PREONToken")
+const sPREONToken = artifacts.require("./sPREONToken.sol")
+const sPREONTokenTester = artifacts.require("./sPREONTokenTester.sol")
 
 console.log("")
 console.log("All tests will fail if mainnet not forked in hardhat.config.js")
@@ -49,31 +49,31 @@ contract('wJLP Test', async accounts => {
   const [bountyAddress, lpRewardsAddress, multisig] = [defaulter_1, defaulter_2, defaulter_3]
 
 
-  let yusdToken
-  let yetiToken
-  let sYetiToken
+  let pusdToken
+  let preonToken
+  let sPreonToken
 
   let contracts
 
   beforeEach(async () => {
     contracts = await deploymentHelper.deployLiquityCore()
-    contracts.yusdToken = await YUSDTokenTester.new(
+    contracts.pusdToken = await PUSDTokenTester.new(
       contracts.troveManager.address,
       contracts.troveManagerLiquidations.address,
       contracts.troveManagerRedemptions.address,
       contracts.stabilityPool.address,
       contracts.borrowerOperations.address
     )
-    const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+    const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
     joeMasterChef=new ethers.Contract("0xd6a4F121CA35509aF06A0Be99093d08462f53052", abi=masterChefABI, signer = await hre.ethers.getSigner(harry))
     WAVAX=new ethers.Contract("0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7", abi = WAVAXABI, signer = await hre.ethers.getSigner(harry));
     WETH=new ethers.Contract("0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB", abi = ERC20ABI, signer = await hre.ethers.getSigner(harry));
     joeRouter = new ethers.Contract("0x60aE616a2155Ee3d9A68541Ba4544862310933d4", abi = routerABI, signer = await hre.ethers.getSigner(harry));
     joeZap = new ethers.Contract("0x2C7B8e971c704371772eDaf16e0dB381A8D02027", abi = zapABI, signer = await hre.ethers.getSigner(harry));
     TOWRAP= new ethers.Contract("0xFE15c2695F1F920da45C30AAE47d11dE51007AF9", abi = joePairABI, signer = await hre.ethers.getSigner(harry));
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
     const WRAPPERS = await deploymentHelper.deployAssetWrappers()
     WASSET=WRAPPERS.wJLP_WETH_WAVAX
     rewardTokens=["0x6e84a6216ea6dacc71ee8e6b0a5b7322eebc0fdd"]
@@ -84,7 +84,7 @@ contract('wJLP Test', async accounts => {
       contracts.troveManagerRedemptions.address,
       contracts.defaultPool.address,
       contracts.stabilityPool.address,
-      YETIContracts.yetiFinanceTreasury.address,
+      PREONContracts.preonFinanceTreasury.address,
     )
     SP=contracts.stabilityPool.address
     LRD=contracts.troveManagerLiquidations.address

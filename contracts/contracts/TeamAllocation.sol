@@ -6,20 +6,20 @@ import "./Interfaces/IERC20.sol";
 import "./Dependencies/SafeERC20.sol";
 
 /*
- * Brought to you by @YetiFinance
- * Holds/Distributes Yeti Finance Team Tokens
+ * Brought to you by @PreonFinance
+ * Holds/Distributes Preon Finance Team Tokens
  */
 contract TeamAllocation {
   using SafeERC20 for IERC20;
 
-  IERC20 YETI;
+  IERC20 PREON;
   address teamWallet;
 
   address[7] team;
   uint256[7] allocations;
 
   bool allocationClaimed;
-  bool yetiSet;
+  bool preonSet;
 
   uint256 internal _94_5_thousand = 945e20; // 70% * 27% * 500,000
 
@@ -56,28 +56,28 @@ contract TeamAllocation {
     _;
   }
 
-  function setYetiAddress(IERC20 _YETI) external onlyTeam {
-    YETI = _YETI;
-    yetiSet = true;
+  function setPreonAddress(IERC20 _PREON) external onlyTeam {
+    PREON = _PREON;
+    preonSet = true;
   }
 
-  function sendAllocatedYETI() external {
-    require(yetiSet, "sendAllocatedYETI: yeti team address not set");
-    require(!allocationClaimed, "sendAllocatedYETI: allocation claimed");
+  function sendAllocatedPREON() external {
+    require(preonSet, "sendAllocatedPREON: preon team address not set");
+    require(!allocationClaimed, "sendAllocatedPREON: allocation claimed");
     for (uint256 i; i < 7; ++i) {
       address member = team[i];
       uint256 amount = allocations[i];
-      YETI.safeTransfer(member, amount);
+      PREON.safeTransfer(member, amount);
     }
     allocationClaimed = true;
   }
 
-  function sendUnallocatedYETI(address _to, uint256 _amount) external onlyTeam {
+  function sendUnallocatedPREON(address _to, uint256 _amount) external onlyTeam {
     require(
       allocationClaimed,
-      "sendUnallocatedYETI: allocation already claimed"
+      "sendUnallocatedPREON: allocation already claimed"
     );
-    YETI.safeTransfer(_to, _amount);
+    PREON.safeTransfer(_to, _amount);
   }
 
   function updateTeamAddress(address _newTeamWallet) external onlyTeam {

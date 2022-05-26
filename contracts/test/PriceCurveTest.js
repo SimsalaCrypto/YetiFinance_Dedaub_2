@@ -6,7 +6,7 @@ const testHelpers = require("../utils/testHelpers.js")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
 const NonPayable = artifacts.require('NonPayable.sol')
 const TroveManagerTester = artifacts.require("TroveManagerTester")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester")
 const LinearPriceCurve = artifacts.require("./PriceCurves/ThreePieceWiseLinearPriceCurve.sol");
 
 const th = testHelpers.TestHelper
@@ -20,10 +20,10 @@ const ZERO_ADDRESS = th.ZERO_ADDRESS
 const assertRevert = th.assertRevert
 const WAVAX_ADDRESS = ZERO_ADDRESS;
 
-/* NOTE: Some of the borrowing tests do not test for specific YUSD fee values. They only test that the
+/* NOTE: Some of the borrowing tests do not test for specific PUSD fee values. They only test that the
  * fees are non-zero when they should occur, and that they decay over time.
  *
- * Specific YUSD fee values will depend on the final fee schedule used, and the final choice for
+ * Specific PUSD fee values will depend on the final fee schedule used, and the final choice for
  *  the parameter MINUTE_DECAY_FACTOR in the TroveManager, which is still TBD based on economic
  * modelling.
  *
@@ -42,15 +42,15 @@ contract('Price Curve', async accounts => {
     // const frontEnds = [frontEnd_1, frontEnd_2, frontEnd_3]
 
     let priceFeed
-    let yusdToken
+    let pusdToken
     let sortedTroves
     let troveManager
     let activePool
     let stabilityPool
     let defaultPool
     let borrowerOperations
-    let sYETI
-    let yetiToken
+    let sPREON
+    let preonToken
     let weth
     let tokenA
     let priceFeedA
@@ -74,7 +74,7 @@ contract('Price Curve', async accounts => {
 
     let contracts
 
-    const getOpenTroveYUSDAmount = async (totalDebt) => th.getOpenTroveYUSDAmount(contracts, totalDebt)
+    const getOpenTrovePUSDAmount = async (totalDebt) => th.getOpenTrovePUSDAmount(contracts, totalDebt)
     const getNetBorrowingAmount = async (debtWithFee) => th.getNetBorrowingAmount(contracts, debtWithFee)
     const getActualDebtFromComposite = async (compositeDebt) => th.getActualDebtFromComposite(compositeDebt, contracts)
     const openTrove = async (params) => th.openTrove(contracts, params)
@@ -83,9 +83,9 @@ contract('Price Curve', async accounts => {
     const getTroveEntireDebt = async (trove) => th.getTroveEntireDebt(contracts, trove)
     const getTroveStake = async (trove) => th.getTroveStake(contracts, trove)
 
-    const YUSDMinAmount = toBN('1791044776119402985075')
+    const PUSDMinAmount = toBN('1791044776119402985075')
 
-    let YUSD_GAS_COMPENSATION
+    let PUSD_GAS_COMPENSATION
     let MIN_NET_DEBT
     let BORROWING_FEE_FLOOR
 
@@ -98,23 +98,23 @@ contract('Price Curve', async accounts => {
             contracts = await deploymentHelper.deployLiquityCore()
             contracts.borrowerOperations = await BorrowerOperationsTester.new()
             contracts.troveManager = await TroveManagerTester.new()
-            contracts = await deploymentHelper.deployYUSDTokenTester(contracts)
-            const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+            contracts = await deploymentHelper.deployPUSDTokenTester(contracts)
+            const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
-            await deploymentHelper.connectYETIContracts(YETIContracts)
-            await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-            await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+            await deploymentHelper.connectPREONContracts(PREONContracts)
+            await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+            await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
             if (withProxy) {
                 const users = [alice, bob, carol, dennis, whale, A, B, C, D, E]
-                await deploymentHelper.deployProxyScripts(contracts, YETIContracts, owner, users)
+                await deploymentHelper.deployProxyScripts(contracts, PREONContracts, owner, users)
             }
 
             // priceFeed = contracts.priceFeedTestnet
             priceFeedAVAX = contracts.priceFeedAVAX
             priceFeedETH = contracts.priceFeedETH
             priceFeed = priceFeedETH
-            yusdToken = contracts.yusdToken
+            pusdToken = contracts.pusdToken
             sortedTroves = contracts.sortedTroves
             troveManager = contracts.troveManager
             activePool = contracts.activePool
@@ -126,12 +126,12 @@ contract('Price Curve', async accounts => {
             weth = contracts.weth
             wavax = contracts.wavax
 
-            sYETI = YETIContracts.sYETI
-            yetiToken = YETIContracts.yetiToken
-            communityIssuance = YETIContracts.communityIssuance
-            lockupContractFactory = YETIContracts.lockupContractFactory
+            sPREON = PREONContracts.sPREON
+            preonToken = PREONContracts.preonToken
+            communityIssuance = PREONContracts.communityIssuance
+            lockupContractFactory = PREONContracts.lockupContractFactory
 
-            YUSD_GAS_COMPENSATION = await borrowerOperations.YUSD_GAS_COMPENSATION()
+            PUSD_GAS_COMPENSATION = await borrowerOperations.PUSD_GAS_COMPENSATION()
             MIN_NET_DEBT = await borrowerOperations.MIN_NET_DEBT()
             BORROWING_FEE_FLOOR = await borrowerOperations.BORROWING_FEE_FLOOR()
 
@@ -274,7 +274,7 @@ contract('Price Curve', async accounts => {
                 assert.isTrue(aliceRawBalanceBefore_A.eq(toBN(dec(5, 18))))
                 assert.isTrue(aliceRawBalanceBefore_B.eq(toBN(dec(10, 18))))
                 assert.isTrue(aliceRawBalanceBefore_C.eq(toBN(dec(15, 18))))
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
 
                 const aliceRawBalanceAfter_A = await tokenA.balanceOf(alice)
                 const aliceRawBalanceAfter_B = await tokenB.balanceOf(alice)
@@ -302,7 +302,7 @@ contract('Price Curve', async accounts => {
                 // Missing token B allocation
                 await th.addMultipleERC20(bob, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: bob })
                 await assertRevert(
-                    borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [tokenA.address, tokenC.address], [dec(5, 18), dec(11, 18), dec(15, 18)], { from: bob }),
+                    borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [tokenA.address, tokenC.address], [dec(5, 18), dec(11, 18), dec(15, 18)], { from: bob }),
                     "Borrower does not have enough allocation of one of the tokens. "
                 )
 

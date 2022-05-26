@@ -12,13 +12,13 @@ import "./LockupContract.sol";
  * The LockupContractFactory deploys LockupContracts - its main purpose is to keep a registry of valid deployed
  * LockupContracts.
  *
- * This registry is checked by YETIToken when the Liquity deployer attempts to transfer YETI tokens. During the first year
- * since system deployment, the Liquity deployer is only allowed to transfer YETI to valid LockupContracts that have been
- * deployed by and recorded in the LockupContractFactory. This ensures the deployer's YETI can't be traded or staked in the
+ * This registry is checked by PREONToken when the Liquity deployer attempts to transfer PREON tokens. During the first year
+ * since system deployment, the Liquity deployer is only allowed to transfer PREON to valid LockupContracts that have been
+ * deployed by and recorded in the LockupContractFactory. This ensures the deployer's PREON can't be traded or staked in the
  * first year, and can only be sent to a verified LockupContract which unlocks at least one year after system deployment.
  *
  * LockupContracts can of course be deployed directly, but only those deployed through and recorded in the LockupContractFactory
- * will be considered "valid" by YETIToken. This is a convenient way to verify that the target address is a genuine
+ * will be considered "valid" by PREONToken. This is a convenient way to verify that the target address is a genuine
  * LockupContract.
  */
 
@@ -34,13 +34,13 @@ contract LockupContractFactory is
 
   uint256 public constant SECONDS_IN_ONE_YEAR = 31536000;
 
-  address public yetiTokenAddress;
+  address public preonTokenAddress;
 
   mapping(address => address) public lockupContractToDeployer;
 
   // --- Events ---
 
-  event YETITokenAddressSet(address _yetiTokenAddress);
+  event PREONTokenAddressSet(address _preonTokenAddress);
   event LockupContractDeployedThroughFactory(
     address _lockupContractAddress,
     address _beneficiary,
@@ -50,15 +50,15 @@ contract LockupContractFactory is
 
   // --- Functions ---
 
-  function setYETITokenAddress(address _yetiTokenAddress)
+  function setPREONTokenAddress(address _preonTokenAddress)
     external
     override
     onlyOwner
   {
-    checkContract(_yetiTokenAddress);
+    checkContract(_preonTokenAddress);
 
-    yetiTokenAddress = _yetiTokenAddress;
-    emit YETITokenAddressSet(_yetiTokenAddress);
+    preonTokenAddress = _preonTokenAddress;
+    emit PREONTokenAddressSet(_preonTokenAddress);
 
     _renounceOwnership();
   }
@@ -67,10 +67,10 @@ contract LockupContractFactory is
     external
     override
   {
-    address yetiTokenAddressCached = yetiTokenAddress;
-    _requireYETIAddressIsSet(yetiTokenAddressCached);
+    address preonTokenAddressCached = preonTokenAddress;
+    _requirePREONAddressIsSet(preonTokenAddressCached);
     LockupContract lockupContract = new LockupContract(
-      yetiTokenAddressCached,
+      preonTokenAddressCached,
       _beneficiary,
       _unlockTime
     );
@@ -94,7 +94,7 @@ contract LockupContractFactory is
   }
 
   // --- 'require'  functions ---
-  function _requireYETIAddressIsSet(address _yetiTokenAddress) internal pure {
-    require(_yetiTokenAddress != address(0), "LCF: YETI Address is not set");
+  function _requirePREONAddressIsSet(address _preonTokenAddress) internal pure {
+    require(_preonTokenAddress != address(0), "LCF: PREON Address is not set");
   }
 }

@@ -4,7 +4,7 @@ const testHelpers = require("../utils/testHelpers.js")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
 const NonPayable = artifacts.require('NonPayable.sol')
 const TroveManagerTester = artifacts.require("TroveManagerTester")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester")
 const LinearPriceCurve = artifacts.require("./PriceCurves/ThreePieceWiseLinearPriceCurve.sol");
 
 const th = testHelpers.TestHelper
@@ -22,10 +22,10 @@ const WAVAX_ADDRESS = ZERO_ADDRESS;
 const routerABI = [{ "inputs": [{ "internalType": "address", "name": "_factory", "type": "address" }, { "internalType": "address", "name": "_WAVAX", "type": "address" }], "stateMutability": "nonpayable", "type": "constructor" }, { "inputs": [], "name": "WAVAX", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "tokenA", "type": "address" }, { "internalType": "address", "name": "tokenB", "type": "address" }, { "internalType": "uint256", "name": "amountADesired", "type": "uint256" }, { "internalType": "uint256", "name": "amountBDesired", "type": "uint256" }, { "internalType": "uint256", "name": "amountAMin", "type": "uint256" }, { "internalType": "uint256", "name": "amountBMin", "type": "uint256" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "addLiquidity", "outputs": [{ "internalType": "uint256", "name": "amountA", "type": "uint256" }, { "internalType": "uint256", "name": "amountB", "type": "uint256" }, { "internalType": "uint256", "name": "liquidity", "type": "uint256" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "token", "type": "address" }, { "internalType": "uint256", "name": "amountTokenDesired", "type": "uint256" }, { "internalType": "uint256", "name": "amountTokenMin", "type": "uint256" }, { "internalType": "uint256", "name": "amountAVAXMin", "type": "uint256" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "addLiquidityAVAX", "outputs": [{ "internalType": "uint256", "name": "amountToken", "type": "uint256" }, { "internalType": "uint256", "name": "amountAVAX", "type": "uint256" }, { "internalType": "uint256", "name": "liquidity", "type": "uint256" }], "stateMutability": "payable", "type": "function" }, { "inputs": [], "name": "factory", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountOut", "type": "uint256" }, { "internalType": "uint256", "name": "reserveIn", "type": "uint256" }, { "internalType": "uint256", "name": "reserveOut", "type": "uint256" }], "name": "getAmountIn", "outputs": [{ "internalType": "uint256", "name": "amountIn", "type": "uint256" }], "stateMutability": "pure", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountIn", "type": "uint256" }, { "internalType": "uint256", "name": "reserveIn", "type": "uint256" }, { "internalType": "uint256", "name": "reserveOut", "type": "uint256" }], "name": "getAmountOut", "outputs": [{ "internalType": "uint256", "name": "amountOut", "type": "uint256" }], "stateMutability": "pure", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountOut", "type": "uint256" }, { "internalType": "address[]", "name": "path", "type": "address[]" }], "name": "getAmountsIn", "outputs": [{ "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountIn", "type": "uint256" }, { "internalType": "address[]", "name": "path", "type": "address[]" }], "name": "getAmountsOut", "outputs": [{ "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountA", "type": "uint256" }, { "internalType": "uint256", "name": "reserveA", "type": "uint256" }, { "internalType": "uint256", "name": "reserveB", "type": "uint256" }], "name": "quote", "outputs": [{ "internalType": "uint256", "name": "amountB", "type": "uint256" }], "stateMutability": "pure", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "tokenA", "type": "address" }, { "internalType": "address", "name": "tokenB", "type": "address" }, { "internalType": "uint256", "name": "liquidity", "type": "uint256" }, { "internalType": "uint256", "name": "amountAMin", "type": "uint256" }, { "internalType": "uint256", "name": "amountBMin", "type": "uint256" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "removeLiquidity", "outputs": [{ "internalType": "uint256", "name": "amountA", "type": "uint256" }, { "internalType": "uint256", "name": "amountB", "type": "uint256" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "token", "type": "address" }, { "internalType": "uint256", "name": "liquidity", "type": "uint256" }, { "internalType": "uint256", "name": "amountTokenMin", "type": "uint256" }, { "internalType": "uint256", "name": "amountAVAXMin", "type": "uint256" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "removeLiquidityAVAX", "outputs": [{ "internalType": "uint256", "name": "amountToken", "type": "uint256" }, { "internalType": "uint256", "name": "amountAVAX", "type": "uint256" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "token", "type": "address" }, { "internalType": "uint256", "name": "liquidity", "type": "uint256" }, { "internalType": "uint256", "name": "amountTokenMin", "type": "uint256" }, { "internalType": "uint256", "name": "amountAVAXMin", "type": "uint256" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "removeLiquidityAVAXSupportingFeeOnTransferTokens", "outputs": [{ "internalType": "uint256", "name": "amountAVAX", "type": "uint256" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "token", "type": "address" }, { "internalType": "uint256", "name": "liquidity", "type": "uint256" }, { "internalType": "uint256", "name": "amountTokenMin", "type": "uint256" }, { "internalType": "uint256", "name": "amountAVAXMin", "type": "uint256" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }, { "internalType": "bool", "name": "approveMax", "type": "bool" }, { "internalType": "uint8", "name": "v", "type": "uint8" }, { "internalType": "bytes32", "name": "r", "type": "bytes32" }, { "internalType": "bytes32", "name": "s", "type": "bytes32" }], "name": "removeLiquidityAVAXWithPermit", "outputs": [{ "internalType": "uint256", "name": "amountToken", "type": "uint256" }, { "internalType": "uint256", "name": "amountAVAX", "type": "uint256" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "token", "type": "address" }, { "internalType": "uint256", "name": "liquidity", "type": "uint256" }, { "internalType": "uint256", "name": "amountTokenMin", "type": "uint256" }, { "internalType": "uint256", "name": "amountAVAXMin", "type": "uint256" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }, { "internalType": "bool", "name": "approveMax", "type": "bool" }, { "internalType": "uint8", "name": "v", "type": "uint8" }, { "internalType": "bytes32", "name": "r", "type": "bytes32" }, { "internalType": "bytes32", "name": "s", "type": "bytes32" }], "name": "removeLiquidityAVAXWithPermitSupportingFeeOnTransferTokens", "outputs": [{ "internalType": "uint256", "name": "amountAVAX", "type": "uint256" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "tokenA", "type": "address" }, { "internalType": "address", "name": "tokenB", "type": "address" }, { "internalType": "uint256", "name": "liquidity", "type": "uint256" }, { "internalType": "uint256", "name": "amountAMin", "type": "uint256" }, { "internalType": "uint256", "name": "amountBMin", "type": "uint256" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }, { "internalType": "bool", "name": "approveMax", "type": "bool" }, { "internalType": "uint8", "name": "v", "type": "uint8" }, { "internalType": "bytes32", "name": "r", "type": "bytes32" }, { "internalType": "bytes32", "name": "s", "type": "bytes32" }], "name": "removeLiquidityWithPermit", "outputs": [{ "internalType": "uint256", "name": "amountA", "type": "uint256" }, { "internalType": "uint256", "name": "amountB", "type": "uint256" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountOut", "type": "uint256" }, { "internalType": "address[]", "name": "path", "type": "address[]" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "swapAVAXForExactTokens", "outputs": [{ "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }], "stateMutability": "payable", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountOutMin", "type": "uint256" }, { "internalType": "address[]", "name": "path", "type": "address[]" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "swapExactAVAXForTokens", "outputs": [{ "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }], "stateMutability": "payable", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountOutMin", "type": "uint256" }, { "internalType": "address[]", "name": "path", "type": "address[]" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "swapExactAVAXForTokensSupportingFeeOnTransferTokens", "outputs": [], "stateMutability": "payable", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountIn", "type": "uint256" }, { "internalType": "uint256", "name": "amountOutMin", "type": "uint256" }, { "internalType": "address[]", "name": "path", "type": "address[]" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "swapExactTokensForAVAX", "outputs": [{ "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountIn", "type": "uint256" }, { "internalType": "uint256", "name": "amountOutMin", "type": "uint256" }, { "internalType": "address[]", "name": "path", "type": "address[]" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "swapExactTokensForAVAXSupportingFeeOnTransferTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountIn", "type": "uint256" }, { "internalType": "uint256", "name": "amountOutMin", "type": "uint256" }, { "internalType": "address[]", "name": "path", "type": "address[]" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "swapExactTokensForTokens", "outputs": [{ "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountIn", "type": "uint256" }, { "internalType": "uint256", "name": "amountOutMin", "type": "uint256" }, { "internalType": "address[]", "name": "path", "type": "address[]" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "swapExactTokensForTokensSupportingFeeOnTransferTokens", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountOut", "type": "uint256" }, { "internalType": "uint256", "name": "amountInMax", "type": "uint256" }, { "internalType": "address[]", "name": "path", "type": "address[]" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "swapTokensForExactAVAX", "outputs": [{ "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "uint256", "name": "amountOut", "type": "uint256" }, { "internalType": "uint256", "name": "amountInMax", "type": "uint256" }, { "internalType": "address[]", "name": "path", "type": "address[]" }, { "internalType": "address", "name": "to", "type": "address" }, { "internalType": "uint256", "name": "deadline", "type": "uint256" }], "name": "swapTokensForExactTokens", "outputs": [{ "internalType": "uint256[]", "name": "amounts", "type": "uint256[]" }], "stateMutability": "nonpayable", "type": "function" }, { "stateMutability": "payable", "type": "receive" }];
 
 
-/* NOTE: Some of the borrowing tests do not test for specific YUSD fee values. They only test that the
+/* NOTE: Some of the borrowing tests do not test for specific PUSD fee values. They only test that the
  * fees are non-zero when they should occur, and that they decay over time.
  *
- * Specific YUSD fee values will depend on the final fee schedule used, and the final choice for
+ * Specific PUSD fee values will depend on the final fee schedule used, and the final choice for
  *  the parameter MINUTE_DECAY_FACTOR in the TroveManager, which is still TBD based on economic
  * modelling.
  * 
@@ -44,15 +44,15 @@ contract('BorrowerOperations', async accounts => {
     // const frontEnds = [frontEnd_1, frontEnd_2, frontEnd_3]
 
     let priceFeed
-    let yusdToken
+    let pusdToken
     let sortedTroves
     let troveManager
     let activePool
     let stabilityPool
     let defaultPool
     let borrowerOperations
-    let sYETI
-    let yetiToken
+    let sPREON
+    let preonToken
     let weth
     let tokenA
     let priceFeedA
@@ -72,9 +72,9 @@ contract('BorrowerOperations', async accounts => {
     let priceFeedStableCoin
 
     let contracts
-    let YETIContracts
+    let PREONContracts
 
-    const getOpenTroveYUSDAmount = async (totalDebt) => th.getOpenTroveYUSDAmount(contracts, totalDebt)
+    const getOpenTrovePUSDAmount = async (totalDebt) => th.getOpenTrovePUSDAmount(contracts, totalDebt)
     const getNetBorrowingAmount = async (debtWithFee) => th.getNetBorrowingAmount(contracts, debtWithFee)
     const getActualDebtFromComposite = async (compositeDebt) => th.getActualDebtFromComposite(compositeDebt, contracts)
     const openTrove = async (params) => th.openTrove(contracts, params)
@@ -83,9 +83,9 @@ contract('BorrowerOperations', async accounts => {
     const getTroveEntireDebt = async (trove) => th.getTroveEntireDebt(contracts, trove)
     const getTroveStake = async (trove) => th.getTroveStake(contracts, trove)
 
-    const YUSDMinAmount = toBN('1791044776119402985075')
+    const PUSDMinAmount = toBN('1791044776119402985075')
 
-    let YUSD_GAS_COMPENSATION
+    let PUSD_GAS_COMPENSATION
     let MIN_NET_DEBT
     let BORROWING_FEE_FLOOR
 
@@ -98,23 +98,23 @@ contract('BorrowerOperations', async accounts => {
             contracts = await deploymentHelper.deployLiquityCore()
             contracts.borrowerOperations = await BorrowerOperationsTester.new()
             contracts.troveManager = await TroveManagerTester.new()
-            contracts = await deploymentHelper.deployYUSDTokenTester(contracts)
-            YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+            contracts = await deploymentHelper.deployPUSDTokenTester(contracts)
+            PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
-            await deploymentHelper.connectYETIContracts(YETIContracts)
-            await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-            await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+            await deploymentHelper.connectPREONContracts(PREONContracts)
+            await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+            await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
             if (withProxy) {
                 const users = [alice, bob, carol, dennis, whale, A, B, C, D, E]
-                await deploymentHelper.deployProxyScripts(contracts, YETIContracts, owner, users)
+                await deploymentHelper.deployProxyScripts(contracts, PREONContracts, owner, users)
             }
 
             // priceFeed = contracts.priceFeedTestnet
             priceFeedAVAX = contracts.priceFeedAVAX
             priceFeedETH = contracts.priceFeedETH
             priceFeed = priceFeedETH
-            yusdToken = contracts.yusdToken
+            pusdToken = contracts.pusdToken
             sortedTroves = contracts.sortedTroves
             troveManager = contracts.troveManager
             activePool = contracts.activePool
@@ -126,12 +126,12 @@ contract('BorrowerOperations', async accounts => {
             weth = contracts.weth
             wavax = contracts.wavax
 
-            sYETI = YETIContracts.sYETI
-            yetiToken = YETIContracts.yetiToken
-            communityIssuance = YETIContracts.communityIssuance
-            lockupContractFactory = YETIContracts.lockupContractFactory
+            sPREON = PREONContracts.sPREON
+            preonToken = PREONContracts.preonToken
+            communityIssuance = PREONContracts.communityIssuance
+            lockupContractFactory = PREONContracts.lockupContractFactory
 
-            YUSD_GAS_COMPENSATION = await borrowerOperations.YUSD_GAS_COMPENSATION()
+            PUSD_GAS_COMPENSATION = await borrowerOperations.PUSD_GAS_COMPENSATION()
             MIN_NET_DEBT = await borrowerOperations.MIN_NET_DEBT()
             BORROWING_FEE_FLOOR = await borrowerOperations.BORROWING_FEE_FLOOR()
 
@@ -239,7 +239,7 @@ contract('BorrowerOperations', async accounts => {
                 assert.isTrue(aliceRawBalanceBefore_A.eq(toBN(dec(5, 18))))
                 assert.isTrue(aliceRawBalanceBefore_B.eq(toBN(dec(10, 18))))
                 assert.isTrue(aliceRawBalanceBefore_C.eq(toBN(dec(15, 18))))
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
 
                 const aliceRawBalanceAfter_A = await tokenA.balanceOf(alice)
                 const aliceRawBalanceAfter_B = await tokenB.balanceOf(alice)
@@ -267,7 +267,7 @@ contract('BorrowerOperations', async accounts => {
                 // Missing token B allocation
                 await th.addMultipleERC20(bob, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: bob })
                 await assertRevert(
-                    borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [tokenA.address, tokenC.address], [dec(5, 18), dec(11, 18), dec(15, 18)], { from: bob }),
+                    borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [tokenA.address, tokenC.address], [dec(5, 18), dec(11, 18), dec(15, 18)], { from: bob }),
                     "Borrower does not have enough allocation of one of the tokens. "
                 )
 
@@ -278,13 +278,13 @@ contract('BorrowerOperations', async accounts => {
                 // await th.addMultipleERC20(alice, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
                 // await th.addMultipleERC20(alice, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenC], [dec(200, 18)], { from: alice })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenC.address], [dec(200, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenC.address], [dec(200, 18)], { from: alice })
 
                 await th.addMultipleERC20(bob, borrowerOperations.address, [tokenC, tokenA], [dec(5, 18), dec(10, 18)], { from: bob })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [tokenC.address, tokenA.address], [dec(5, 18), dec(10, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [tokenC.address, tokenA.address], [dec(5, 18), dec(10, 18)], { from: bob })
 
                 await th.addMultipleERC20(carol, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: carol })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, carol, carol, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: carol })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, carol, carol, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: carol })
 
                 const aliceTokens = await getTroveEntireTokens(alice)
                 const aliceColls = await getTroveEntireColl(alice)
@@ -302,18 +302,18 @@ contract('BorrowerOperations', async accounts => {
 
             it("Open trove multi collat with less balance than you have fails", async () => {
                 await assertRevert(
-                    borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address], [dec(200, 18)], { from: alice }),
+                    borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address], [dec(200, 18)], { from: alice }),
                     "revert if you don't have enough collateral"
                 )
 
                 await assertRevert(
-                  borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenB.address], [dec(200, 18), dec(200, 18)], { from: alice }),
+                  borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenB.address], [dec(200, 18), dec(200, 18)], { from: alice }),
                   "revert if you don't have enough collateral"
                 )
 
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenA], [dec(400, 18)], { from: alice })
                 await assertRevert(
-                  borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenB.address], [dec(200, 18), dec(200, 18)], { from: alice }),
+                  borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenB.address], [dec(200, 18), dec(200, 18)], { from: alice }),
                   "revert if you don't have enough collateral"
                 )
             })
@@ -322,13 +322,13 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenA], [dec(400, 18)], { from: alice })
                 await th.addMultipleERC20(whale, borrowerOperations.address, [tokenA], [dec(400, 18)], { from: whale })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [tokenA], [dec(400, 18)], { from: bob })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address], [dec(300, 18)], { from: whale })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [tokenA.address], [dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address], [dec(300, 18)], { from: whale })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [tokenA.address], [dec(20, 18)], { from: bob })
 
                 priceFeedA.setPrice(dec(100, 18))
 
                 await assertRevert(
-                    borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address], [dec(20, 18)], { from: alice }),
+                    borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address], [dec(20, 18)], { from: alice }),
                     "revert if collateral is now not worth enough."
                 )
             })
@@ -339,8 +339,8 @@ contract('BorrowerOperations', async accounts => {
             it("Open a trove with multiple collateral types, then adjust", async () => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenA, tokenB, tokenC, tokenD], [dec(500, 18), dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: bob })
 
                 // Attempt to adjust with wrong order collateral and with new collateral type
                 await borrowerOperations.adjustTrove([tokenD.address, tokenA.address], [dec(1, 18), dec(3, 18)], [tokenC.address, tokenB.address], [dec(2, 18), dec(1, 18)], 0, false, alice, alice, th._100pct, { from: alice })
@@ -372,7 +372,7 @@ contract('BorrowerOperations', async accounts => {
             it("Adjusting trove without doing anything reverts", async () => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
                 await assertRevert(
                     borrowerOperations.adjustTrove([], [], [], [], 0, true, alice, alice, th._100pct, { from: alice }),
                     "Should revert if nothing is happening"
@@ -403,7 +403,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
                 await assertRevert(
                     borrowerOperations.adjustTrove([], [0], [], [], 0, false, alice, alice, th._100pct, { from: alice }),
                     "Should revert if tokens and amounts do not have same length"
@@ -429,7 +429,7 @@ contract('BorrowerOperations', async accounts => {
             it("Adjusting trove by removing and adding same type of collateral does not work", async () => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
 
                 await assertRevert(
                     borrowerOperations.adjustTrove([tokenA.address], [toBN(dec(1, 18))], [tokenA.address], [toBN(dec(2, 18))], 0, false, alice, alice, th._100pct, { from: alice }),
@@ -445,12 +445,12 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
 
                 await assertRevert(
-                    borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenA.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice }),
+                    borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenA.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice }),
                     "Should revert if duplicate collateral"
                 )
 
                 // Can still open normal trove
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
 
                 await assertRevert(
                     borrowerOperations.adjustTrove([tokenA.address, tokenB.address, tokenA.address], [toBN(dec(1, 18)), toBN(dec(1, 18))], [], [], 0, false, alice, alice, th._100pct, { from: alice }),
@@ -470,8 +470,8 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(whale, borrowerOperations.address, [tokenSuperRisky, tokenC, tokenLowDecimal], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: whale })
 
                 // 5 low decimal token worth 5 * 200, with only 6 decimals. 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenSuperRisky.address, tokenC.address, tokenLowDecimal.address], [dec(20, 18), dec(5, 18), dec(5, 6)], { from: alice })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenSuperRisky.address, tokenC.address, tokenLowDecimal.address], [dec(450, 18), dec(450, 18), dec(450, 6)], { from: whale })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenSuperRisky.address, tokenC.address, tokenLowDecimal.address], [dec(20, 18), dec(5, 18), dec(5, 6)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenSuperRisky.address, tokenC.address, tokenLowDecimal.address], [dec(450, 18), dec(450, 18), dec(450, 6)], { from: whale })
 
                 const aliceTokens = await getTroveEntireTokens(alice)
                 const aliceColls = await getTroveEntireColl(alice)
@@ -538,8 +538,8 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [tokenA.address, tokenB.address, tokenC.address], [dec(5, 18), dec(10, 18), dec(15, 18)], { from: bob })
 
                 const aliceTokens = await getTroveEntireTokens(alice)
                 const aliceColls = await getTroveEntireColl(alice)
@@ -562,8 +562,8 @@ contract('BorrowerOperations', async accounts => {
                 assert.isTrue(await th.assertCollateralsEqual(ABCAddresses, [0, 0, 0], ABCAddresses, activePool_Coll_Before))
                 assert.isTrue(await th.assertCollateralsEqual(ABCAddresses, [0, 0, 0], ABCAddresses, activePool_RawColl_Before))
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenB.address], [dec(55, 18), dec(10, 18)], { from: alice })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [tokenA.address, tokenC.address], [dec(20, 18), dec(12, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenB.address], [dec(55, 18), dec(10, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [tokenA.address, tokenC.address], [dec(20, 18), dec(12, 18)], { from: bob })
 
                 const aliceTokens = await getTroveEntireTokens(alice)
                 const aliceColls = await getTroveEntireColl(alice)
@@ -591,7 +591,7 @@ contract('BorrowerOperations', async accounts => {
             it("Open multi collateral trove, adjust prices individually, check if VC and TCR change accordingly. Ratio 1 tokens", async () => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenA, tokenB, tokenC], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenA.address, tokenC.address, tokenB.address], [dec(10, 18), dec(5, 18), dec(5, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenA.address, tokenC.address, tokenB.address], [dec(10, 18), dec(5, 18), dec(5, 18)], { from: alice })
 
                 const aliceTokens = await getTroveEntireTokens(alice)
                 const aliceColls = await getTroveEntireColl(alice)
@@ -628,7 +628,7 @@ contract('BorrowerOperations', async accounts => {
             it("Ratio < 1, Open multi collateral trove, adjust prices individually, check if VC and TCR change accordingly", async () => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenSuperRisky, tokenB, tokenC], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenSuperRisky.address, tokenC.address, tokenB.address], [dec(20, 18), dec(5, 18), dec(5, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenSuperRisky.address, tokenC.address, tokenB.address], [dec(20, 18), dec(5, 18), dec(5, 18)], { from: alice })
 
                 const aliceTokens = await getTroveEntireTokens(alice)
                 const aliceColls = await getTroveEntireColl(alice)
@@ -667,7 +667,7 @@ contract('BorrowerOperations', async accounts => {
 
                 priceFeedStableCoin.setPrice(toBN(dec(1, 18)))
                 const amountStableCoin = toBN(dec(2000, 18)).mul(toBN(dec(1, 18))).div(toBN(dec(105, 16))) // 2000 / 105% to get the amount to take out in stablecoin
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenC.address, stableCoin.address], [dec(10, 18), amountStableCoin], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenC.address, stableCoin.address], [dec(10, 18), amountStableCoin], { from: alice })
 
                 const TCRBefore = await th.getTCR(contracts)
 
@@ -700,7 +700,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenSuperRisky, tokenC, tokenLowDecimal], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
 
                 // 5 low decimal token worth 5 * 200, with only 6 decimals. 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenSuperRisky.address, tokenC.address, tokenLowDecimal.address], [dec(20, 18), dec(5, 18), dec(5, 6)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenSuperRisky.address, tokenC.address, tokenLowDecimal.address], [dec(20, 18), dec(5, 18), dec(5, 6)], { from: alice })
 
                 const aliceTokens = await getTroveEntireTokens(alice)
                 const aliceColls = await getTroveEntireColl(alice)
@@ -739,7 +739,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [tokenSuperRisky, tokenC, tokenLowDecimal], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
 
                 // 5 low decimal token worth 5 * 200, with only 6 decimals. 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [tokenSuperRisky.address, tokenC.address, tokenLowDecimal.address], [dec(20, 18), dec(5, 18), dec(5, 6)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [tokenSuperRisky.address, tokenC.address, tokenLowDecimal.address], [dec(20, 18), dec(5, 18), dec(5, 6)], { from: alice })
 
                 const aliceTokens = await getTroveEntireTokens(alice)
                 const aliceColls = await getTroveEntireColl(alice)
@@ -828,7 +828,7 @@ contract('BorrowerOperations', async accounts => {
 
                 let accounts = [A, B, C, D, E, F, G, H]
                 let tokens = [contracts.weth, contracts.wavax, tokenA, tokenB, tokenC, tokenD, tokenE, tokenF, tokenG, tokenH, tokenI, tokenLowDecimal, tokenRisky, tokenSuperRisky, stableCoin]
-                await openTrove({ extraYUSDAmount: toBN(dec(100000, 30)), ICR: toBN(dec(2, 18)), extraParams: { from: whale } })
+                await openTrove({ extraPUSDAmount: toBN(dec(100000, 30)), ICR: toBN(dec(2, 18)), extraParams: { from: whale } })
                 await th.addTokensToAccountsAndOpenTroveWithICR(contracts, toBN(dec(2, 18)), accounts, tokens)
                 console.log("Finished adding tokens and opening all troves. ")
                 console.log("Adjusting troves randomly.")
@@ -861,7 +861,7 @@ contract('BorrowerOperations', async accounts => {
                 console.log("Finished randomly adjusting troves")
                 for (let i = 0; i < accounts.length - 1; i++) {
                     // let balanceBefore = await contracts.weth.balanceOf(accounts[i])
-                    const transfer = await yusdToken.transfer(accounts[i], toBN(dec(1000, 30)), { from: whale }) // for borrow fee. 
+                    const transfer = await pusdToken.transfer(accounts[i], toBN(dec(1000, 30)), { from: whale }) // for borrow fee. 
                     assert.isTrue(transfer.receipt.status)
                     await borrowerOperations.closeTrove({ from: accounts[i] })
                     for (let j = 0; j < tokens.length; j++) {
@@ -890,19 +890,19 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
                 await th.addMultipleERC20(carol, borrowerOperations.address, [contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: carol })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
                 await newPriceCurve.adjustParams("WAVAX Price curve", "0", dec(5, 15), "0", "0", "0", "0", "0");
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
                 // expect debt to be VCAmount * (0.005) / 2 + 2000 
                 const bobDebt = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebt, toBN(dec(2020, 18)))
 
-                const sYETIBalanceBefore = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                const sPREONBalanceBefore = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
                 // Add for carol with two tokens that both have flat fees. Make sure that the fee is correct and summed together
                 const newPriceCurve2 = await LinearPriceCurve.new();
@@ -910,14 +910,14 @@ contract('BorrowerOperations', async accounts => {
                 await newPriceCurve2.adjustParams("Token A Price curve", "0", dec(1, 16), "0", "0", "0", "0", "0");
                 await contracts.whitelist.changePriceCurve(tokenA.address, newPriceCurve2.address)
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, carol, carol, [contracts.wavax.address, tokenA.address], [dec(20, 18), dec(20, 18)], { from: carol })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, carol, carol, [contracts.wavax.address, tokenA.address], [dec(20, 18), dec(20, 18)], { from: carol })
                 // expect debt to be VCAmount * (0.015) / 2 + 2000 
                 const carolDebt = await troveManager.getTroveDebt(carol)
                 await th.assertIsApproximatelyEqual(carolDebt, toBN(dec(2060, 18)))
 
-                // Check that sYETI got the correct amount of tokens. + 10 + the normal 0.005 fee.
-                const sYETIBalanceAfter = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
-                await th.assertIsApproximatelyEqual(sYETIBalanceAfter, sYETIBalanceBefore.add(toBN(dec(60, 18))).add(toBN(dec(1800, 18)).sub(YUSDMinAmount)))
+                // Check that sPREON got the correct amount of tokens. + 10 + the normal 0.005 fee.
+                const sPREONBalanceAfter = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
+                await th.assertIsApproximatelyEqual(sPREONBalanceAfter, sPREONBalanceBefore.add(toBN(dec(60, 18))).add(toBN(dec(1800, 18)).sub(PUSDMinAmount)))
             })
 
             it("Basic get fee sloped open trove before and after", async () => {
@@ -929,7 +929,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
                 await th.addMultipleERC20(carol, borrowerOperations.address, [contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: carol })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
@@ -938,12 +938,12 @@ contract('BorrowerOperations', async accounts => {
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
                 // Now wavax is 50% of the collateral of the protocol, so the two fee points should be 0.5% and 1.5%, resulting in 1% fee.
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
                 // expect debt to be VCAmount * (0.005) / 2 + 2000 
                 const bobDebt = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebt, toBN(dec(2030, 18)))
 
-                const sYETIBalanceBefore = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                const sPREONBalanceBefore = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
                 // Add for carol with two tokens that both have flat fees. Make sure that the fee is correct and summed together
                 const newPriceCurve2 = await LinearPriceCurve.new();
@@ -954,14 +954,14 @@ contract('BorrowerOperations', async accounts => {
                 // total collateral in the system is 40 + 120 = 160. 
                 // wavax is 100 / 160 = 62.5% of total. The fee should be (50% + 62.5%) / 2 => (0.01 + 0.01125) / 2 = 0.010625%
                 // tokenA is 40 / 160 = 25% of total. The fee should be (0% + 25%) / 2 => (0.005 + 0.0075) = 0.00625% 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, carol, carol, [contracts.wavax.address, tokenA.address], [dec(80, 18), dec(40, 18)], { from: carol })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, carol, carol, [contracts.wavax.address, tokenA.address], [dec(80, 18), dec(40, 18)], { from: carol })
                 // expect debt to be (80 * 200 * 0.010625 + 40 * 200 * 0.00625) / 2 + 2000 = 2110
                 const carolDebt = await troveManager.getTroveDebt(carol)
                 await th.assertIsApproximatelyEqual(carolDebt, toBN(dec(2220, 18)))
 
-                // Check that sYETI got the correct amount of tokens. + 10 + the normal 0.005 fee.
-                const sYETIBalanceAfter = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
-                await th.assertIsApproximatelyEqual(sYETIBalanceAfter, sYETIBalanceBefore.add(toBN(dec(220, 18))).add(toBN(dec(1800, 18)).sub(YUSDMinAmount)))
+                // Check that sPREON got the correct amount of tokens. + 10 + the normal 0.005 fee.
+                const sPREONBalanceAfter = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
+                await th.assertIsApproximatelyEqual(sPREONBalanceAfter, sPREONBalanceBefore.add(toBN(dec(220, 18))).add(toBN(dec(1800, 18)).sub(PUSDMinAmount)))
             })
 
             it("Basic get fee sloped open and adjust trove before and after", async () => {
@@ -972,7 +972,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
@@ -981,12 +981,12 @@ contract('BorrowerOperations', async accounts => {
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
                 // Now wavax is 50% of the collateral of the protocol, so the two fee points should be 0.5% and 1.5%, resulting in 1% fee.
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
                 // expect debt to be VCAmount * (0.005) / 2 + 2000 
                 const bobDebt = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebt, toBN(dec(2030, 18)))
 
-                const sYETIBalanceBefore = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                const sPREONBalanceBefore = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
                 // Add for carol with two tokens that both have flat fees. Make sure that the fee is correct and summed together
                 const newPriceCurve2 = await LinearPriceCurve.new();
@@ -1002,10 +1002,10 @@ contract('BorrowerOperations', async accounts => {
                 const bobDebtAfter = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebtAfter, toBN(dec(2250, 18)))
 
-                // Check that sYETI got the correct amount of tokens. + 110
-                const sYETIBalanceAfter = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                // Check that sPREON got the correct amount of tokens. + 110
+                const sPREONBalanceAfter = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
-                await th.assertIsApproximatelyEqual(sYETIBalanceAfter, sYETIBalanceBefore.add(toBN(dec(220, 18))))
+                await th.assertIsApproximatelyEqual(sPREONBalanceAfter, sPREONBalanceBefore.add(toBN(dec(220, 18))))
             })
 
             it("Test fee cap passed in to open trove", async() => {
@@ -1016,7 +1016,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
@@ -1024,14 +1024,14 @@ contract('BorrowerOperations', async accounts => {
                 await newPriceCurve.adjustParams("WAVAX Price curve", dec(1, 16), dec(5, 15), "0", dec(2, 18), "0", dec(2, 18), "0");
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
-                const justBelowFeeCap = toBN(dec(30, 18)).add(toBN(dec(1800, 18)).sub(YUSDMinAmount)).mul(toBN(dec(1, 18))).div(toBN(dec(4000, 18))).sub(toBN(dec(1, 1)))
+                const justBelowFeeCap = toBN(dec(30, 18)).add(toBN(dec(1800, 18)).sub(PUSDMinAmount)).mul(toBN(dec(1, 18))).div(toBN(dec(4000, 18))).sub(toBN(dec(1, 1)))
                 // bob does not want to pay more than 0.5% fee on his open trove. Now calculated on collateral amount. 
                 th.assertRevert(
-                    borrowerOperations.openTrove(justBelowFeeCap, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob }),
+                    borrowerOperations.openTrove(justBelowFeeCap, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob }),
                     "This tx should revert because the assessed fee is greater than the cap bob passed in."
                 )
                 // succeeds just below fee cap 
-                await borrowerOperations.openTrove(justBelowFeeCap.add(toBN(dec(1, 1))), YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(justBelowFeeCap.add(toBN(dec(1, 1))), PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
             })
 
             it("Test fee cap passed in to adjustTrove", async() => {
@@ -1042,7 +1042,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
@@ -1051,12 +1051,12 @@ contract('BorrowerOperations', async accounts => {
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
                 // Now wavax is 50% of the collateral of the protocol, so the two fee points should be 0.5% and 1.5%, resulting in 1% fee.
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
                 // expect debt to be VCAmount * (0.005) / 2 + 2000 
                 const bobDebt = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebt, toBN(dec(2030, 18)))
 
-                const sYETIBalanceBefore = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                const sPREONBalanceBefore = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
                 // Add for carol with two tokens that both have flat fees. Make sure that the fee is correct and summed together
                 const newPriceCurve2 = await LinearPriceCurve.new();
@@ -1079,10 +1079,10 @@ contract('BorrowerOperations', async accounts => {
                 const bobDebtAfter = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebtAfter, toBN(dec(2250, 18)))
 
-                // Check that sYETI got the correct amount of tokens. + 110
-                const sYETIBalanceAfter = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                // Check that sPREON got the correct amount of tokens. + 110
+                const sPREONBalanceAfter = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
-                await th.assertIsApproximatelyEqual(sYETIBalanceAfter, sYETIBalanceBefore.add(toBN(dec(220, 18))))
+                await th.assertIsApproximatelyEqual(sPREONBalanceAfter, sPREONBalanceBefore.add(toBN(dec(220, 18))))
             })
 
             it("Test hard cap on collateral. If owner increases cap, tx should go through", async() => {
@@ -1093,7 +1093,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.wavax.address], [dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.wavax.address], [dec(20, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
@@ -1104,12 +1104,12 @@ contract('BorrowerOperations', async accounts => {
 
                 // bob does not want to pay more than 0.5% fee on his open trove. Now calculated on collateral amount. 
                 await th.assertRevert(
-                    borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob }),
+                    borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob }),
                     "No capacity for WAVAX. "
                 )
                 // succeeds after increasing cap. 
                 await newPriceCurve.adjustParams("WAVAX Price curve", dec(1, 16), dec(5, 15), "0", dec(2, 18), "0", dec(2, 18), dec(8001, 18));
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
             })
 
             it("During bootstrapping period, max fee is 1%", async() => {
@@ -1117,7 +1117,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sfure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
@@ -1125,15 +1125,15 @@ contract('BorrowerOperations', async accounts => {
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
                 // bob will pay max fee of 1% here 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: bob })
                 const bobDebt = await troveManager.getTroveDebt(bob)
                 assert.isTrue(bobDebt.sub(toBN(dec(2000, 18))).eq(toBN(dec(40, 18))), "maxFee is 1% ")
 
-                await yusdToken.transfer(bob, dec(1500, 18), { from: alice })
+                await pusdToken.transfer(bob, dec(1500, 18), { from: alice })
                 await borrowerOperations.closeTrove({from: bob})
                 // skip fee bootstrap period. 
                 await th.fastForwardTime((SECONDS_IN_ONE_DAY * 14), web3.currentProvider)
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: bob })
                 const bobDebt2 = await troveManager.getTroveDebt(bob)
                 assert.isTrue(bobDebt2.sub(toBN(dec(2000, 18))).gt(toBN(dec(40, 18))), "maxFee no longer applies at 1% ")
             })
@@ -1154,15 +1154,15 @@ contract('BorrowerOperations', async accounts => {
                 await newPriceCurve.adjustParams("WAVAX Price curve", dec(1, 16), dec(5, 15), "0", dec(2, 18), "0", dec(2, 18), "0");
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: alice })
                 // alice pays fee at 50% of the protocol. Carol potentially should pay less than that but it will charge the original fee. 
                 const aliceDebt = await troveManager.getTroveDebt(alice)
 
                 // Bob should pay slightly more than alice due to how the price curve is set up. Set to be around 0.875%. 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: bob })
 
                 // Carol should pay slightly less than 0.875% fee. 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, carol, carol, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: carol })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, carol, carol, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: carol })
                 const carolDebt = await troveManager.getTroveDebt(carol)
                 assert.isTrue(carolDebt.sub(toBN(dec(2000, 18))).lt(toBN(dec(35, 18))), "slightly decayed")
                 assert.isTrue(carolDebt.sub(toBN(dec(2000, 18))).gt(toBN(dec(349, 17))), "slightly decayed")
@@ -1184,12 +1184,12 @@ contract('BorrowerOperations', async accounts => {
                 await newPriceCurve.adjustParams("WAVAX Price curve", dec(1, 16), dec(5, 15), "0", dec(2, 18), "0", dec(2, 18), "0");
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: alice })
                 // alice pays fee at 50% of the protocol. Carol potentially should pay less than that but it will charge the original fee. 
                 const aliceDebt = await troveManager.getTroveDebt(alice)
 
                 // Bob should pay slightly more than alice due to how the price curve is set up. Set to be around 0.875%. 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: bob })
 
                 // actually the same price curve but it should keep the same params (last buyback time, etc. )
                 const newPriceCurve2 = await LinearPriceCurve.new();
@@ -1199,7 +1199,7 @@ contract('BorrowerOperations', async accounts => {
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve2.address)
 
                 // Carol should pay slightly less than 0.875% fee. 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, carol, carol, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: carol })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, carol, carol, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: carol })
                 const carolDebt = await troveManager.getTroveDebt(carol)
                 assert.isTrue(carolDebt.sub(toBN(dec(2000, 18))).lt(toBN(dec(35, 18))), "slightly decayed")
                 assert.isTrue(carolDebt.sub(toBN(dec(2000, 18))).gt(toBN(dec(349, 17))), "slightly decayed")
@@ -1221,17 +1221,17 @@ contract('BorrowerOperations', async accounts => {
                 await newPriceCurve.adjustParams("WAVAX Price curve", dec(1, 16), dec(5, 15), "0", dec(2, 18), "0", dec(2, 18), "0");
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], { from: alice })
                 // alice pays fee at 50% of the protocol. Carol potentially should pay less than that but it will charge the original fee. 
                 const aliceDebt = await troveManager.getTroveDebt(alice)
 
                 // Bob should pay slightly more than alice due to how the price curve is set up. Set to be around 0.875%. 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: bob })
 
                 await th.fastForwardTime((SECONDS_IN_ONE_DAY * 0.5), web3.currentProvider)
 
                 // Carol should pay slightly less than 0.875% fee if not decayed, but will pay her actual fee since the time has passed. 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, carol, carol, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: carol })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, carol, carol, [contracts.weth.address, contracts.wavax.address], [dec(100, 18), dec(20, 18)], { from: carol })
                 const carolDebt = await troveManager.getTroveDebt(carol)
                 assert.isTrue(carolDebt.sub(toBN(dec(2000, 18))).lt(toBN(dec(35, 18))), "under decay")
                 assert.isTrue(carolDebt.sub(toBN(dec(2000, 18))).gt(toBN(dec(30, 18))), "but still not full fee (> 29.28")
@@ -1245,7 +1245,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
@@ -1254,12 +1254,12 @@ contract('BorrowerOperations', async accounts => {
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
                 // Now wavax is 50% of the collateral of the protocol, so the two fee points should be 0.5% and 1.5%, resulting in 1% fee.
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
                 // expect debt to be VCAmount * (0.005) / 2 + 2000 
                 const bobDebt = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebt, toBN(dec(2030, 18)))
 
-                const sYETIBalanceBefore = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                const sPREONBalanceBefore = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
                 // Add for carol with two tokens that both have flat fees. Make sure that the fee is correct and summed together
                 const newPriceCurve2 = await LinearPriceCurve.new();
@@ -1276,10 +1276,10 @@ contract('BorrowerOperations', async accounts => {
                 const bobDebtAfter = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebtAfter, toBN(dec(2080, 18)))
 
-                // Check that sYETI got the correct amount of tokens. + 50
-                const sYETIBalanceAfter = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                // Check that sPREON got the correct amount of tokens. + 50
+                const sPREONBalanceAfter = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
-                await th.assertIsApproximatelyEqual(sYETIBalanceAfter, sYETIBalanceBefore.add(toBN(dec(50, 18))))
+                await th.assertIsApproximatelyEqual(sPREONBalanceAfter, sPREONBalanceBefore.add(toBN(dec(50, 18))))
             })
 
             it("Variable fee adjust trove, with collateral out > collateral in", async() => {
@@ -1290,7 +1290,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address], [dec(100, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address], [dec(100, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
@@ -1298,12 +1298,12 @@ contract('BorrowerOperations', async accounts => {
                 await newPriceCurve.adjustParams("WAVAX Price curve", dec(1, 16), dec(5, 15), "0", dec(2, 18), "0", dec(2, 18), "0");
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(100, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(100, 18)], { from: bob })
                 const bobDebt = await troveManager.getTroveDebt(bob)
 
                 await th.assertIsApproximatelyEqual(bobDebt, toBN(dec(2150, 18)))
 
-                const sYETIBalanceBefore = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                const sPREONBalanceBefore = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
                 // Add for carol with two tokens that both have flat fees. Make sure that the fee is correct and summed together
                 const newPriceCurve2 = await LinearPriceCurve.new();
@@ -1318,10 +1318,10 @@ contract('BorrowerOperations', async accounts => {
                 const bobDebtAfter = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebtAfter, toBN(dec(2200, 18)))
 
-                // Check that sYETI got the correct amount of tokens. + 50
-                const sYETIBalanceAfter = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                // Check that sPREON got the correct amount of tokens. + 50
+                const sPREONBalanceAfter = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
-                await th.assertIsApproximatelyEqual(sYETIBalanceAfter, sYETIBalanceBefore.add(toBN(dec(50, 18))))
+                await th.assertIsApproximatelyEqual(sPREONBalanceAfter, sPREONBalanceBefore.add(toBN(dec(50, 18))))
             })
 
             it("Variable fee adjust trove, with paid back debt and collateral in. ", async() => {
@@ -1332,7 +1332,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address], [dec(100, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address], [dec(100, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
@@ -1340,12 +1340,12 @@ contract('BorrowerOperations', async accounts => {
                 await newPriceCurve.adjustParams("WAVAX Price curve", dec(1, 16), dec(5, 15), "0", dec(2, 18), "0", dec(2, 18), "0");
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(100, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(100, 18)], { from: bob })
                 const bobDebt = await troveManager.getTroveDebt(bob)
 
                 await th.assertIsApproximatelyEqual(bobDebt, toBN(dec(2150, 18)))
 
-                const sYETIBalanceBefore = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                const sPREONBalanceBefore = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
                 // Add for carol with two tokens that both have flat fees. Make sure that the fee is correct and summed together
                 const newPriceCurve2 = await LinearPriceCurve.new();
@@ -1360,10 +1360,10 @@ contract('BorrowerOperations', async accounts => {
                 const bobDebtAfter = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebtAfter, toBN(dec(2100, 18)))
 
-                // Check that sYETI got the correct amount of tokens. + 50
-                const sYETIBalanceAfter = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                // Check that sPREON got the correct amount of tokens. + 50
+                const sPREONBalanceAfter = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
-                await th.assertIsApproximatelyEqual(sYETIBalanceAfter, sYETIBalanceBefore.add(toBN(dec(50, 18))))
+                await th.assertIsApproximatelyEqual(sPREONBalanceAfter, sPREONBalanceBefore.add(toBN(dec(50, 18))))
             })
 
             it("Variable fee adjust trove, with extra debt and collateral in. Applies stacking fee correctly", async() => {
@@ -1374,7 +1374,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address], [dec(100, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address], [dec(100, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
@@ -1382,12 +1382,12 @@ contract('BorrowerOperations', async accounts => {
                 await newPriceCurve.adjustParams("WAVAX Price curve", dec(1, 16), dec(5, 15), "0", dec(2, 18), "0", dec(2, 18), "0");
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(100, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(100, 18)], { from: bob })
                 const bobDebt = await troveManager.getTroveDebt(bob)
 
                 await th.assertIsApproximatelyEqual(bobDebt, toBN(dec(2150, 18)))
 
-                const sYETIBalanceBefore = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                const sPREONBalanceBefore = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
                 // Add for carol with two tokens that both have flat fees. Make sure that the fee is correct and summed together
                 const newPriceCurve2 = await LinearPriceCurve.new();
@@ -1402,10 +1402,10 @@ contract('BorrowerOperations', async accounts => {
                 const bobDebtAfter = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebtAfter, toBN(dec(23005, 17)))
 
-                // Check that sYETI got the correct amount of tokens. + 50 + .5 from flat fee. 
-                const sYETIBalanceAfter = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                // Check that sPREON got the correct amount of tokens. + 50 + .5 from flat fee. 
+                const sPREONBalanceAfter = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
-                await th.assertIsApproximatelyEqual(sYETIBalanceAfter, sYETIBalanceBefore.add(toBN(dec(505, 17))))
+                await th.assertIsApproximatelyEqual(sPREONBalanceAfter, sPREONBalanceBefore.add(toBN(dec(505, 17))))
             })
 
             it("Add coll applies correct fee", async() => {
@@ -1416,7 +1416,7 @@ contract('BorrowerOperations', async accounts => {
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax, tokenA], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
 
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, alice, alice, [contracts.weth.address], [dec(20, 18)], { from: alice })
                 // Entire system is collateralized by weth. Bob adds some wavax, which has an updated price curve with flat fee of 0.5%. Make sure that the new debt is correct. 
                 const newPriceCurve = await LinearPriceCurve.new();
                 await newPriceCurve.setAddresses(contracts.whitelist.address)
@@ -1425,12 +1425,12 @@ contract('BorrowerOperations', async accounts => {
                 await contracts.whitelist.changePriceCurve(contracts.wavax.address, newPriceCurve.address)
 
                 // Now wavax is 50% of the collateral of the protocol, so the two fee points should be 0.5% and 1.5%, resulting in 1% fee.
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(20, 18)], { from: bob })
                 // expect debt to be VCAmount * (0.005) / 2 + 2000 
                 const bobDebt = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebt, toBN(dec(2030, 18)))
 
-                const sYETIBalanceBefore = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                const sPREONBalanceBefore = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
                 // Add for carol with two tokens that both have flat fees. Make sure that the fee is correct and summed together
                 const newPriceCurve2 = await LinearPriceCurve.new();
@@ -1447,10 +1447,10 @@ contract('BorrowerOperations', async accounts => {
                 const bobDebtAfter = await troveManager.getTroveDebt(bob)
                 await th.assertIsApproximatelyEqual(bobDebtAfter, toBN(dec(2250, 18)))
 
-                // Check that sYETI got the correct amount of tokens. + 110
-                const sYETIBalanceAfter = await contracts.yusdToken.balanceOf(YETIContracts.sYETI.address)
+                // Check that sPREON got the correct amount of tokens. + 110
+                const sPREONBalanceAfter = await contracts.pusdToken.balanceOf(PREONContracts.sPREON.address)
 
-                await th.assertIsApproximatelyEqual(sYETIBalanceAfter, sYETIBalanceBefore.add(toBN(dec(220, 18))))
+                await th.assertIsApproximatelyEqual(sPREONBalanceAfter, sPREONBalanceBefore.add(toBN(dec(220, 18))))
 
             })
             // it("") test max fee max(new debt in, collateral in)
@@ -1459,24 +1459,24 @@ contract('BorrowerOperations', async accounts => {
         describe.only('Lever up', async () => {
             beforeEach(async () => {
                 joeRouter = new ethers.Contract("0x60aE616a2155Ee3d9A68541Ba4544862310933d4", abi = routerABI, signer = await hre.ethers.getSigner(H));
-                await yusdToken.unprotectedMint(H, dec(100000000, 18));
+                await pusdToken.unprotectedMint(H, dec(100000000, 18));
                 await contracts.weth.mint(H, dec(100000000, 18));
-                await yusdToken.approve(joeRouter.address, dec(100000000, 18), { from: H })
+                await pusdToken.approve(joeRouter.address, dec(100000000, 18), { from: H })
                 await contracts.weth.approve(joeRouter.address, dec(100000000, 18), { from: H })
-                await joeRouter.addLiquidity(yusdToken.address, contracts.weth.address, dec(2000000, 18), dec(10000, 18), 0, 0, H, 1737113033, { from: H })
+                await joeRouter.addLiquidity(pusdToken.address, contracts.weth.address, dec(2000000, 18), dec(10000, 18), 0, 0, H, 1737113033, { from: H })
 
-                await yusdToken.unprotectedMint(H, dec(100000000, 18));
+                await pusdToken.unprotectedMint(H, dec(100000000, 18));
                 await contracts.wavax.mint(H, dec(100000000, 18));
-                await yusdToken.approve(joeRouter.address, dec(100000000, 18), { from: H })
+                await pusdToken.approve(joeRouter.address, dec(100000000, 18), { from: H })
                 await contracts.wavax.approve(joeRouter.address, dec(100000000, 18), { from: H })
-                await joeRouter.addLiquidity(yusdToken.address, contracts.wavax.address, dec(2000000, 18), dec(10000, 18), 0, 0, H, 1737113033, { from: H })
+                await joeRouter.addLiquidity(pusdToken.address, contracts.wavax.address, dec(2000000, 18), dec(10000, 18), 0, 0, H, 1737113033, { from: H })
                 await deploymentHelper.deployNewRouter(contracts, {name: "Joe router weth", joeRouter: joeRouter, whitelistCollateral: contracts.weth})
                 await deploymentHelper.deployNewRouter(contracts, {name: "Joe router wavax", joeRouter: joeRouter, whitelistCollateral: contracts.wavax})
             })
 
             it("Basic open trove lever up with one collateral type", async() => {
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(500, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(500, 18)], { from: bob })
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await borrowerOperations.openTroveLeverUp(th._100pct, 0, alice, alice, [contracts.weth.address], [dec(20, 18)], [dec(3, 18)], [dec(1, 17)], { from: alice })
                 const aliceDebt = await troveManager.getTroveDebt(alice)
@@ -1492,7 +1492,7 @@ contract('BorrowerOperations', async accounts => {
 
             it("Open trove lever up with multiple collateral types, one lever", async() => {
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(500, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(500, 18)], { from: bob })
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await borrowerOperations.openTroveLeverUp(th._100pct, dec(2000, 18), alice, alice, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], [dec(3, 18), "0"], [dec(1, 17), "0"], { from: alice })
                 const aliceDebt = await troveManager.getTroveDebt(alice)
@@ -1509,7 +1509,7 @@ contract('BorrowerOperations', async accounts => {
 
             it("Open trove lever up with multiple collateral types, multiple lever at once", async() => {
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(500, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(500, 18)], { from: bob })
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 await borrowerOperations.openTroveLeverUp(th._100pct, dec(2000, 18), alice, alice, [contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(20, 18)], [dec(3, 18), dec(3, 18)], [dec(1, 17), dec(1, 17)], { from: alice })
                 const aliceDebt = await troveManager.getTroveDebt(alice)
@@ -1530,7 +1530,7 @@ contract('BorrowerOperations', async accounts => {
 
             it("Adjust trove lever up on same collateral", async() => {
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: bob })
-                await borrowerOperations.openTrove(th._100pct, YUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(500, 18)], { from: bob })
+                await borrowerOperations.openTrove(th._100pct, PUSDMinAmount, bob, bob, [contracts.wavax.address], [dec(500, 18)], { from: bob })
                 await th.addMultipleERC20(alice, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 18), dec(500, 18), dec(500, 18)], { from: alice })
                 // open normally with weth as collateral and 2k debt 
                 await borrowerOperations.openTroveLeverUp(th._100pct, dec(2000, 18), alice, alice, [contracts.weth.address], [dec(40, 18)], ["0"], ["0"], { from: alice })
@@ -1559,14 +1559,14 @@ contract('BorrowerOperations', async accounts => {
                 const aliceDebt = await troveManager.getTroveDebt(alice)
                 const aliceWeth = (await troveManager.getTroveColls(alice))[1][0]
                 const aliceWavax = (await troveManager.getTroveColls(alice))[1][1]
-                const aliceRawBalance = (await yusdToken.balanceOf(alice))
+                const aliceRawBalance = (await pusdToken.balanceOf(alice))
                 assert.isTrue(aliceDebt.eq(toBN(dec(8240, 18))))
                 contracts.weth.approve((await contracts.whitelist.getDefaultRouterAddress(contracts.weth.address)), dec(20, 18), {from: alice})
                 await borrowerOperations.withdrawCollUnleverUp([contracts.weth.address], [dec(20, 18)], [dec(1, 17)], dec(3000, 18), alice, alice, {from: alice})
                 const aliceDebtAfter = await troveManager.getTroveDebt(alice)
                 const aliceWethAfter = (await troveManager.getTroveColls(alice))[1][0]
                 const aliceWavaxAfter = (await troveManager.getTroveColls(alice))[1][1]
-                const aliceRawBalanceAfter = (await yusdToken.balanceOf(alice))
+                const aliceRawBalanceAfter = (await pusdToken.balanceOf(alice))
                 // alice should have 3000 less debt after since she paid it back from unlevering up
                 assert.isTrue(aliceDebtAfter.eq(toBN(dec(5240, 18))))
                 // and have sold 20 weth.
@@ -1584,14 +1584,14 @@ contract('BorrowerOperations', async accounts => {
                 const aliceDebt = await troveManager.getTroveDebt(alice)
                 const aliceWeth = (await troveManager.getTroveColls(alice))[1][0]
                 const aliceWavax = (await troveManager.getTroveColls(alice))[1][1]
-                const aliceRawBalance = (await yusdToken.balanceOf(alice))
+                const aliceRawBalance = (await pusdToken.balanceOf(alice))
                 assert.isTrue(aliceDebt.eq(toBN(dec(8240, 18))))
                 contracts.weth.approve((await contracts.whitelist.getDefaultRouterAddress(contracts.weth.address)), dec(20, 18), {from: alice})
                 await borrowerOperations.withdrawCollUnleverUp([contracts.weth.address, contracts.wavax.address], [dec(20, 18), dec(1, 18)], [dec(1, 17), dec(0, 1)], dec(3000, 18), alice, alice, {from: alice})
                 const aliceDebtAfter = await troveManager.getTroveDebt(alice)
                 const aliceWethAfter = (await troveManager.getTroveColls(alice))[1][0]
                 const aliceWavaxAfter = (await troveManager.getTroveColls(alice))[1][1]
-                const aliceRawBalanceAfter = (await yusdToken.balanceOf(alice))
+                const aliceRawBalanceAfter = (await pusdToken.balanceOf(alice))
                 // alice should have 3000 less debt after since she paid it back from unlevering up
                 assert.isTrue(aliceDebtAfter.eq(toBN(dec(5240, 18))))
                 // and have sold 20 weth.
@@ -1612,33 +1612,33 @@ contract('BorrowerOperations', async accounts => {
                 const aliceWavax = (await troveManager.getTroveColls(alice))[1][1]
                 assert.isTrue(aliceDebt.eq(toBN(dec(8240, 18))))
                 contracts.weth.approve((await contracts.whitelist.getDefaultRouterAddress(contracts.weth.address)), dec(20, 18), {from: alice})
-                // should revert if she does not have enough YUSD
+                // should revert if she does not have enough PUSD
                 await th.assertRevert( borrowerOperations.withdrawCollUnleverUp([contracts.weth.address], [dec(5, 18)], [dec(1, 17)], dec(3000, 18), alice, alice, {from: alice}), 
                     "Not enough balance to cover extra not sold from unlever")
 
-                // give alice some YUSD first from bob
+                // give alice some PUSD first from bob
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 25), dec(500, 25), dec(500, 25)], { from: bob })
                 await borrowerOperations.openTrove(th._100pct, dec(20000, 18), bob, bob, [contracts.wavax.address], [dec(500, 25)], { from: bob })
-                await contracts.yusdToken.transfer(alice, dec(10000, 18), {from: bob})
-                const aliceRawBalance = (await yusdToken.balanceOf(alice))
+                await contracts.pusdToken.transfer(alice, dec(10000, 18), {from: bob})
+                const aliceRawBalance = (await pusdToken.balanceOf(alice))
                 const bobDebt = await troveManager.getTroveDebt(bob)
 
                 // check active pool raw balances. 
                 var activePoolRawWethBalance = (await contracts.weth.balanceOf(contracts.activePool.address))
                 var activePoolRawWavaxBalance = (await contracts.wavax.balanceOf(contracts.activePool.address))
                 var activePoolVirtualWethBalance = (await contracts.activePool.getCollateralVC(contracts.weth.address)).div(toBN(200))
-                var activePoolVirtualYUSDDebt = await contracts.activePool.getYUSDDebt()
+                var activePoolVirtualPUSDDebt = await contracts.activePool.getPUSDDebt()
                 var activePoolVirtualWavaxBalance = (await contracts.activePool.getCollateralVC(contracts.wavax.address)).div(toBN(200))
                 assert.isTrue(activePoolRawWethBalance.eq(activePoolVirtualWethBalance))
                 assert.isTrue(activePoolRawWavaxBalance.eq(activePoolVirtualWavaxBalance))
-                assert.isTrue(activePoolVirtualYUSDDebt.eq(bobDebt.add(aliceDebt)))
+                assert.isTrue(activePoolVirtualPUSDDebt.eq(bobDebt.add(aliceDebt)))
 
                 await contracts.weth.approve((await contracts.whitelist.getDefaultRouterAddress(contracts.weth.address)), dec(20, 18), {from: alice})
                 await borrowerOperations.withdrawCollUnleverUp([contracts.weth.address], [dec(5, 18)], [dec(1, 17)], dec(3000, 18), alice, alice, {from: alice})
                 const aliceDebtAfter = await troveManager.getTroveDebt(alice)
                 const aliceWethAfter = (await troveManager.getTroveColls(alice))[1][0]
                 const aliceWavaxAfter = (await troveManager.getTroveColls(alice))[1][1]
-                const aliceRawBalanceAfter = (await yusdToken.balanceOf(alice))
+                const aliceRawBalanceAfter = (await pusdToken.balanceOf(alice))
                 // alice should have 3000 less debt after since she paid it back from unlevering up
                 assert.isTrue(aliceDebtAfter.eq(toBN(dec(5240, 18))))
                 // and have sold 20 weth.
@@ -1652,11 +1652,11 @@ contract('BorrowerOperations', async accounts => {
                 activePoolRawWethBalance = (await contracts.weth.balanceOf(contracts.activePool.address))
                 activePoolRawWavaxBalance = (await contracts.wavax.balanceOf(contracts.activePool.address))
                 activePoolVirtualWethBalance = (await contracts.activePool.getCollateralVC(contracts.weth.address)).div(toBN(200))
-                activePoolVirtualYUSDDebt = await contracts.activePool.getYUSDDebt()
+                activePoolVirtualPUSDDebt = await contracts.activePool.getPUSDDebt()
                 activePoolVirtualWavaxBalance = (await contracts.activePool.getCollateralVC(contracts.wavax.address)).div(toBN(200))
                 assert.isTrue(activePoolRawWethBalance.eq(activePoolVirtualWethBalance))
                 assert.isTrue(activePoolRawWavaxBalance.eq(activePoolVirtualWavaxBalance))
-                assert.isTrue(activePoolVirtualYUSDDebt.eq(bobDebt.add(aliceDebtAfter)))
+                assert.isTrue(activePoolVirtualPUSDDebt.eq(bobDebt.add(aliceDebtAfter)))
             })
 
             it("Withdraw coll unlever up, extra checks", async() => {
@@ -1669,33 +1669,33 @@ contract('BorrowerOperations', async accounts => {
                 const aliceWavax = (await troveManager.getTroveColls(alice))[1][1]
                 assert.isTrue(aliceDebt.eq(toBN(dec(8240, 18))))
                 contracts.weth.approve((await contracts.whitelist.getDefaultRouterAddress(contracts.weth.address)), dec(20, 18), {from: alice})
-                // should revert if she does not have enough YUSD
+                // should revert if she does not have enough PUSD
                 await th.assertRevert( borrowerOperations.withdrawCollUnleverUp([contracts.weth.address], [dec(5, 18)], [dec(1, 17)], dec(3000, 18), alice, alice, {from: alice}), 
                     "Not enough balance to cover extra not sold from unlever")
 
-                // give alice some YUSD first from bob
+                // give alice some PUSD first from bob
                 await th.addMultipleERC20(bob, borrowerOperations.address, [contracts.weth, contracts.wavax], [dec(500, 25), dec(500, 25), dec(500, 25)], { from: bob })
                 await borrowerOperations.openTrove(th._100pct, dec(20000, 18), bob, bob, [contracts.wavax.address], [dec(500, 25)], { from: bob })
-                await contracts.yusdToken.transfer(alice, dec(10000, 18), {from: bob})
-                const aliceRawBalance = (await yusdToken.balanceOf(alice))
+                await contracts.pusdToken.transfer(alice, dec(10000, 18), {from: bob})
+                const aliceRawBalance = (await pusdToken.balanceOf(alice))
                 const bobDebt = await troveManager.getTroveDebt(bob)
 
                 // check active pool raw balances. 
                 var activePoolRawWethBalance = (await contracts.weth.balanceOf(contracts.activePool.address))
                 var activePoolRawWavaxBalance = (await contracts.wavax.balanceOf(contracts.activePool.address))
                 var activePoolVirtualWethBalance = (await contracts.activePool.getCollateralVC(contracts.weth.address)).div(toBN(200))
-                var activePoolVirtualYUSDDebt = await contracts.activePool.getYUSDDebt()
+                var activePoolVirtualPUSDDebt = await contracts.activePool.getPUSDDebt()
                 var activePoolVirtualWavaxBalance = (await contracts.activePool.getCollateralVC(contracts.wavax.address)).div(toBN(200))
                 assert.isTrue(activePoolRawWethBalance.eq(activePoolVirtualWethBalance))
                 assert.isTrue(activePoolRawWavaxBalance.eq(activePoolVirtualWavaxBalance))
-                assert.isTrue(activePoolVirtualYUSDDebt.eq(bobDebt.add(aliceDebt)))
+                assert.isTrue(activePoolVirtualPUSDDebt.eq(bobDebt.add(aliceDebt)))
 
                 await contracts.weth.approve((await contracts.whitelist.getDefaultRouterAddress(contracts.weth.address)), dec(20, 18), {from: alice})
                 await borrowerOperations.withdrawCollUnleverUp([contracts.weth.address], [dec(5, 18)], [dec(1, 17)], dec(3000, 18), alice, alice, {from: alice})
                 const aliceDebtAfter = await troveManager.getTroveDebt(alice)
                 const aliceWethAfter = (await troveManager.getTroveColls(alice))[1][0]
                 const aliceWavaxAfter = (await troveManager.getTroveColls(alice))[1][1]
-                const aliceRawBalanceAfter = (await yusdToken.balanceOf(alice))
+                const aliceRawBalanceAfter = (await pusdToken.balanceOf(alice))
                 // alice should have 3000 less debt after since she paid it back from unlevering up
                 assert.isTrue(aliceDebtAfter.eq(toBN(dec(5240, 18))))
                 // and have sold 20 weth.
@@ -1709,11 +1709,11 @@ contract('BorrowerOperations', async accounts => {
                 activePoolRawWethBalance = (await contracts.weth.balanceOf(contracts.activePool.address))
                 activePoolRawWavaxBalance = (await contracts.wavax.balanceOf(contracts.activePool.address))
                 activePoolVirtualWethBalance = (await contracts.activePool.getCollateralVC(contracts.weth.address)).div(toBN(200))
-                activePoolVirtualYUSDDebt = await contracts.activePool.getYUSDDebt()
+                activePoolVirtualPUSDDebt = await contracts.activePool.getPUSDDebt()
                 activePoolVirtualWavaxBalance = (await contracts.activePool.getCollateralVC(contracts.wavax.address)).div(toBN(200))
                 assert.isTrue(activePoolRawWethBalance.eq(activePoolVirtualWethBalance))
                 assert.isTrue(activePoolRawWavaxBalance.eq(activePoolVirtualWavaxBalance))
-                assert.isTrue(activePoolVirtualYUSDDebt.eq(bobDebt.add(aliceDebtAfter)))
+                assert.isTrue(activePoolVirtualPUSDDebt.eq(bobDebt.add(aliceDebtAfter)))
             })
 
             it("Full close trove unlever up one asset", async() => {
@@ -1734,10 +1734,10 @@ contract('BorrowerOperations', async accounts => {
 
                 await contracts.weth.approve((await contracts.whitelist.getDefaultRouterAddress(contracts.weth.address)), dec(20, 18), {from: alice})
                 await th.assertRevert(borrowerOperations.closeTroveUnlever([contracts.weth.address], [dec(20, 18)], [dec(1, 17)], {from: alice}), 
-                    "should revert if not enough YUSD to cover remaining balance. ")
+                    "should revert if not enough PUSD to cover remaining balance. ")
 
-                await contracts.yusdToken.transfer(alice, dec(10000, 18), {from: bob})
-                const aliceYUSDBalanceBefore = (await yusdToken.balanceOf(alice))
+                await contracts.pusdToken.transfer(alice, dec(10000, 18), {from: bob})
+                const alicePUSDBalanceBefore = (await pusdToken.balanceOf(alice))
                 
                 await borrowerOperations.closeTroveUnlever([contracts.weth.address], [dec(20, 18)], [dec(1, 17)], {from: alice})
 
@@ -1752,24 +1752,24 @@ contract('BorrowerOperations', async accounts => {
                 const activePoolRawWavaxBalanceAfter = await contracts.wavax.balanceOf(activePool.address)
                 const activePoolVirtualWethBalance = (await contracts.activePool.getCollateralVC(contracts.weth.address)).div(toBN(200))
                 const activePoolVirtualWavaxBalance = (await contracts.activePool.getCollateralVC(contracts.wavax.address)).div(toBN(200))
-                const activePoolVirtualYUSDDebt = await contracts.activePool.getYUSDDebt()
+                const activePoolVirtualPUSDDebt = await contracts.activePool.getPUSDDebt()
                 assert.isTrue(activePoolRawWethBalanceAfter.eq(activePoolVirtualWethBalance))
                 assert.isTrue(activePoolRawWavaxBalanceAfter.eq(activePoolVirtualWavaxBalance))
-                assert.isTrue(activePoolVirtualYUSDDebt.eq(bobDebt))
+                assert.isTrue(activePoolVirtualPUSDDebt.eq(bobDebt))
 
                 // assert alice's balances are correct
                 // alice should have received all of her coll back. So the amount that was levered up, minus 20 weth. 
-                // Her YUSD balance should have decreased by the corresponding amount as well. 
+                // Her PUSD balance should have decreased by the corresponding amount as well. 
                 const aliceRawWethAfter = await contracts.weth.balanceOf(alice)
                 const aliceRawWavax = await contracts.wavax.balanceOf(alice)
-                const aliceYUSDAfter = await contracts.yusdToken.balanceOf(alice)
+                const alicePUSDAfter = await contracts.pusdToken.balanceOf(alice)
 
                 assert.isTrue(aliceRawWethAfter.sub(aliceRawWethBefore).eq(aliceWeth.sub(toBN(dec(20, 18)))))
                 assert.isTrue(aliceRawWavax.eq(toBN(dec(500, 18))))
 
-                // yusd balance should be less than before. debt = toBN(dec(10250, 18))
-                // by selling 20 weth = 20 * ~200 = 4000, she should have paid back about 6000 YUSD from her own balance
-                await th.assertIsApproximatelyEqual(((aliceYUSDBalanceBefore.sub(aliceYUSDAfter)).div(toBN(dec(1, 18)))), toBN(dec(6000, 0)), 50)
+                // pusd balance should be less than before. debt = toBN(dec(10250, 18))
+                // by selling 20 weth = 20 * ~200 = 4000, she should have paid back about 6000 PUSD from her own balance
+                await th.assertIsApproximatelyEqual(((alicePUSDBalanceBefore.sub(alicePUSDAfter)).div(toBN(dec(1, 18)))), toBN(dec(6000, 0)), 50)
             })
 
             it("open trove reverts when max slippage is overtaken", async() => {
@@ -1790,11 +1790,11 @@ contract('BorrowerOperations', async accounts => {
 
                 // make the price ~200 again
                 joeRouter = new ethers.Contract("0x60aE616a2155Ee3d9A68541Ba4544862310933d4", abi = routerABI, signer = await hre.ethers.getSigner(H));
-                await joeRouter.swapExactTokensForTokens(dec(40, 18), 1, [contracts.weth.address, contracts.yusdToken.address], H, dec(1, 50), {from: H})
+                await joeRouter.swapExactTokensForTokens(dec(40, 18), 1, [contracts.weth.address, contracts.pusdToken.address], H, dec(1, 50), {from: H})
 
                 await contracts.weth.approve((await contracts.whitelist.getDefaultRouterAddress(contracts.weth.address)), dec(20, 18), {from: alice})
                 await th.assertRevert(borrowerOperations.addCollLeverUp([contracts.weth.address], [dec(20, 18)], [dec(3, 18)], [dec(1, 1)], "0", alice, alice, th._100pct, { from: alice }), 
-                    "should revert if not enough YUSD to cover remaining balance. ")
+                    "should revert if not enough PUSD to cover remaining balance. ")
             })
 
             it("withdraw coll reverts when max slippage is overtaken", async() => {
@@ -1806,11 +1806,11 @@ contract('BorrowerOperations', async accounts => {
 
                 // make the price ~200 again
                 joeRouter = new ethers.Contract("0x60aE616a2155Ee3d9A68541Ba4544862310933d4", abi = routerABI, signer = await hre.ethers.getSigner(H));
-                await joeRouter.swapExactTokensForTokens(dec(40, 18), 1, [contracts.weth.address, contracts.yusdToken.address], H, dec(1, 50), {from: H})
+                await joeRouter.swapExactTokensForTokens(dec(40, 18), 1, [contracts.weth.address, contracts.pusdToken.address], H, dec(1, 50), {from: H})
 
                 await contracts.weth.approve((await contracts.whitelist.getDefaultRouterAddress(contracts.weth.address)), dec(20, 18), {from: alice})
                 await th.assertRevert(borrowerOperations.withdrawCollUnleverUp([contracts.weth.address], [dec(20, 18)], [dec(1, 1)], dec(3000, 18), alice, alice, {from: alice}),
-                    "should revert if not enough YUSD to cover remaining balance. ")
+                    "should revert if not enough PUSD to cover remaining balance. ")
             })
 
             it("close trove reverts when max slippage is overtaken", async() => {
@@ -1822,11 +1822,11 @@ contract('BorrowerOperations', async accounts => {
 
                 // make the price ~200 again
                 joeRouter = new ethers.Contract("0x60aE616a2155Ee3d9A68541Ba4544862310933d4", abi = routerABI, signer = await hre.ethers.getSigner(H));
-                await joeRouter.swapExactTokensForTokens(dec(40, 18), 1, [contracts.weth.address, contracts.yusdToken.address], H, dec(1, 50), {from: H})
+                await joeRouter.swapExactTokensForTokens(dec(40, 18), 1, [contracts.weth.address, contracts.pusdToken.address], H, dec(1, 50), {from: H})
 
                 await contracts.weth.approve((await contracts.whitelist.getDefaultRouterAddress(contracts.weth.address)), dec(20, 18), {from: alice})
                 await th.assertRevert(borrowerOperations.closeTroveUnlever([contracts.weth.address], [dec(20, 18)], [dec(1, 17)], {from: alice}), 
-                    "should revert if not enough YUSD to cover remaining balance. ")
+                    "should revert if not enough PUSD to cover remaining balance. ")
             })
 
             it("reverts when resulting value would be < 110%", async() => {

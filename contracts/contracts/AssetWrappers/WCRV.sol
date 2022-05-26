@@ -47,7 +47,7 @@ contract WCRV is IWAsset, ERC20_8 {
   address public TMR;
   address public defaultPool;
   address public stabilityPool;
-  address public YetiFinanceTreasury;
+  address public PreonFinanceTreasury;
   uint256 public SHAREOFFSET = 1e12;
   uint256 public numberOfCoinsInCurvePool;
   bool addressesSet;
@@ -137,7 +137,7 @@ contract WCRV is IWAsset, ERC20_8 {
     address _TMR,
     address _defaultPool,
     address _stabilityPool,
-    address _YetiFinanceTreasury
+    address _PreonFinanceTreasury
   ) external {
     require(!addressesSet);
     activePool = _activePool;
@@ -145,7 +145,7 @@ contract WCRV is IWAsset, ERC20_8 {
     TMR = _TMR;
     defaultPool = _defaultPool;
     stabilityPool = _stabilityPool;
-    YetiFinanceTreasury = _YetiFinanceTreasury;
+    PreonFinanceTreasury = _PreonFinanceTreasury;
     addressesSet = true;
   }
 
@@ -182,8 +182,8 @@ contract WCRV is IWAsset, ERC20_8 {
     uint256 _minAmt
   ) public {
     require(
-      msg.sender == YetiFinanceTreasury,
-      "Only YetiFinanceTreasury can update reward tokens"
+      msg.sender == PreonFinanceTreasury,
+      "Only PreonFinanceTreasury can update reward tokens"
     );
     _setRewardToken(index, _token, _path, _minAmt);
   }
@@ -308,9 +308,9 @@ contract WCRV is IWAsset, ERC20_8 {
   }
 
   // When funds are transferred into the stabilityPool on liquidation,
-  // the rewards these funds are earning are allocated Yeti Finance Treasury.
+  // the rewards these funds are earning are allocated Preon Finance Treasury.
   // But when an stabilityPool depositor wants to withdraw their collateral,
-  // the wAsset is unwrapped and the rewards are no longer accruing to the Yeti Finance Treasury
+  // the wAsset is unwrapped and the rewards are no longer accruing to the Preon Finance Treasury
   function endTreasuryReward(address _to, uint256 _amount) external override {
     _requireCallerIsSP();
   }
@@ -358,7 +358,7 @@ contract WCRV is IWAsset, ERC20_8 {
   }
 
   function claimRewardTreasury() external {
-    require(msg.sender == YetiFinanceTreasury);
+    require(msg.sender == PreonFinanceTreasury);
   }
 
   // Claims msg.sender's pending rewards and sends to _to address

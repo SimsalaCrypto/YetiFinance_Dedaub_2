@@ -47,56 +47,56 @@ async function mainnetDeploy(configParams) {
 
 
 
-  // Check Uniswap Pair YUSD-ETH pair before pair creation
-  let YUSDWETHPairAddr = await uniswapV2Factory.getPair(liquityCore.yusdToken.address, configParams.externalAddrs.WETH_ERC20)
-  let WETHYUSDPairAddr = await uniswapV2Factory.getPair(configParams.externalAddrs.WETH_ERC20, liquityCore.yusdToken.address)
-  assert.equal(YUSDWETHPairAddr, WETHYUSDPairAddr)
+  // Check Uniswap Pair PUSD-ETH pair before pair creation
+  let PUSDWETHPairAddr = await uniswapV2Factory.getPair(liquityCore.pusdToken.address, configParams.externalAddrs.WETH_ERC20)
+  let WETHPUSDPairAddr = await uniswapV2Factory.getPair(configParams.externalAddrs.WETH_ERC20, liquityCore.pusdToken.address)
+  assert.equal(PUSDWETHPairAddr, WETHPUSDPairAddr)
 
-  if (YUSDWETHPairAddr == th.ZERO_ADDRESS) {
-    // Deploy Unipool for YUSD-WETH
+  if (PUSDWETHPairAddr == th.ZERO_ADDRESS) {
+    // Deploy Unipool for PUSD-WETH
     const pairTx = await mdh.sendAndWaitForTransaction(uniswapV2Factory.createPair(
       configParams.externalAddrs.WETH_ERC20,
-      liquityCore.yusdToken.address,
+      liquityCore.pusdToken.address,
       { gasPrice }
     ))
 
-    // Check Uniswap Pair YUSD-WETH pair after pair creation (forwards and backwards should have same address)
-    YUSDWETHPairAddr = await uniswapV2Factory.getPair(liquityCore.yusdToken.address, configParams.externalAddrs.WETH_ERC20)
-    assert.notEqual(YUSDWETHPairAddr, th.ZERO_ADDRESS)
-    WETHYUSDPairAddr = await uniswapV2Factory.getPair(configParams.externalAddrs.WETH_ERC20, liquityCore.yusdToken.address)
-    console.log(`YUSD-WETH pair contract address after Uniswap pair creation: ${YUSDWETHPairAddr}`)
-    assert.equal(WETHYUSDPairAddr, YUSDWETHPairAddr)
+    // Check Uniswap Pair PUSD-WETH pair after pair creation (forwards and backwards should have same address)
+    PUSDWETHPairAddr = await uniswapV2Factory.getPair(liquityCore.pusdToken.address, configParams.externalAddrs.WETH_ERC20)
+    assert.notEqual(PUSDWETHPairAddr, th.ZERO_ADDRESS)
+    WETHPUSDPairAddr = await uniswapV2Factory.getPair(configParams.externalAddrs.WETH_ERC20, liquityCore.pusdToken.address)
+    console.log(`PUSD-WETH pair contract address after Uniswap pair creation: ${PUSDWETHPairAddr}`)
+    assert.equal(WETHPUSDPairAddr, PUSDWETHPairAddr)
   }
 
-  deploymentState['uniToken'] = {address: YUSDWETHPairAddr};
+  deploymentState['uniToken'] = {address: PUSDWETHPairAddr};
   // Deploy Unipool
   const unipool = await mdh.deployUnipoolMainnet(deploymentState);
 
   
-  // Deploy YETI Contracts
-  const YETIContracts = await mdh.deployYETIContractsMainnet(
+  // Deploy PREON Contracts
+  const PREONContracts = await mdh.deployPREONContractsMainnet(
     configParams.liquityAddrs.GENERAL_SAFE, // bounty address
     unipool.address,  // lp rewards address
-    configParams.liquityAddrs.YETI_SAFE, // multisig YETI endowment address
+    configParams.liquityAddrs.PREON_SAFE, // multisig PREON endowment address
     deploymentState,
   );
-  console.log("Deployed YETI Contracts");
+  console.log("Deployed PREON Contracts");
 
   // Connect all core contracts up
-  await mdh.connectCoreContractsMainnet(liquityCore, YETIContracts, configParams.externalAddrs.CHAINLINK_ETHUSD_PROXY)
+  await mdh.connectCoreContractsMainnet(liquityCore, PREONContracts, configParams.externalAddrs.CHAINLINK_ETHUSD_PROXY)
   console.log("Connected Core Contracts");
-  await mdh.connectYETIContractsMainnet(YETIContracts)
-  console.log("Connected YETI Contracts");
-  await mdh.connectYETIContractsToCoreMainnet(YETIContracts, liquityCore)
-  console.log("Connected Yeti Contracts to Core");
+  await mdh.connectPREONContractsMainnet(PREONContracts)
+  console.log("Connected PREON Contracts");
+  await mdh.connectPREONContractsToCoreMainnet(PREONContracts, liquityCore)
+  console.log("Connected Preon Contracts to Core");
 
-  // @KingYeti: commented out below for now because it is not part of the core system
+  // @KingPreon: commented out below for now because it is not part of the core system
  //  // Deploy a read-only multi-trove getter
  //  const multiTroveGetter = await mdh.deployMultiTroveGetterMainnet(liquityCore, deploymentState)
  //
- //  // Connect Unipool to YETIToken and the YUSD-WETH pair address, with a 6 week duration
+ //  // Connect Unipool to PREONToken and the PUSD-WETH pair address, with a 6 week duration
  //  const LPRewardsDuration = timeVals.SECONDS_IN_SIX_WEEKS
- //  await mdh.connectUnipoolMainnet(unipool, YETIContracts, YUSDWETHPairAddr, LPRewardsDuration)
+ //  await mdh.connectUnipoolMainnet(unipool, PREONContracts, PUSDWETHPairAddr, LPRewardsDuration)
  //
  //
  //  // deploy pool2
@@ -115,49 +115,49 @@ async function mainnetDeploy(configParams) {
  //
  //
  //  for (const [dex, factory] of Object.entries(pool2Factories)) {
- //    let YETIWETHPairAddr = await factory.getPair(YETIContracts.yetiToken.address, configParams.externalAddrs.WETH_ERC20)
- //    let WETHYETIPairAddr = await factory.getPair(configParams.externalAddrs.WETH_ERC20, YETIContracts.yetiToken.address)
- //    assert.equal(YETIWETHPairAddr, WETHYETIPairAddr)
+ //    let PREONWETHPairAddr = await factory.getPair(PREONContracts.preonToken.address, configParams.externalAddrs.WETH_ERC20)
+ //    let WETHPREONPairAddr = await factory.getPair(configParams.externalAddrs.WETH_ERC20, PREONContracts.preonToken.address)
+ //    assert.equal(PREONWETHPairAddr, WETHPREONPairAddr)
  //    const pool2Name = `${dex}Token`;
- //    if (YETIWETHPairAddr == th.ZERO_ADDRESS) {
- //      // Deploy Unipool for YETI-WETH
+ //    if (PREONWETHPairAddr == th.ZERO_ADDRESS) {
+ //      // Deploy Unipool for PREON-WETH
  //      const pairTx = await mdh.sendAndWaitForTransaction(factory.createPair(
  //        configParams.externalAddrs.WETH_ERC20,
- //        YETIContracts.yetiToken.address,
+ //        PREONContracts.preonToken.address,
  //        { gasPrice }
  //      ))
  //
- //      // Check Uniswap Pair YUSD-WETH pair after pair creation (forwards and backwards should have same address)
- //      YETIWETHPairAddr = await factory.getPair(YETIContracts.yetiToken.address, configParams.externalAddrs.WETH_ERC20)
- //      assert.notEqual(YETIWETHPairAddr, th.ZERO_ADDRESS)
- //      WETHYETIPairAddr = await factory.getPair(configParams.externalAddrs.WETH_ERC20, YETIContracts.yetiToken.address)
- //      console.log(`${dex} YETI-WETH pair contract address after Uniswap pair creation: ${YETIWETHPairAddr}`)
- //      assert.equal(WETHYETIPairAddr, YETIWETHPairAddr)
- //      deploymentState[pool2Name] = {address: YETIWETHPairAddr, txHash: pairTx.transactionHash};
+ //      // Check Uniswap Pair PUSD-WETH pair after pair creation (forwards and backwards should have same address)
+ //      PREONWETHPairAddr = await factory.getPair(PREONContracts.preonToken.address, configParams.externalAddrs.WETH_ERC20)
+ //      assert.notEqual(PREONWETHPairAddr, th.ZERO_ADDRESS)
+ //      WETHPREONPairAddr = await factory.getPair(configParams.externalAddrs.WETH_ERC20, PREONContracts.preonToken.address)
+ //      console.log(`${dex} PREON-WETH pair contract address after Uniswap pair creation: ${PREONWETHPairAddr}`)
+ //      assert.equal(WETHPREONPairAddr, PREONWETHPairAddr)
+ //      deploymentState[pool2Name] = {address: PREONWETHPairAddr, txHash: pairTx.transactionHash};
  //    } else if (!deploymentState[pool2Name]) {
- //      // Check Uniswap Pair YUSD-WETH pair after pair creation (forwards and backwards should have same address)
- //      YETIWETHPairAddr = await factory.getPair(YETIContracts.yetiToken.address, configParams.externalAddrs.WETH_ERC20)
- //      assert.notEqual(YETIWETHPairAddr, th.ZERO_ADDRESS)
- //      console.log(`${dex} YETI-WETH pair contract address after Uniswap pair creation: ${YETIWETHPairAddr}`)
- //      deploymentState[pool2Name] = {address: YETIWETHPairAddr};
+ //      // Check Uniswap Pair PUSD-WETH pair after pair creation (forwards and backwards should have same address)
+ //      PREONWETHPairAddr = await factory.getPair(PREONContracts.preonToken.address, configParams.externalAddrs.WETH_ERC20)
+ //      assert.notEqual(PREONWETHPairAddr, th.ZERO_ADDRESS)
+ //      console.log(`${dex} PREON-WETH pair contract address after Uniswap pair creation: ${PREONWETHPairAddr}`)
+ //      deploymentState[pool2Name] = {address: PREONWETHPairAddr};
  //    }
  //
  //    // create rewards unipools
  //    const pool2Unipool = await mdh.deployPool2UnipoolMainnet(deploymentState, dex);
  //    console.log(`${dex} pool2Unipool address: ${pool2Unipool.address}`)
  //    // duration is 4 weeks
- //    await mdh.connectUnipoolMainnet(pool2Unipool, YETIContracts, YETIWETHPairAddr, timeVals.SECONDS_IN_ONE_MONTH);
+ //    await mdh.connectUnipoolMainnet(pool2Unipool, PREONContracts, PREONWETHPairAddr, timeVals.SECONDS_IN_ONE_MONTH);
  //    console.log(`Successfully connected${pool2Name}`);
  //  }
  //
- //  // Log YETI and Unipool addresses
- //  await mdh.logContractObjects(YETIContracts)
+ //  // Log PREON and Unipool addresses
+ //  await mdh.logContractObjects(PREONContracts)
  //  console.log(`Unipool address: ${unipool.address}`)
  //
- //  const deployTx = await ethers.provider.getTransaction(deploymentState['yetiToken'].txHash)
+ //  const deployTx = await ethers.provider.getTransaction(deploymentState['preonToken'].txHash)
  //  const startBlock = deployTx.blockNumber;
  //
- //  let deploymentStartTime = await YETIContracts.yetiToken.getDeploymentStartTime()
+ //  let deploymentStartTime = await PREONContracts.preonToken.getDeploymentStartTime()
  //  //let deploymentStartTime = (await ethers.provider.getBlock(latestBlock)).timestamp
  //  deploymentState.metadata = deploymentState.metadata || {};
  //  deploymentState.metadata.startBlock = startBlock;
@@ -184,7 +184,7 @@ async function mainnetDeploy(configParams) {
  //    } else {
  //      console.log(`Deploying lockup for ${investor}`)
  //      let unlockTime = investorObj.unlockTime ? investorObj.unlockTime : oneYearFromDeployment;
- //      const txReceipt = await mdh.sendAndWaitForTransaction(YETIContracts.lockupContractFactory.deployLockupContract(investorAddr, unlockTime, { gasPrice }))
+ //      const txReceipt = await mdh.sendAndWaitForTransaction(PREONContracts.lockupContractFactory.deployLockupContract(investorAddr, unlockTime, { gasPrice }))
  //
  //      const address = await txReceipt.logs[0].address // The deployment event emitted from the LC itself is is the first of two events, so this is its address
  //      lockupContracts[investor] = new ethers.Contract(
@@ -201,19 +201,19 @@ async function mainnetDeploy(configParams) {
  //      mdh.saveDeployment(deploymentState)
  //    }
  //
- //    const yetiTokenAddr = YETIContracts.yetiToken.address
+ //    const preonTokenAddr = PREONContracts.preonToken.address
  //    // verify
  //    if (configParams.ETHERSCAN_BASE_URL) {
- //      console.log("@KingYeti: Removed Call to mdf.verifyContract in mainnetDeployment")
- //      // await mdh.verifyContract(investor, deploymentState, [yetiTokenAddr, investorAddr, oneYearFromDeployment])
+ //      console.log("@KingPreon: Removed Call to mdf.verifyContract in mainnetDeployment")
+ //      // await mdh.verifyContract(investor, deploymentState, [preonTokenAddr, investorAddr, oneYearFromDeployment])
  //    }
  //  }
  //  mdh.saveDeployment(deploymentState)
  //  // // --- TESTS AND CHECKS  ---
  //
- //  // Deployer repay YUSD
+ //  // Deployer repay PUSD
  //  // console.log(`deployer trove debt before repaying: ${await liquityCore.troveManager.getTroveDebt(deployerWallet.address)}`)
- // // await mdh.sendAndWaitForTransaction(liquityCore.borrowerOperations.repayYUSD(dec(800, 18), th.ZERO_ADDRESS, th.ZERO_ADDRESS, {gasPrice, gasLimit: 1000000}))
+ // // await mdh.sendAndWaitForTransaction(liquityCore.borrowerOperations.repayPUSD(dec(800, 18), th.ZERO_ADDRESS, th.ZERO_ADDRESS, {gasPrice, gasLimit: 1000000}))
  //  // console.log(`deployer trove debt after repaying: ${await liquityCore.troveManager.getTroveDebt(deployerWallet.address)}`)
  //
  //  // Deployer add coll
@@ -243,9 +243,9 @@ async function mainnetDeploy(configParams) {
  //  // Check lockup contracts exist for each beneficiary with correct unlock time
  //  for (investor of Object.keys(lockupContracts)) {
  //    const lockupContract = lockupContracts[investor]
- //    // check LC references correct YETIToken
- //    const storedYETITokenAddr = await lockupContract.yetiToken()
- //    assert.equal(YETIContracts.yetiToken.address, storedYETITokenAddr)
+ //    // check LC references correct PREONToken
+ //    const storedPREONTokenAddr = await lockupContract.preonToken()
+ //    assert.equal(PREONContracts.preonToken.address, storedPREONTokenAddr)
  //    // Check contract has stored correct beneficary
  //    const onChainBeneficiary = await lockupContract.beneficiary()
  //    assert.equal(configParams.beneficiaries[investor].address.toLowerCase(), onChainBeneficiary.toLowerCase())
@@ -255,7 +255,7 @@ async function mainnetDeploy(configParams) {
  //
  //    console.log(
  //      `lockupContract addr: ${lockupContract.address},
- //            stored YETIToken addr: ${storedYETITokenAddr}
+ //            stored PREONToken addr: ${storedPREONTokenAddr}
  //            beneficiary: ${investor},
  //            beneficiary addr: ${configParams.beneficiaries[investor].address},
  //            on-chain beneficiary addr: ${onChainBeneficiary},
@@ -264,32 +264,32 @@ async function mainnetDeploy(configParams) {
  //    )
  //  }
 
-  // // --- Check correct addresses set in YETIToken
-  // console.log("STORED ADDRESSES IN YETI TOKEN")
-  // const storedMultisigAddress = await YETIContracts.yetiToken.multisigAddress()
-  // assert.equal(configParams.liquityAddrs.YETI_SAFE.toLowerCase(), storedMultisigAddress.toLowerCase())
-  // console.log(`multi-sig address stored in YETIToken : ${th.squeezeAddr(storedMultisigAddress)}`)
-  // console.log(`YETI Safe address: ${th.squeezeAddr(configParams.liquityAddrs.YETI_SAFE)}`)
+  // // --- Check correct addresses set in PREONToken
+  // console.log("STORED ADDRESSES IN PREON TOKEN")
+  // const storedMultisigAddress = await PREONContracts.preonToken.multisigAddress()
+  // assert.equal(configParams.liquityAddrs.PREON_SAFE.toLowerCase(), storedMultisigAddress.toLowerCase())
+  // console.log(`multi-sig address stored in PREONToken : ${th.squeezeAddr(storedMultisigAddress)}`)
+  // console.log(`PREON Safe address: ${th.squeezeAddr(configParams.liquityAddrs.PREON_SAFE)}`)
 
-  // // --- YETI allowances of different addresses ---
-  // console.log("INITIAL YETI BALANCES")
+  // // --- PREON allowances of different addresses ---
+  // console.log("INITIAL PREON BALANCES")
   // // Unipool
-  // const unipoolYETIBal = await YETIContracts.yetiToken.balanceOf(unipool.address)
-  // // assert.equal(unipoolYETIBal.toString(), '1333333333333333333333333')
-  // th.logBN('Unipool YETI balance       ', unipoolYETIBal)
+  // const unipoolPREONBal = await PREONContracts.preonToken.balanceOf(unipool.address)
+  // // assert.equal(unipoolPREONBal.toString(), '1333333333333333333333333')
+  // th.logBN('Unipool PREON balance       ', unipoolPREONBal)
 
-  // // YETI Safe
-  // const yetiSafeBal = await YETIContracts.yetiToken.balanceOf(configParams.liquityAddrs.YETI_SAFE)
-  // assert.equal(yetiSafeBal.toString(), '64666666666666666666666667')
-  // th.logBN('YETI Safe balance     ', yetiSafeBal)
+  // // PREON Safe
+  // const preonSafeBal = await PREONContracts.preonToken.balanceOf(configParams.liquityAddrs.PREON_SAFE)
+  // assert.equal(preonSafeBal.toString(), '64666666666666666666666667')
+  // th.logBN('PREON Safe balance     ', preonSafeBal)
 
   // // Bounties/hackathons (General Safe)
-  // const generalSafeBal = await YETIContracts.yetiToken.balanceOf(configParams.liquityAddrs.GENERAL_SAFE)
+  // const generalSafeBal = await PREONContracts.preonToken.balanceOf(configParams.liquityAddrs.GENERAL_SAFE)
   // assert.equal(generalSafeBal.toString(), '2000000000000000000000000')
   // th.logBN('General Safe balance       ', generalSafeBal)
 
   // // CommunityIssuance contract
-  // const communityIssuanceBal = await YETIContracts.yetiToken.balanceOf(YETIContracts.communityIssuance.address)
+  // const communityIssuanceBal = await PREONContracts.preonToken.balanceOf(PREONContracts.communityIssuance.address)
   // // assert.equal(communityIssuanceBal.toString(), '32000000000000000000000000')
   // th.logBN('Community Issuance balance', communityIssuanceBal)
 
@@ -313,9 +313,9 @@ async function mainnetDeploy(configParams) {
 
   // // --- Unipool ---
 
-  // // Check Unipool's YUSD-ETH Uniswap Pair address
+  // // Check Unipool's PUSD-ETH Uniswap Pair address
   // const unipoolUniswapPairAddr = await unipool.uniToken()
-  // console.log(`Unipool's stored YUSD-ETH Uniswap Pair address: ${unipoolUniswapPairAddr}`)
+  // console.log(`Unipool's stored PUSD-ETH Uniswap Pair address: ${unipoolUniswapPairAddr}`)
 
   // console.log("SYSTEM GLOBAL VARS CHECKS")
   // // --- Sorted Troves ---
@@ -326,24 +326,24 @@ async function mainnetDeploy(configParams) {
 
   // // --- TroveManager ---
 
-  // const liqReserve = await liquityCore.troveManager.YUSD_GAS_COMPENSATION()
+  // const liqReserve = await liquityCore.troveManager.PUSD_GAS_COMPENSATION()
   // const minNetDebt = await liquityCore.troveManager.MIN_NET_DEBT()
 
   // th.logBN('system liquidation reserve', liqReserve)
   // th.logBN('system min net debt      ', minNetDebt)
 
-  // // --- Make first YUSD-ETH liquidity provision ---
+  // // --- Make first PUSD-ETH liquidity provision ---
 
   // // Open trove if not yet opened
   // const troveStatus = await liquityCore.troveManager.getTroveStatus(deployerWallet.address)
   // if (troveStatus.toString() != '1') {
-  //   let _3kYUSDWithdrawal = th.dec(3000, 18) // 3000 YUSD
+  //   let _3kPUSDWithdrawal = th.dec(3000, 18) // 3000 PUSD
   //   let _3ETHcoll = th.dec(3, 'ether') // 3 ETH
   //   console.log('Opening trove...')
   //   await mdh.sendAndWaitForTransaction(
   //     liquityCore.borrowerOperations.openTrove(
   //       th._100pct,
-  //       _3kYUSDWithdrawal,
+  //       _3kPUSDWithdrawal,
   //       th.ZERO_ADDRESS,
   //       th.ZERO_ADDRESS,
   //       { value: _3ETHcoll, gasPrice }
@@ -362,28 +362,28 @@ async function mainnetDeploy(configParams) {
   // th.logBN('deployer stake', deployerTrove[2])
   // console.log(`deployer's trove status: ${deployerTrove[3]}`)
 
-  // // Check deployer has YUSD
-  // let deployerYUSDBal = await liquityCore.yusdToken.balanceOf(deployerWallet.address)
-  // th.logBN("deployer's YUSD balance", deployerYUSDBal)
+  // // Check deployer has PUSD
+  // let deployerPUSDBal = await liquityCore.pusdToken.balanceOf(deployerWallet.address)
+  // th.logBN("deployer's PUSD balance", deployerPUSDBal)
 
-  // // Check Uniswap pool has YUSD and WETH tokens
-  const YUSDETHPair = await new ethers.Contract(
-    YUSDWETHPairAddr,
+  // // Check Uniswap pool has PUSD and WETH tokens
+  const PUSDETHPair = await new ethers.Contract(
+    PUSDWETHPairAddr,
     UniswapV2Pair.abi,
     deployerWallet
   )
 
-  // const token0Addr = await YUSDETHPair.token0()
-  // const token1Addr = await YUSDETHPair.token1()
-  // console.log(`YUSD-ETH Pair token 0: ${th.squeezeAddr(token0Addr)},
-  //       YUSDToken contract addr: ${th.squeezeAddr(liquityCore.yusdToken.address)}`)
-  // console.log(`YUSD-ETH Pair token 1: ${th.squeezeAddr(token1Addr)},
+  // const token0Addr = await PUSDETHPair.token0()
+  // const token1Addr = await PUSDETHPair.token1()
+  // console.log(`PUSD-ETH Pair token 0: ${th.squeezeAddr(token0Addr)},
+  //       PUSDToken contract addr: ${th.squeezeAddr(liquityCore.pusdToken.address)}`)
+  // console.log(`PUSD-ETH Pair token 1: ${th.squeezeAddr(token1Addr)},
   //       WETH ERC20 contract addr: ${th.squeezeAddr(configParams.externalAddrs.WETH_ERC20)}`)
 
-  // // Check initial YUSD-ETH pair reserves before provision
-  // let reserves = await YUSDETHPair.getReserves()
-  // th.logBN("YUSD-ETH Pair's YUSD reserves before provision", reserves[0])
-  // th.logBN("YUSD-ETH Pair's ETH reserves before provision", reserves[1])
+  // // Check initial PUSD-ETH pair reserves before provision
+  // let reserves = await PUSDETHPair.getReserves()
+  // th.logBN("PUSD-ETH Pair's PUSD reserves before provision", reserves[0])
+  // th.logBN("PUSD-ETH Pair's ETH reserves before provision", reserves[1])
 
   // // Get the UniswapV2Router contract
   // const uniswapV2Router02 = new ethers.Contract(
@@ -392,38 +392,38 @@ async function mainnetDeploy(configParams) {
   //   deployerWallet
   // )
 
-  // // --- Provide liquidity to YUSD-ETH pair if not yet done so ---
-  // let deployerLPTokenBal = await YUSDETHPair.balanceOf(deployerWallet.address)
+  // // --- Provide liquidity to PUSD-ETH pair if not yet done so ---
+  // let deployerLPTokenBal = await PUSDETHPair.balanceOf(deployerWallet.address)
   // if (deployerLPTokenBal.toString() == '0') {
   //   console.log('Providing liquidity to Uniswap...')
-  //   // Give router an allowance for YUSD
-  //   await liquityCore.yusdToken.increaseAllowance(uniswapV2Router02.address, dec(10000, 18))
+  //   // Give router an allowance for PUSD
+  //   await liquityCore.pusdToken.increaseAllowance(uniswapV2Router02.address, dec(10000, 18))
 
   //   // Check Router's spending allowance
-  //   const routerYUSDAllowanceFromDeployer = await liquityCore.yusdToken.allowance(deployerWallet.address, uniswapV2Router02.address)
-  //   th.logBN("router's spending allowance for deployer's YUSD", routerYUSDAllowanceFromDeployer)
+  //   const routerPUSDAllowanceFromDeployer = await liquityCore.pusdToken.allowance(deployerWallet.address, uniswapV2Router02.address)
+  //   th.logBN("router's spending allowance for deployer's PUSD", routerPUSDAllowanceFromDeployer)
 
   //   // Get amounts for liquidity provision
   //   const LP_ETH = dec(1, 'ether')
 
   //   // Convert 8-digit CL price to 18 and multiply by ETH amount
-  //   const YUSDAmount = toBigNum(chainlinkPrice)
+  //   const PUSDAmount = toBigNum(chainlinkPrice)
   //     .mul(toBigNum(dec(1, 10)))
   //     .mul(toBigNum(LP_ETH))
   //     .div(toBigNum(dec(1, 18)))
 
-  //   const minYUSDAmount = YUSDAmount.sub(toBigNum(dec(100, 18)))
+  //   const minPUSDAmount = PUSDAmount.sub(toBigNum(dec(100, 18)))
 
   //   latestBlock = await ethers.provider.getBlockNumber()
   //   now = (await ethers.provider.getBlock(latestBlock)).timestamp
   //   let tenMinsFromNow = now + (60 * 60 * 10)
 
-  //   // Provide liquidity to YUSD-ETH pair
+  //   // Provide liquidity to PUSD-ETH pair
   //   await mdh.sendAndWaitForTransaction(
   //     uniswapV2Router02.addLiquidityETH(
-  //       liquityCore.yusdToken.address, // address of YUSD token
-  //       YUSDAmount, // YUSD provision
-  //       minYUSDAmount, // minimum YUSD provision
+  //       liquityCore.pusdToken.address, // address of PUSD token
+  //       PUSDAmount, // PUSD provision
+  //       minPUSDAmount, // minimum PUSD provision
   //       LP_ETH, // minimum ETH provision
   //       deployerWallet.address, // address to send LP tokens to
   //       tenMinsFromNow, // deadline for this tx
@@ -437,33 +437,33 @@ async function mainnetDeploy(configParams) {
   // } else {
   //   console.log('Liquidity already provided to Uniswap')
   // }
-  // // Check YUSD-ETH reserves after liquidity provision:
-  // reserves = await YUSDETHPair.getReserves()
-  // th.logBN("YUSD-ETH Pair's YUSD reserves after provision", reserves[0])
-  // th.logBN("YUSD-ETH Pair's ETH reserves after provision", reserves[1])
+  // // Check PUSD-ETH reserves after liquidity provision:
+  // reserves = await PUSDETHPair.getReserves()
+  // th.logBN("PUSD-ETH Pair's PUSD reserves after provision", reserves[0])
+  // th.logBN("PUSD-ETH Pair's ETH reserves after provision", reserves[1])
 
 
 
   // // ---  Check LP staking  ---
-  // console.log("CHECK LP STAKING EARNS YETI")
+  // console.log("CHECK LP STAKING EARNS PREON")
 
   // // Check deployer's LP tokens
-  // deployerLPTokenBal = await YUSDETHPair.balanceOf(deployerWallet.address)
+  // deployerLPTokenBal = await PUSDETHPair.balanceOf(deployerWallet.address)
   // th.logBN("deployer's LP token balance", deployerLPTokenBal)
 
   // // Stake LP tokens in Unipool
-  // console.log(`YUSDETHPair addr: ${YUSDETHPair.address}`)
+  // console.log(`PUSDETHPair addr: ${PUSDETHPair.address}`)
   // console.log(`Pair addr stored in Unipool: ${await unipool.uniToken()}`)
 
-  // earnedYETI = await unipool.earned(deployerWallet.address)
-  // th.logBN("deployer's farmed YETI before staking LP tokens", earnedYETI)
+  // earnedPREON = await unipool.earned(deployerWallet.address)
+  // th.logBN("deployer's farmed PREON before staking LP tokens", earnedPREON)
 
   // const deployerUnipoolStake = await unipool.balanceOf(deployerWallet.address)
   // if (deployerUnipoolStake.toString() == '0') {
   //   console.log('Staking to Unipool...')
   //   // Deployer approves Unipool
   //   await mdh.sendAndWaitForTransaction(
-  //     YUSDETHPair.approve(unipool.address, deployerLPTokenBal, { gasPrice })
+  //     PUSDETHPair.approve(unipool.address, deployerLPTokenBal, { gasPrice })
   //   )
 
   //   await mdh.sendAndWaitForTransaction(unipool.stake(1, { gasPrice }))
@@ -474,26 +474,26 @@ async function mainnetDeploy(configParams) {
   // console.log("wait 90 seconds before checking earnings... ")
   // await configParams.waitFunction()
 
-  // earnedYETI = await unipool.earned(deployerWallet.address)
-  // th.logBN("deployer's farmed YETI from Unipool after waiting ~1.5mins", earnedYETI)
+  // earnedPREON = await unipool.earned(deployerWallet.address)
+  // th.logBN("deployer's farmed PREON from Unipool after waiting ~1.5mins", earnedPREON)
 
-  // let deployerYETIBal = await YETIContracts.yetiToken.balanceOf(deployerWallet.address)
-  // th.logBN("deployer YETI Balance Before SP deposit", deployerYETIBal)
+  // let deployerPREONBal = await PREONContracts.preonToken.balanceOf(deployerWallet.address)
+  // th.logBN("deployer PREON Balance Before SP deposit", deployerPREONBal)
 
 
 
-  // // --- Make SP deposit and earn YETI ---
-  // console.log("CHECK DEPLOYER MAKING DEPOSIT AND EARNING YETI")
+  // // --- Make SP deposit and earn PREON ---
+  // console.log("CHECK DEPLOYER MAKING DEPOSIT AND EARNING PREON")
 
-  // let SPDeposit = await liquityCore.stabilityPool.getCompoundedYUSDDeposit(deployerWallet.address)
+  // let SPDeposit = await liquityCore.stabilityPool.getCompoundedPUSDDeposit(deployerWallet.address)
   // th.logBN("deployer SP deposit before making deposit", SPDeposit)
 
   // // Provide to SP
   // await mdh.sendAndWaitForTransaction(liquityCore.stabilityPool.provideToSP(dec(15, 18), th.ZERO_ADDRESS, { gasPrice, gasLimit: 400000 }))
 
   // // Get SP deposit 
-  // SPDeposit = await liquityCore.stabilityPool.getCompoundedYUSDDeposit(deployerWallet.address)
-  // th.logBN("deployer SP deposit after depositing 15 YUSD", SPDeposit)
+  // SPDeposit = await liquityCore.stabilityPool.getCompoundedPUSDDeposit(deployerWallet.address)
+  // th.logBN("deployer SP deposit after depositing 15 PUSD", SPDeposit)
 
   // console.log("wait 90 seconds before withdrawing...")
   // // wait 90 seconds
@@ -502,11 +502,11 @@ async function mainnetDeploy(configParams) {
   // // Withdraw from SP
   // // await mdh.sendAndWaitForTransaction(liquityCore.stabilityPool.withdrawFromSP(dec(1000, 18), { gasPrice, gasLimit: 400000 }))
 
-  // // SPDeposit = await liquityCore.stabilityPool.getCompoundedYUSDDeposit(deployerWallet.address)
+  // // SPDeposit = await liquityCore.stabilityPool.getCompoundedPUSDDeposit(deployerWallet.address)
   // // th.logBN("deployer SP deposit after full withdrawal", SPDeposit)
 
-  // // deployerYETIBal = await YETIContracts.yetiToken.balanceOf(deployerWallet.address)
-  // // th.logBN("deployer YETI Balance after SP deposit withdrawal", deployerYETIBal)
+  // // deployerPREONBal = await PREONContracts.preonToken.balanceOf(deployerWallet.address)
+  // // th.logBN("deployer PREON Balance after SP deposit withdrawal", deployerPREONBal)
 
 
 
@@ -516,49 +516,49 @@ async function mainnetDeploy(configParams) {
   // // connect Acct2 wallet to the LC they are beneficiary of
   // let account2LockupContract = await lockupContracts["ACCOUNT_2"].connect(account2Wallet)
 
-  // // Deployer funds LC with 10 YETI
-  // // await mdh.sendAndWaitForTransaction(YETIContracts.yetiToken.transfer(account2LockupContract.address, dec(10, 18), { gasPrice }))
+  // // Deployer funds LC with 10 PREON
+  // // await mdh.sendAndWaitForTransaction(PREONContracts.preonToken.transfer(account2LockupContract.address, dec(10, 18), { gasPrice }))
 
-  // // account2 YETI bal
-  // let account2bal = await YETIContracts.yetiToken.balanceOf(account2Wallet.address)
-  // th.logBN("account2 YETI bal before withdrawal attempt", account2bal)
+  // // account2 PREON bal
+  // let account2bal = await PREONContracts.preonToken.balanceOf(account2Wallet.address)
+  // th.logBN("account2 PREON bal before withdrawal attempt", account2bal)
 
-  // // Check LC YETI bal 
-  // let account2LockupContractBal = await YETIContracts.yetiToken.balanceOf(account2LockupContract.address)
-  // th.logBN("account2's LC YETI bal before withdrawal attempt", account2LockupContractBal)
+  // // Check LC PREON bal 
+  // let account2LockupContractBal = await PREONContracts.preonToken.balanceOf(account2LockupContract.address)
+  // th.logBN("account2's LC PREON bal before withdrawal attempt", account2LockupContractBal)
 
   // // Acct2 attempts withdrawal from  LC
-  // await mdh.sendAndWaitForTransaction(account2LockupContract.withdrawYETI({ gasPrice, gasLimit: 1000000 }))
+  // await mdh.sendAndWaitForTransaction(account2LockupContract.withdrawPREON({ gasPrice, gasLimit: 1000000 }))
 
-  // // Acct YETI bal
-  // account2bal = await YETIContracts.yetiToken.balanceOf(account2Wallet.address)
-  // th.logBN("account2's YETI bal after LC withdrawal attempt", account2bal)
+  // // Acct PREON bal
+  // account2bal = await PREONContracts.preonToken.balanceOf(account2Wallet.address)
+  // th.logBN("account2's PREON bal after LC withdrawal attempt", account2bal)
 
   // // Check LC bal 
-  // account2LockupContractBal = await YETIContracts.yetiToken.balanceOf(account2LockupContract.address)
-  // th.logBN("account2's LC YETI bal LC withdrawal attempt", account2LockupContractBal)
+  // account2LockupContractBal = await PREONContracts.preonToken.balanceOf(account2LockupContract.address)
+  // th.logBN("account2's LC PREON bal LC withdrawal attempt", account2LockupContractBal)
 
-  // // --- Stake YETI ---
-  // console.log("CHECK DEPLOYER STAKING YETI")
+  // // --- Stake PREON ---
+  // console.log("CHECK DEPLOYER STAKING PREON")
 
-  // // Log deployer YETI bal and stake before staking
-  // deployerYETIBal = await YETIContracts.yetiToken.balanceOf(deployerWallet.address)
-  // th.logBN("deployer YETI bal before staking", deployerYETIBal)
-  // let deployerYETIStake = await YETIContracts.sYETI.mints(deployerWallet.address)
-  // th.logBN("deployer stake before staking", deployerYETIStake)
+  // // Log deployer PREON bal and stake before staking
+  // deployerPREONBal = await PREONContracts.preonToken.balanceOf(deployerWallet.address)
+  // th.logBN("deployer PREON bal before staking", deployerPREONBal)
+  // let deployerPREONStake = await PREONContracts.sPREON.mints(deployerWallet.address)
+  // th.logBN("deployer stake before staking", deployerPREONStake)
 
-  // // stake 13 YETI
-  // await mdh.sendAndWaitForTransaction(YETIContracts.sYETI.mint(dec(13, 18), { gasPrice, gasLimit: 1000000 }))
+  // // stake 13 PREON
+  // await mdh.sendAndWaitForTransaction(PREONContracts.sPREON.mint(dec(13, 18), { gasPrice, gasLimit: 1000000 }))
 
-  // // Log deployer YETI bal and stake after staking
-  // deployerYETIBal = await YETIContracts.yetiToken.balanceOf(deployerWallet.address)
-  // th.logBN("deployer YETI bal after staking", deployerYETIBal)
-  // deployerYETIStake = await YETIContracts.sYETI.mints(deployerWallet.address)
-  // th.logBN("deployer stake after staking", deployerYETIStake)
+  // // Log deployer PREON bal and stake after staking
+  // deployerPREONBal = await PREONContracts.preonToken.balanceOf(deployerWallet.address)
+  // th.logBN("deployer PREON bal after staking", deployerPREONBal)
+  // deployerPREONStake = await PREONContracts.sPREON.mints(deployerWallet.address)
+  // th.logBN("deployer stake after staking", deployerPREONStake)
 
   // // Log deployer rev share immediately after staking
-  // let deployerYUSDRevShare = await YETIContracts.sYETI.getPendingYUSDGain(deployerWallet.address)
-  // th.logBN("deployer pending YUSD revenue share", deployerYUSDRevShare)
+  // let deployerPUSDRevShare = await PREONContracts.sPREON.getPendingPUSDGain(deployerWallet.address)
+  // th.logBN("deployer pending PUSD revenue share", deployerPUSDRevShare)
 
 
 
@@ -566,12 +566,12 @@ async function mainnetDeploy(configParams) {
   // const trove2Status = await liquityCore.troveManager.getTroveStatus(account2Wallet.address)
   // if (trove2Status.toString() != '1') {
   //   console.log("Acct 2 opens a trove ...")
-  //   let _2kYUSDWithdrawal = th.dec(2000, 18) // 2000 YUSD
+  //   let _2kPUSDWithdrawal = th.dec(2000, 18) // 2000 PUSD
   //   let _1pt5_ETHcoll = th.dec(15, 17) // 1.5 ETH
   //   const borrowerOpsEthersFactory = await ethers.getContractFactory("BorrowerOperations", account2Wallet)
   //   const borrowerOpsAcct2 = await new ethers.Contract(liquityCore.borrowerOperations.address, borrowerOpsEthersFactory.interface, account2Wallet)
 
-  //   await mdh.sendAndWaitForTransaction(borrowerOpsAcct2.openTrove(th._100pct, _2kYUSDWithdrawal, th.ZERO_ADDRESS, th.ZERO_ADDRESS, { value: _1pt5_ETHcoll, gasPrice, gasLimit: 1000000 }))
+  //   await mdh.sendAndWaitForTransaction(borrowerOpsAcct2.openTrove(th._100pct, _2kPUSDWithdrawal, th.ZERO_ADDRESS, th.ZERO_ADDRESS, { value: _1pt5_ETHcoll, gasPrice, gasLimit: 1000000 }))
   // } else {
   //   console.log('Acct 2 already has an active trove')
   // }
@@ -582,31 +582,31 @@ async function mainnetDeploy(configParams) {
   // th.logBN('acct2 stake', acct2Trove[2])
   // console.log(`acct2 trove status: ${acct2Trove[3]}`)
 
-  // // Log deployer's pending YUSD gain - check fees went to staker (deloyer)
-  // deployerYUSDRevShare = await YETIContracts.sYETI.getPendingYUSDGain(deployerWallet.address)
-  // th.logBN("deployer pending YUSD revenue share from staking, after acct 2 opened trove", deployerYUSDRevShare)
+  // // Log deployer's pending PUSD gain - check fees went to staker (deloyer)
+  // deployerPUSDRevShare = await PREONContracts.sPREON.getPendingPUSDGain(deployerWallet.address)
+  // th.logBN("deployer pending PUSD revenue share from staking, after acct 2 opened trove", deployerPUSDRevShare)
 
   // //  --- deployer withdraws staking gains ---
   // console.log("CHECK DEPLOYER WITHDRAWING STAKING GAINS")
 
-  // // check deployer's YUSD balance before withdrawing staking gains
-  // deployerYUSDBal = await liquityCore.yusdToken.balanceOf(deployerWallet.address)
-  // th.logBN('deployer YUSD bal before withdrawing staking gains', deployerYUSDBal)
+  // // check deployer's PUSD balance before withdrawing staking gains
+  // deployerPUSDBal = await liquityCore.pusdToken.balanceOf(deployerWallet.address)
+  // th.logBN('deployer PUSD bal before withdrawing staking gains', deployerPUSDBal)
 
   // // Deployer withdraws staking gains
-  // await mdh.sendAndWaitForTransaction(YETIContracts.sYETI.unstake(0, { gasPrice, gasLimit: 1000000 }))
+  // await mdh.sendAndWaitForTransaction(PREONContracts.sPREON.unstake(0, { gasPrice, gasLimit: 1000000 }))
 
-  // // check deployer's YUSD balance after withdrawing staking gains
-  // deployerYUSDBal = await liquityCore.yusdToken.balanceOf(deployerWallet.address)
-  // th.logBN('deployer YUSD bal after withdrawing staking gains', deployerYUSDBal)
+  // // check deployer's PUSD balance after withdrawing staking gains
+  // deployerPUSDBal = await liquityCore.pusdToken.balanceOf(deployerWallet.address)
+  // th.logBN('deployer PUSD bal after withdrawing staking gains', deployerPUSDBal)
 
 
   // // --- System stats  ---
   //
-  // // Uniswap YUSD-ETH pool size
-  // reserves = await YUSDETHPair.getReserves()
-  // th.logBN("YUSD-ETH Pair's current YUSD reserves", reserves[0])
-  // th.logBN("YUSD-ETH Pair's current ETH reserves", reserves[1])
+  // // Uniswap PUSD-ETH pool size
+  // reserves = await PUSDETHPair.getReserves()
+  // th.logBN("PUSD-ETH Pair's current PUSD reserves", reserves[0])
+  // th.logBN("PUSD-ETH Pair's current ETH reserves", reserves[1])
   //
   // // Number of troves
   // const numTroves = await liquityCore.troveManager.getTroveOwnersCount()
@@ -633,16 +633,16 @@ async function mainnetDeploy(configParams) {
   // th.logBN("Current borrowing rate", currentBorrowingRate)
   //
   // // total SP deposits
-  // const totalSPDeposits = await liquityCore.stabilityPool.getTotalYUSDDeposits()
-  // th.logBN("Total YUSD SP deposits", totalSPDeposits)
+  // const totalSPDeposits = await liquityCore.stabilityPool.getTotalPUSDDeposits()
+  // th.logBN("Total PUSD SP deposits", totalSPDeposits)
   //
-  // // total YETI Staked in SYETI
-  // const totalYETIStaked = await YETIContracts.sYETI.totalYETIStaked()
-  // th.logBN("Total YETI staked", totalYETIStaked)
+  // // total PREON Staked in SPREON
+  // const totalPREONStaked = await PREONContracts.sPREON.totalPREONStaked()
+  // th.logBN("Total PREON staked", totalPREONStaked)
   //
   // // total LP tokens staked in Unipool
   // const totalLPTokensStaked = await unipool.totalSupply()
-  // th.logBN("Total LP (YUSD-ETH) tokens staked in unipool", totalLPTokensStaked)
+  // th.logBN("Total LP (PUSD-ETH) tokens staked in unipool", totalLPTokensStaked)
   //
   // // --- State variables ---
   //
@@ -656,9 +656,9 @@ async function mainnetDeploy(configParams) {
   // th.logBN("Snapshot of total trove collateral before last liq. ", totalCollateralSnapshot)
   //
   // const L_ETH = await liquityCore.troveManager.L_ETH()
-  // const L_YUSDDebt = await liquityCore.troveManager.L_YUSDDebt()
+  // const L_PUSDDebt = await liquityCore.troveManager.L_PUSDDebt()
   // th.logBN("L_ETH", L_ETH)
-  // th.logBN("L_YUSDDebt", L_YUSDDebt)
+  // th.logBN("L_PUSDDebt", L_PUSDDebt)
   //
   // // StabilityPool
   // console.log("StabilityPool state variables:")
@@ -674,21 +674,21 @@ async function mainnetDeploy(configParams) {
   // th.logBN("Sum S, at current epoch and scale", S)
   // th.logBN("Sum G, at current epoch and scale", G)
   //
-  // // SYETI
-  // console.log("SYETI state variables:")
-  // const F_YUSD = await YETIContracts.sYETI.F_YUSD()
-  // const F_ETH = await YETIContracts.sYETI.F_ETH()
-  // th.logBN("F_YUSD", F_YUSD)
+  // // SPREON
+  // console.log("SPREON state variables:")
+  // const F_PUSD = await PREONContracts.sPREON.F_PUSD()
+  // const F_ETH = await PREONContracts.sPREON.F_ETH()
+  // th.logBN("F_PUSD", F_PUSD)
   // th.logBN("F_ETH", F_ETH)
   //
   //
   // // CommunityIssuance
   // console.log("CommunityIssuance state variables:")
-  // const totalYETIIssued = await YETIContracts.communityIssuance.totalYETIIssued()
-  // th.logBN("Total YETI issued to depositors / front ends", totalYETIIssued)
+  // const totalPREONIssued = await PREONContracts.communityIssuance.totalPREONIssued()
+  // th.logBN("Total PREON issued to depositors / front ends", totalPREONIssued)
   //
   //
-  // // TODO: Uniswap *YETI-ETH* pool size (check it's deployed?)
+  // // TODO: Uniswap *PREON-ETH* pool size (check it's deployed?)
 
 
 
@@ -705,15 +705,15 @@ async function mainnetDeploy(configParams) {
 
 
   // ************************
-  // --- NOT FOR APRIL 5: Deploy a YETIToken2 with General Safe as beneficiary to test minting YETI showing up in Gnosis App  ---
+  // --- NOT FOR APRIL 5: Deploy a PREONToken2 with General Safe as beneficiary to test minting PREON showing up in Gnosis App  ---
 
-  // // General Safe YETI bal before:
+  // // General Safe PREON bal before:
   // const realGeneralSafeAddr = "0xF06016D822943C42e3Cb7FC3a6A3B1889C1045f8"
 
-  //   const YETIToken2EthersFactory = await ethers.getContractFactory("YETIToken2", deployerWallet)
-  //   const yetiToken2 = await YETIToken2EthersFactory.deploy( 
+  //   const PREONToken2EthersFactory = await ethers.getContractFactory("PREONToken2", deployerWallet)
+  //   const preonToken2 = await PREONToken2EthersFactory.deploy( 
   //     "0xF41E0DD45d411102ed74c047BdA544396cB71E27",  // CI param: LC1 
-  //     "0x9694a04263593AC6b895Fc01Df5929E1FC7495fA", // YETI Staking param: LC2
+  //     "0x9694a04263593AC6b895Fc01Df5929E1FC7495fA", // PREON Staking param: LC2
   //     "0x98f95E112da23c7b753D8AE39515A585be6Fb5Ef", // LCF param: LC3
   //     realGeneralSafeAddr,  // bounty/hackathon param: REAL general safe addr
   //     "0x98f95E112da23c7b753D8AE39515A585be6Fb5Ef", // LP rewards param: LC3
@@ -721,15 +721,15 @@ async function mainnetDeploy(configParams) {
   //     {gasPrice, gasLimit: 10000000}
   //   )
 
-  //   console.log(`yeti2 address: ${yetiToken2.address}`)
+  //   console.log(`preon2 address: ${preonToken2.address}`)
 
-  //   let generalSafeYETIBal = await yetiToken2.balanceOf(realGeneralSafeAddr)
-  //   console.log(`generalSafeYETIBal: ${generalSafeYETIBal}`)
+  //   let generalSafePREONBal = await preonToken2.balanceOf(realGeneralSafeAddr)
+  //   console.log(`generalSafePREONBal: ${generalSafePREONBal}`)
 
 
 
   // ************************
-  // --- NOT FOR APRIL 5: Test short-term lockup contract YETI withdrawal on mainnet ---
+  // --- NOT FOR APRIL 5: Test short-term lockup contract PREON withdrawal on mainnet ---
 
   // now = (await ethers.provider.getBlock(latestBlock)).timestamp
 
@@ -737,7 +737,7 @@ async function mainnetDeploy(configParams) {
 
   // new deployment
   // const LCshortTerm = await LCShortTermEthersFactory.deploy(
-  //   YETIContracts.yetiToken.address,
+  //   PREONContracts.preonToken.address,
   //   deployerWallet.address,
   //   now, 
   //   {gasPrice, gasLimit: 1000000}
@@ -765,25 +765,25 @@ async function mainnetDeploy(configParams) {
   //   now = (await ethers.provider.getBlock(latestBlock)).timestamp
   //   console.log(`time now: ${now}`)
 
-  //   // check deployer YETI bal
-  //   let deployerYETIBal = await YETIContracts.yetiToken.balanceOf(deployerWallet.address)
-  //   console.log(`deployerYETIBal before he withdraws: ${deployerYETIBal}`)
+  //   // check deployer PREON bal
+  //   let deployerPREONBal = await PREONContracts.preonToken.balanceOf(deployerWallet.address)
+  //   console.log(`deployerPREONBal before he withdraws: ${deployerPREONBal}`)
 
-  //   // check LC YETI bal
-  //   let LC_YETIBal = await YETIContracts.yetiToken.balanceOf(deployedShortTermLC.address)
-  //   console.log(`LC YETI bal before withdrawal: ${LC_YETIBal}`)
+  //   // check LC PREON bal
+  //   let LC_PREONBal = await PREONContracts.preonToken.balanceOf(deployedShortTermLC.address)
+  //   console.log(`LC PREON bal before withdrawal: ${LC_PREONBal}`)
 
   // // withdraw from LC
-  // const withdrawFromShortTermTx = await deployedShortTermLC.withdrawYETI( {gasPrice, gasLimit: 1000000})
+  // const withdrawFromShortTermTx = await deployedShortTermLC.withdrawPREON( {gasPrice, gasLimit: 1000000})
   // withdrawFromShortTermTx.wait()
 
   // // check deployer bal after LC withdrawal
-  // deployerYETIBal = await YETIContracts.yetiToken.balanceOf(deployerWallet.address)
-  // console.log(`deployerYETIBal after he withdraws: ${deployerYETIBal}`)
+  // deployerPREONBal = await PREONContracts.preonToken.balanceOf(deployerWallet.address)
+  // console.log(`deployerPREONBal after he withdraws: ${deployerPREONBal}`)
 
-  //   // check LC YETI bal
-  //   LC_YETIBal = await YETIContracts.yetiToken.balanceOf(deployedShortTermLC.address)
-  //   console.log(`LC YETI bal after withdrawal: ${LC_YETIBal}`)
+  //   // check LC PREON bal
+  //   LC_PREONBal = await PREONContracts.preonToken.balanceOf(deployedShortTermLC.address)
+  //   console.log(`LC PREON bal after withdrawal: ${LC_PREONBal}`)
 }
 
 module.exports = {

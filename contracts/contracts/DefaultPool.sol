@@ -4,7 +4,7 @@ pragma solidity 0.6.11;
 
 import "../Interfaces/IDefaultPool.sol";
 import "../Interfaces/IActivePool.sol";
-import "../Interfaces/IYetiController.sol";
+import "../Interfaces/IPreonController.sol";
 import "../Interfaces/IERC20.sol";
 import "../Dependencies/SafeMath.sol";
 import "../Dependencies/PoolBase2.sol";
@@ -43,10 +43,10 @@ import "../Dependencies/SafeERC20.sol";
 //      \__|   \_______|  \____/ \__|      \__|      \__|\__|  \__| \_______|\__|  \__| \_______| \_______|
 
 /**
- * @notice The Default Pool holds the collateral and YUSD debt (but not YUSD tokens) from liquidations that have been redistributed
+ * @notice The Default Pool holds the collateral and PUSD debt (but not PUSD tokens) from liquidations that have been redistributed
  * to active troves but not yet "applied", i.e. not yet recorded on a recipient active trove's struct.
  *
- * @dev When a trove makes an operation that applies its pending collateral and YUSD debt, its pending collateral and YUSD debt is moved
+ * @dev When a trove makes an operation that applies its pending collateral and PUSD debt, its pending collateral and PUSD debt is moved
  * from the Default Pool to the Active Pool. This contract has never been used in Liquity.
  */
 
@@ -63,9 +63,9 @@ contract DefaultPool is IDefaultPool, PoolBase2 {
   // deposited collateral tracker. Colls is always the controller list of all collateral tokens. Amounts
   newColls internal poolColl;
 
-  uint256 public YUSDDebt;
+  uint256 public PUSDDebt;
 
-  event DefaultPoolYUSDDebtUpdated(uint256 _YUSDDebt);
+  event DefaultPoolPUSDDebtUpdated(uint256 _PUSDDebt);
   event DefaultPoolBalanceUpdated(address _collateral, uint256 _amount);
   event DefaultPoolBalancesUpdated(address[] _collaterals, uint256[] _amounts);
 
@@ -91,7 +91,7 @@ contract DefaultPool is IDefaultPool, PoolBase2 {
     troveManagerAddress = _troveManagerAddress;
     troveManagerLiquidationsAddress = _troveManagerLiquidationsAddress;
     activePoolAddress = _activePoolAddress;
-    controller = IYetiController(_controllerAddress);
+    controller = IPreonController(_controllerAddress);
   }
 
   // --- Getters for public variables. Required by IPool interface ---
@@ -196,8 +196,8 @@ contract DefaultPool is IDefaultPool, PoolBase2 {
   /**
    * @notice Debt that DefaultPool holds in total
    */
-  function getYUSDDebt() external view override returns (uint256) {
-    return YUSDDebt;
+  function getPUSDDebt() external view override returns (uint256) {
+    return PUSDDebt;
   }
 
   // --- Functions for sending to Active Pool ---
@@ -271,29 +271,29 @@ contract DefaultPool is IDefaultPool, PoolBase2 {
    *   leftSumColls when receiving new collateral.
    */
   function addCollateralType(address _collateral) external override {
-    _requireCallerIsYetiController();
+    _requireCallerIsPreonController();
     poolColl.tokens.push(_collateral);
     poolColl.amounts.push(0);
   }
 
   /**
-   * @notice Increases the YUSD Debt of this pool. Called when new YUSD is sent to this contract
+   * @notice Increases the PUSD Debt of this pool. Called when new PUSD is sent to this contract
    *   by redistribution.
    */
-  function increaseYUSDDebt(uint256 _amount) external override {
+  function increasePUSDDebt(uint256 _amount) external override {
     _requireCallerIsTroveManager();
-    YUSDDebt = YUSDDebt.add(_amount);
-    emit DefaultPoolYUSDDebtUpdated(YUSDDebt);
+    PUSDDebt = PUSDDebt.add(_amount);
+    emit DefaultPoolPUSDDebtUpdated(PUSDDebt);
   }
 
   /**
-   * @notice Decreases the YUSD Debt of this pool. Called when YUSD is sent to active pool when 'rewards'
+   * @notice Decreases the PUSD Debt of this pool. Called when PUSD is sent to active pool when 'rewards'
    *   are claimed.
    */
-  function decreaseYUSDDebt(uint256 _amount) external override {
+  function decreasePUSDDebt(uint256 _amount) external override {
     _requireCallerIsTroveManager();
-    YUSDDebt = YUSDDebt.sub(_amount);
-    emit DefaultPoolYUSDDebtUpdated(YUSDDebt);
+    PUSDDebt = PUSDDebt.sub(_amount);
+    emit DefaultPoolPUSDDebtUpdated(PUSDDebt);
   }
 
   // --- 'require' functions ---

@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.11;
 
-import "../Dependencies/YetiCustomBase.sol";
+import "../Dependencies/PreonCustomBase.sol";
 import "./ICollateralReceiver.sol";
 
 interface ICollSurplusPool is ICollateralReceiver {
@@ -19,7 +19,7 @@ interface ICollSurplusPool is ICollateralReceiver {
     address _troveManagerRedemptionsAddress,
     address _activePoolAddress,
     address _controllerAddress,
-    address _yusdTokenAddress
+    address _pusdTokenAddress
   ) external;
 
   function getCollVC() external view returns (uint256);

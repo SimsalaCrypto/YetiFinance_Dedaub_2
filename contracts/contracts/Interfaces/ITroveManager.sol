@@ -4,8 +4,8 @@ pragma solidity 0.6.11;
 
 import "./ILiquityBase.sol";
 import "./IStabilityPool.sol";
-import "./IYUSDToken.sol";
-import "./IYETIToken.sol";
+import "./IPUSDToken.sol";
+import "./IPREONToken.sol";
 import "./IActivePool.sol";
 import "./IDefaultPool.sol";
 
@@ -14,9 +14,9 @@ interface ITroveManager is ILiquityBase {
   // --- Events ---
 
   event Redemption(
-    uint256 _attemptedYUSDAmount,
-    uint256 _actualYUSDAmount,
-    uint256 YUSDfee,
+    uint256 _attemptedPUSDAmount,
+    uint256 _actualPUSDAmount,
+    uint256 PUSDfee,
     address[] tokens,
     uint256[] amounts
   );
@@ -33,8 +33,8 @@ interface ITroveManager is ILiquityBase {
     uint256 _totalStakesSnapshot,
     uint256 _totalCollateralSnapshot
   );
-  event LTermsUpdated(uint256 _L_ETH, uint256 _L_YUSDDebt);
-  event TroveSnapshotsUpdated(uint256 _L_ETH, uint256 _L_YUSDDebt);
+  event LTermsUpdated(uint256 _L_ETH, uint256 _L_PUSDDebt);
+  event TroveSnapshotsUpdated(uint256 _L_ETH, uint256 _L_PUSDDebt);
   event TroveIndexUpdated(address _borrower, uint256 _newIndex);
 
   // --- Functions ---
@@ -68,8 +68,8 @@ interface ITroveManager is ILiquityBase {
   ) external;
 
   function redeemCollateral(
-    uint256 _YUSDAmount,
-    uint256 _YUSDMaxFee,
+    uint256 _PUSDAmount,
+    uint256 _PUSDMaxFee,
     address _firstRedemptionHint,
     address _upperPartialRedemptionHint,
     address _lowerPartialRedemptionHint,
@@ -78,8 +78,8 @@ interface ITroveManager is ILiquityBase {
   ) external;
 
   function redeemCollateralSingle(
-    uint256 _YUSDamount,
-    uint256 _YUSDMaxFee,
+    uint256 _PUSDamount,
+    uint256 _PUSDMaxFee,
     address _target,
     address _upperHint,
     address _lowerHint,
@@ -100,7 +100,7 @@ interface ITroveManager is ILiquityBase {
     view
     returns (address[] memory, uint256[] memory);
 
-  function getPendingYUSDDebtReward(address _borrower)
+  function getPendingPUSDDebtReward(address _borrower)
     external
     view
     returns (uint256);
@@ -124,14 +124,14 @@ interface ITroveManager is ILiquityBase {
 
   function getBorrowingRateWithDecay() external view returns (uint256);
 
-  function getBorrowingFee(uint256 YUSDDebt) external view returns (uint256);
+  function getBorrowingFee(uint256 PUSDDebt) external view returns (uint256);
 
-  function getBorrowingFeeWithDecay(uint256 _YUSDDebt)
+  function getBorrowingFeeWithDecay(uint256 _PUSDDebt)
     external
     view
     returns (uint256);
 
-  function decayBaseRateFromBorrowingAndCalculateFee(uint256 _YUSDDebt)
+  function decayBaseRateFromBorrowingAndCalculateFee(uint256 _PUSDDebt)
     external
     returns (uint256);
 
@@ -150,14 +150,14 @@ interface ITroveManager is ILiquityBase {
 
   function getL_Coll(address _token) external view returns (uint256);
 
-  function getL_YUSD(address _token) external view returns (uint256);
+  function getL_PUSD(address _token) external view returns (uint256);
 
   function getRewardSnapshotColl(address _borrower, address _token)
     external
     view
     returns (uint256);
 
-  function getRewardSnapshotYUSD(address _borrower, address _token)
+  function getRewardSnapshotPUSD(address _borrower, address _token)
     external
     view
     returns (uint256);
@@ -246,7 +246,7 @@ interface ITroveManager is ILiquityBase {
 
   function getCCR() external view returns (uint256);
 
-  function getYUSD_GAS_COMPENSATION() external view returns (uint256);
+  function getPUSD_GAS_COMPENSATION() external view returns (uint256);
 
   function getMIN_NET_DEBT() external view returns (uint256);
 

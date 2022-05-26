@@ -2,7 +2,7 @@
 
 pragma solidity 0.6.11;
 
-interface IYetiController {
+interface IPreonController {
   // ======== Mutable Only Owner-Instantaneous ========
   function setAddresses(
     address _activePoolAddress,
@@ -10,11 +10,11 @@ interface IYetiController {
     address _stabilityPoolAddress,
     address _collSurplusPoolAddress,
     address _borrowerOperationsAddress,
-    address _yusdTokenAddress,
-    address _YUSDFeeRecipientAddress,
-    address _yetiFinanceTreasury,
+    address _pusdTokenAddress,
+    address _PUSDFeeRecipientAddress,
+    address _preonFinanceTreasury,
     address _sortedTrovesAddress,
-    address _veYETIAddress,
+    address _vePREONAddress,
     address _troveManagerRedemptionsAddress,
     address _claimAddress,
     address _threeDayTimelock,
@@ -31,11 +31,11 @@ interface IYetiController {
 
   function setFeeBootstrapPeriodEnabled(bool _enabled) external;
 
-  function updateGlobalYUSDMinting(bool _canMint) external;
+  function updateGlobalPUSDMinting(bool _canMint) external;
 
-  function removeValidYUSDMinter(address _minter) external;
+  function removeValidPUSDMinter(address _minter) external;
 
-  function removeVeYetiCaller(address _contractAddress) external;
+  function removeVePreonCaller(address _contractAddress) external;
 
   function updateRedemptionsEnabled(bool _enabled) external;
 
@@ -65,13 +65,13 @@ interface IYetiController {
 
   function setDefaultRouter(address _collateral, address _router) external;
 
-  function changeYetiFinanceTreasury(address _newTreasury) external;
+  function changePreonFinanceTreasury(address _newTreasury) external;
 
   function changeClaimAddress(address _newClaimAddress) external;
 
-  function changeYUSDFeeRecipient(address _newFeeRecipient) external;
+  function changePUSDFeeRecipient(address _newFeeRecipient) external;
 
-  function changeYetiFinanceTreasurySplit(uint256 _newSplit) external;
+  function changePreonFinanceTreasurySplit(uint256 _newSplit) external;
 
   function changeRedemptionBorrowerFeeSplit(uint256 _newSplit) external;
 
@@ -83,7 +83,7 @@ interface IYetiController {
   function changeOracle(address _collateral, address _oracle) external;
 
   // ======== Mutable Only Owner-2 Week TimeLock ========
-  function addValidYUSDMinter(address _minter) external;
+  function addValidPUSDMinter(address _minter) external;
 
   function changeBoostMinuteDecayFactor(uint256 _newBoostMinuteDecayFactor)
     external;
@@ -91,7 +91,7 @@ interface IYetiController {
   function changeGlobalBoostMultiplier(uint256 _newBoostMinuteDecayFactor)
     external;
 
-  function addVeYetiCaller(address _contractAddress) external;
+  function addVePreonCaller(address _contractAddress) external;
 
   function updateMaxSystemColls(uint256 _newMax) external;
 
@@ -185,13 +185,13 @@ interface IYetiController {
   ) external view returns (uint256[] memory);
 
   // ======= VIEW FUNCTIONS FOR CONTRACT FUNCTIONALITY =======
-  function getYetiFinanceTreasury() external view returns (address);
+  function getPreonFinanceTreasury() external view returns (address);
 
-  function getYetiFinanceTreasurySplit() external view returns (uint256);
+  function getPreonFinanceTreasurySplit() external view returns (uint256);
 
   function getRedemptionBorrowerFeeSplit() external view returns (uint256);
 
-  function getYUSDFeeRecipient() external view returns (address);
+  function getPUSDFeeRecipient() external view returns (address);
 
   function leverUpEnabled() external view returns (bool);
 
@@ -229,5 +229,5 @@ interface IYetiController {
     uint256 _entireSystemCollVC,
     uint256 _VCin,
     uint256 _VCout
-  ) external returns (uint256 YUSDFee, uint256 boostFactor);
+  ) external returns (uint256 PUSDFee, uint256 boostFactor);
 }

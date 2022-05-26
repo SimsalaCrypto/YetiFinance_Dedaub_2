@@ -86,7 +86,7 @@ module.exports = {
     networks: {
         hardhat: {
             gas: 8 * 10 ** 6,  // tx gas limit
-            blockGasLimit: 8 * 10 ** 6, // Avalanche Gas Limit (added by @RoboYeti)
+            blockGasLimit: 8 * 10 ** 6, // Avalanche Gas Limit (added by @RoboPreon)
             gasPrice: 50537197095,
             allowUnlimitedContractSize: true,
             chainId: 1,

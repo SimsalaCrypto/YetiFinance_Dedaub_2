@@ -47,7 +47,7 @@ contract WJLP is ERC20_8, IWAsset {
   address internal TMR;
   address internal defaultPool;
   address internal stabilityPool;
-  address internal YetiFinanceTreasury;
+  address internal PreonFinanceTreasury;
   address internal borrowerOperations;
   address internal collSurplusPool;
 
@@ -57,7 +57,7 @@ contract WJLP is ERC20_8, IWAsset {
     uint256 amount; // How many LP tokens the user has provided.
     uint256 rewardDebt; // Reward debt. See explanation below.
     uint256 unclaimedJOEReward;
-    uint256 amountInYeti;
+    uint256 amountInPreon;
     //
     // This explanation is from the Master Chef V2 contracts, which we use here to essentially
     // keep track of rewards which are owned by this contract but actually belong to users
@@ -109,7 +109,7 @@ contract WJLP is ERC20_8, IWAsset {
     address _TMR,
     address _defaultPool,
     address _stabilityPool,
-    address _YetiFinanceTreasury,
+    address _PreonFinanceTreasury,
     address _borrowerOperations,
     address _collSurplusPool
   ) external {
@@ -119,7 +119,7 @@ contract WJLP is ERC20_8, IWAsset {
     checkContract(_TMR);
     checkContract(_defaultPool);
     checkContract(_stabilityPool);
-    checkContract(_YetiFinanceTreasury);
+    checkContract(_PreonFinanceTreasury);
     checkContract(_borrowerOperations);
     checkContract(_collSurplusPool);
     activePool = _activePool;
@@ -127,7 +127,7 @@ contract WJLP is ERC20_8, IWAsset {
     TMR = _TMR;
     defaultPool = _defaultPool;
     stabilityPool = _stabilityPool;
-    YetiFinanceTreasury = _YetiFinanceTreasury;
+    PreonFinanceTreasury = _PreonFinanceTreasury;
     borrowerOperations = _borrowerOperations;
     collSurplusPool = _collSurplusPool;
     addressesSet = true;
@@ -142,7 +142,7 @@ contract WJLP is ERC20_8, IWAsset {
   // contract and get your JLP back is tracked by wJLP balance, and given to _to.
   // If the caller is not borrower operations, then _from and msg.sender must be
   // the same to make it so you must be the one wrapping your tokens.
-  // Intended for use by Yeti Finance so that users can collateralize their LP tokens
+  // Intended for use by Preon Finance so that users can collateralize their LP tokens
   // while gaining yield. So the protocol owns wJLP while the user owns the reward balance
   // and can claim their JOE rewards any time.
   function wrap(
@@ -177,7 +177,7 @@ contract WJLP is ERC20_8, IWAsset {
     _userUpdate(_rewardRecipient, _amount, true);
     _mint(_to, _amount);
     if (_to == activePool) {
-      userInfo[_rewardRecipient].amountInYeti += _amount;
+      userInfo[_rewardRecipient].amountInPreon += _amount;
     }
   }
 
@@ -221,7 +221,7 @@ contract WJLP is ERC20_8, IWAsset {
 
     // Decrease rewards by the same amount user is unwrapping. Ensures they have enough reward balance.
     _userUpdate(_from, _amount, false);
-    userInfo[_from].amountInYeti -= _amount;
+    userInfo[_from].amountInPreon -= _amount;
 
     // Withdraw LP tokens from Master chef contract
     _MasterChefJoe.withdraw(_poolPid, _amount);
@@ -249,10 +249,10 @@ contract WJLP is ERC20_8, IWAsset {
     ) {
       UserInfo memory user = userInfo[_from];
       require(
-        user.amount - user.amountInYeti >= _amount,
-        "Reward balance not sufficient to transfer into Yeti Finance"
+        user.amount - user.amountInPreon >= _amount,
+        "Reward balance not sufficient to transfer into Preon Finance"
       );
-      user.amountInYeti += _amount;
+      user.amountInPreon += _amount;
     }
     return super.transferFrom(_from, _to, _amount);
   }
@@ -274,24 +274,24 @@ contract WJLP is ERC20_8, IWAsset {
       ) {
         UserInfo memory user = userInfo[msg.sender];
         require(
-          user.amount - user.amountInYeti >= _amount,
-          "Reward balance not sufficient to transfer into Yeti Finance"
+          user.amount - user.amountInPreon >= _amount,
+          "Reward balance not sufficient to transfer into Preon Finance"
         );
-        user.amountInYeti += _amount;
+        user.amountInPreon += _amount;
       }
     }
     return super.transfer(_to, _amount);
   }
 
   // When funds are transferred into the stabilityPool on liquidation,
-  // the rewards these funds are earning are allocated Yeti Finance Treasury.
+  // the rewards these funds are earning are allocated Preon Finance Treasury.
   // But when an stabilityPool depositor wants to withdraw their collateral,
-  // the wAsset is unwrapped and the rewards are no longer accruing to the Yeti Finance Treasury
+  // the wAsset is unwrapped and the rewards are no longer accruing to the Preon Finance Treasury
   function endTreasuryReward(address _to, uint256 _amount) external override {
     _requireCallerIsSPorDP();
 
     // Then update new owner of rewards.
-    _updateReward(YetiFinanceTreasury, _to, _amount);
+    _updateReward(PreonFinanceTreasury, _to, _amount);
   }
 
   // Decreases _from's amount of LP tokens earning yield by _amount
@@ -314,9 +314,9 @@ contract WJLP is ERC20_8, IWAsset {
     // Claim any outstanding reward first
     _sendJoeReward(_from, _from);
     _userUpdate(_from, _amount, false);
-    userInfo[_from].amountInYeti -= _amount;
+    userInfo[_from].amountInPreon -= _amount;
     _userUpdate(_to, _amount, true);
-    userInfo[_to].amountInYeti += _amount;
+    userInfo[_to].amountInPreon += _amount;
   }
 
   // checks total pending JOE rewards for _for

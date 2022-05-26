@@ -1,10 +1,10 @@
 const { artifacts, ethers, assert } = require("hardhat")
 const deploymentHelper = require("../utils/deploymentHelpers.js")
 const testHelpers = require("../utils/testHelpers.js")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester.sol")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester.sol")
 const TroveManagerTester = artifacts.require("./TroveManagerTester.sol")
-const YetiTokenTester = artifacts.require("./YETITokenTester.sol")
-const YetiFinanceTreasury = artifacts.require("./YetiFinanceTreasury.sol")
+const PreonTokenTester = artifacts.require("./PREONTokenTester.sol")
+const PreonFinanceTreasury = artifacts.require("./PreonFinanceTreasury.sol")
 const {getWAVAX, getJOEContracts, wrapAVAX, zapForWAVAX_WETH_JLP, approveJLP} = require("../utils/joeHelper.js")
 
 let joeRouter
@@ -28,10 +28,10 @@ const zeroAddress = "0x0000000000000000000000000000000000000000"
 const timeValues = testHelpers.TimeValues
 
 
-const YUSDToken = artifacts.require("YUSDToken")
-const YetiToken = artifacts.require("YETIToken")
-const sYETIToken = artifacts.require("./sYETIToken.sol")
-const sYETITokenTester = artifacts.require("./sYETITokenTester.sol")
+const PUSDToken = artifacts.require("PUSDToken")
+const PreonToken = artifacts.require("PREONToken")
+const sPREONToken = artifacts.require("./sPREONToken.sol")
+const sPREONTokenTester = artifacts.require("./sPREONTokenTester.sol")
 
 console.log("")
 console.log("All tests will fail if mainnet not forked in hardhat.config.js")
@@ -50,9 +50,9 @@ contract('WAssetTroveManagerTests', async accounts => {
 
   const openTrove = async (params) => th.openTrove(contracts, params)
 
-  let yusdToken
-  let yetiToken
-  let sYetiToken
+  let pusdToken
+  let preonToken
+  let sPreonToken
   let troveManager
   let borrowerOperations
   let WJLP
@@ -64,17 +64,17 @@ contract('WAssetTroveManagerTests', async accounts => {
   beforeEach(async () => {
     contracts = await deploymentHelper.deployLiquityCore()
     contracts.troveManager = await TroveManagerTester.new()
-    contracts.yusdToken = await YUSDTokenTester.new(
+    contracts.pusdToken = await PUSDTokenTester.new(
       contracts.troveManager.address,
       contracts.troveManagerLiquidations.address,
       contracts.troveManagerRedemptions.address,
       contracts.stabilityPool.address,
       contracts.borrowerOperations.address
     )
-    const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+    const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
     await ethers.provider.send("hardhat_setBalance", [
       harry,
@@ -91,9 +91,9 @@ contract('WAssetTroveManagerTests', async accounts => {
     troveManager = contracts.troveManager;
     borrowerOperations = contracts.borrowerOperations
     weth = contracts.weth
-    yusdToken = contracts.yusdToken;
+    pusdToken = contracts.pusdToken;
     stabilityPool = contracts.stabilityPool;
-    treasury = YETIContracts.yetiFinanceTreasury;
+    treasury = PREONContracts.preonFinanceTreasury;
     await contracts.priceFeedJLP.setPrice(toBN(dec(200, 18)).toString())
   })
 
@@ -158,7 +158,7 @@ contract('WAssetTroveManagerTests', async accounts => {
       // th.test opens a trove with WJLP as collateral for harry
       await th.test(contracts, harry, WJLP.address, amount)
       // alice opens a large trove with WETH collateral and a large debt position
-      await th.openTrove(contracts, { ICR: toBN(dec(2, 18)), extraYUSDAmount: toBN(dec(2, 25)), extraParams: { from: alice } })
+      await th.openTrove(contracts, { ICR: toBN(dec(2, 18)), extraPUSDAmount: toBN(dec(2, 25)), extraParams: { from: alice } })
 
 
       let harryRewards = await WJLP.getUserInfo(harry);
@@ -184,8 +184,8 @@ contract('WAssetTroveManagerTests', async accounts => {
       // console.log("VC:", val.toString());
 
 
-      const YUSDBalance = await yusdToken.balanceOf(alice);
-      await stabilityPool.provideToSP(YUSDBalance, zeroAddress, {from: alice});
+      const PUSDBalance = await pusdToken.balanceOf(alice);
+      await stabilityPool.provideToSP(PUSDBalance, zeroAddress, {from: alice});
 
       await contracts.priceFeedJLP.setPrice(toBN(dec(155, 17)).toString())
 
@@ -231,7 +231,7 @@ contract('WAssetTroveManagerTests', async accounts => {
       assert.equal(initJLP_alice.toString(), "0")
       assert.equal(initWJLP_alice.toString(), "0")
 
-      await stabilityPool.withdrawFromSP(YUSDBalance, {from: alice});
+      await stabilityPool.withdrawFromSP(PUSDBalance, {from: alice});
       const finalWJLP_alice = await WJLP.balanceOf(alice);
       const finalJLP_alice = await jlp.balanceOf(alice)
 
@@ -272,9 +272,9 @@ contract('WAssetTroveManagerTests', async accounts => {
       // th.test opens a trove with WJLP as collateral for harry
       await th.test(contracts, harry, WJLP.address, amount)
       // alice opens a large trove with WETH collateral and a large debt position
-      await th.openTrove(contracts, { ICR: toBN(dec(16, 17)), extraYUSDAmount: toBN(dec(2, 25)), extraParams: { from: alice } })
-      const YUSDBalance = await yusdToken.balanceOf(alice);
-      await stabilityPool.provideToSP(YUSDBalance, zeroAddress, {from: alice});
+      await th.openTrove(contracts, { ICR: toBN(dec(16, 17)), extraPUSDAmount: toBN(dec(2, 25)), extraParams: { from: alice } })
+      const PUSDBalance = await pusdToken.balanceOf(alice);
+      await stabilityPool.provideToSP(PUSDBalance, zeroAddress, {from: alice});
 
       await contracts.priceFeedJLP.setPrice(toBN(dec(155, 17)).toString())
 
@@ -320,7 +320,7 @@ contract('WAssetTroveManagerTests', async accounts => {
       assert.equal(initJLP_alice.toString(), "0")
       assert.equal(initWJLP_alice.toString(), "0")
 
-      await stabilityPool.withdrawFromSP(YUSDBalance, {from: alice});
+      await stabilityPool.withdrawFromSP(PUSDBalance, {from: alice});
       const finalWJLP_alice = await WJLP.balanceOf(alice);
       const finalJLP_alice = await jlp.balanceOf(alice)
 
@@ -362,10 +362,10 @@ contract('WAssetTroveManagerTests', async accounts => {
       await th.test(contracts, harry, WJLP.address, amount)
       await borrowerOperations.adjustTrove([], [], [], [], dec(2000, 18), true, harry, harry, th._100pct, { from: harry })
       // alice opens a large trove with WETH collateral and a large debt position
-      await th.openTrove(contracts, { ICR: toBN(dec(200, 18)), extraYUSDAmount: toBN(dec(2, 25)), extraParams: { from: alice } })
+      await th.openTrove(contracts, { ICR: toBN(dec(200, 18)), extraPUSDAmount: toBN(dec(2, 25)), extraParams: { from: alice } })
 
-      const YUSDRedemption = toBN(dec(2000, 18))
-      const tx1 = await th.performRedemptionWithMaxFeeAmount(alice, contracts, YUSDRedemption, YUSDRedemption)
+      const PUSDRedemption = toBN(dec(2000, 18))
+      const tx1 = await th.performRedemptionWithMaxFeeAmount(alice, contracts, PUSDRedemption, PUSDRedemption)
       assert.isTrue(tx1.receipt.status)
 
       const AliceJLPAfter = await jlp.balanceOf(alice)
@@ -409,14 +409,14 @@ contract('WAssetTroveManagerTests', async accounts => {
       await th.test(contracts, harry, WJLP.address, amount)
       // await borrowerOperations.adjustTrove([], [], [], [], dec(2000, 18), true, harry, harry, th._100pct, { from: harry })
       // alice opens a large trove with WETH collateral and a large debt position
-      await th.openTrove(contracts, { ICR: toBN(dec(200, 18)), extraYUSDAmount: toBN(dec(2, 25)), extraParams: { from: alice } })
+      await th.openTrove(contracts, { ICR: toBN(dec(200, 18)), extraPUSDAmount: toBN(dec(2, 25)), extraParams: { from: alice } })
 
 
       const harryDebtBefore = await troveManager.getTroveDebt(harry)
       console.log("Harry trove debt: ", harryDebtBefore.toString())
 
-      const YUSDRedemption = toBN(dec(4000, 18))
-      const tx1 = await th.performRedemptionWithMaxFeeAmount(alice, contracts, YUSDRedemption, YUSDRedemption)
+      const PUSDRedemption = toBN(dec(4000, 18))
+      const tx1 = await th.performRedemptionWithMaxFeeAmount(alice, contracts, PUSDRedemption, PUSDRedemption)
       assert.isTrue(tx1.receipt.status)
 
       const harryDebtAfter = await troveManager.getTroveDebt(harry)
@@ -492,7 +492,7 @@ contract('WAssetTroveManagerTests', async accounts => {
       assert.isTrue(harryRewards[0].toString() == amount3.add(amount2).sub(toBN(dec(1, 18))).toString())
       assert.isTrue(aliceRewards[0].toString() == amount.toString())
 
-      await contracts.yusdToken.transfer(harry, toBN(dec(1000, 18)), { from: alice })
+      await contracts.pusdToken.transfer(harry, toBN(dec(1000, 18)), { from: alice })
       await contracts.borrowerOperations.closeTrove( {from: harry} )
       const harryBalanceFinal = await jlp.balanceOf(harry)
       assert.isTrue(harryBalanceFinal.toString() == (amount3.add(amount2)).toString())
@@ -513,7 +513,7 @@ contract('WAssetTroveManagerTests', async accounts => {
     //   // th.test opens a trove with WJLP as collateral for harry
     //   await th.test(contracts, harry, WJLP.address, amount)
     //   // alice opens a large trove with WETH collateral and a large debt position at 200% ICR
-    //   await th.openTrove(contracts, { ICR: toBN(dec(2, 18)), extraYUSDAmount: toBN(dec(2, 25)), extraParams: { from: alice } })
+    //   await th.openTrove(contracts, { ICR: toBN(dec(2, 18)), extraPUSDAmount: toBN(dec(2, 25)), extraParams: { from: alice } })
     //
     //   await contracts.priceFeedJLP.setPrice(toBN(dec(170, 17)).toString())
     //
@@ -576,7 +576,7 @@ contract('WAssetTroveManagerTests', async accounts => {
     //     //
     //     // assert(aliceRewardFirstMonth.mul(toBN(2)).eq(bobRewardFirstMonth))
     //     //
-    //     // th.redeemCollateralAndGetTxObject(alice, contracts, yusdToken.balanceOf(alice))
+    //     // th.redeemCollateralAndGetTxObject(alice, contracts, pusdToken.balanceOf(alice))
     //     //
     //     // // fastforward time
     //     // await ethers.provider.send('evm_increaseTime', [2592000]);
@@ -600,7 +600,7 @@ contract('WAssetTroveManagerTests', async accounts => {
     //     const { collateral: A_coll } = await th. openTroveWithJLP(contracts,  { ICR: toBN(dec(400, 16)), extraParams: { from: alice } })
     //     const { collateral: B_coll } = await th.openTroveWithJLP(contracts, { ICR: toBN(dec(210, 16)), extraParams: { from: bob } })
     //
-    //     await stabilityPool.provideToSP(yusdToken.balanceOf(alice), ZERO_ADDRESS, { from: alice })
+    //     await stabilityPool.provideToSP(pusdToken.balanceOf(alice), ZERO_ADDRESS, { from: alice })
     //
     //     // fastforward time
     //     await ethers.provider.send('evm_increaseTime', [2592000]);

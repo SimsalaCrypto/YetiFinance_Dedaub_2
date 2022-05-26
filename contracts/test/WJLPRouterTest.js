@@ -2,10 +2,10 @@ const { artifacts, ethers, assert } = require("hardhat")
 const deploymentHelper = require("../utils/deploymentHelpers.js")
 const testHelpers = require("../utils/testHelpers.js")
 const WJLPRouter = artifacts.require("./Routers/WJLPRouter.sol")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester.sol")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester.sol")
 const TroveManagerTester = artifacts.require("./TroveManagerTester.sol")
-const YetiTokenTester = artifacts.require("./YETITokenTester.sol")
-const YetiFinanceTreasury = artifacts.require("./YetiFinanceTreasury.sol")
+const PreonTokenTester = artifacts.require("./PREONTokenTester.sol")
+const PreonFinanceTreasury = artifacts.require("./PreonFinanceTreasury.sol")
 const {getWAVAX, getJOEContracts, wrapAVAX, zapForWAVAX_WETH_JLP, approveJLP} = require("../utils/joeHelper.js")
 
 let joeRouter
@@ -28,10 +28,10 @@ const getDifference = th.getDifference
 const assertRevert = th.assertRevert
 const mv = testHelpers.MoneyValues
 
-const YUSDToken = artifacts.require("YUSDToken")
-const YetiToken = artifacts.require("YETIToken")
-const sYETIToken = artifacts.require("./sYETIToken.sol")
-const sYETITokenTester = artifacts.require("./sYETITokenTester.sol")
+const PUSDToken = artifacts.require("PUSDToken")
+const PreonToken = artifacts.require("PREONToken")
+const sPREONToken = artifacts.require("./sPREONToken.sol")
+const sPREONTokenTester = artifacts.require("./sPREONTokenTester.sol")
 
 console.log("")
 console.log("All tests will fail if mainnet not forked in hardhat.config.js")
@@ -50,9 +50,9 @@ contract('WAssetTroveManagerTests', async accounts => {
 
   const openTrove = async (params) => th.openTrove(contracts, params)
 
-  let yusdToken
-  let yetiToken
-  let sYetiToken
+  let pusdToken
+  let preonToken
+  let sPreonToken
   let troveManager
   let borrowerOperations
   let WJLP
@@ -63,18 +63,18 @@ contract('WAssetTroveManagerTests', async accounts => {
   beforeEach(async () => {
     contracts = await deploymentHelper.deployLiquityCore()
     contracts.troveManager = await TroveManagerTester.new()
-    contracts.yusdToken = await YUSDTokenTester.new(
+    contracts.pusdToken = await PUSDTokenTester.new(
       contracts.troveManager.address,
       contracts.troveManagerLiquidations.address,
       contracts.troveManagerRedemptions.address,
       contracts.stabilityPool.address,
       contracts.borrowerOperations.address
     )
-    const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+    const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
     await ethers.provider.send("hardhat_setBalance", [
       harry,
@@ -93,13 +93,13 @@ contract('WAssetTroveManagerTests', async accounts => {
       weth_wavax_jlp_address,
       WJLP.address,
       joeZap_address, 
-      contracts.yusdToken.address,
+      contracts.pusdToken.address,
     )
 
     troveManager = contracts.troveManager;
     borrowerOperations = contracts.borrowerOperations
     weth = contracts.weth
-    yusdToken = contracts.yusdToken;
+    pusdToken = contracts.pusdToken;
     stabilityPool = contracts.stabilityPool;
   })
 

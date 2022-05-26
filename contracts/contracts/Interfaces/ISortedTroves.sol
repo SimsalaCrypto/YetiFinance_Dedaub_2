@@ -11,7 +11,7 @@ interface ISortedTroves {
     address _TroveManagerAddress,
     address _borrowerOperationsAddress,
     address _troveManagerRedemptionsAddress,
-    address _yetiControllerAddress
+    address _preonControllerAddress
   ) external;
 
   function insert(

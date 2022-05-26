@@ -2,16 +2,16 @@
 
 pragma solidity 0.6.11;
 
-import "./YetiMath.sol";
+import "./PreonMath.sol";
 import "../Interfaces/IActivePool.sol";
 import "../Interfaces/IDefaultPool.sol";
-import "./YetiCustomBase.sol";
+import "./PreonCustomBase.sol";
 
 /*
- * Base contract for ActivePool and DefaultPool. Inherits from YetiCustomBase
- * and contains additional array operation functions and _requireCallerIsYetiController()
+ * Base contract for ActivePool and DefaultPool. Inherits from PreonCustomBase
+ * and contains additional array operation functions and _requireCallerIsPreonController()
  */
-contract PoolBase2 is YetiCustomBase {
+contract PoolBase2 is PreonCustomBase {
   /**
    * @dev This empty reserved space is put in place to allow future versions to add new
    * variables without shifting down storage in the inheritance chain.
@@ -24,7 +24,7 @@ contract PoolBase2 is YetiCustomBase {
    *    Used by pool accounting of tokens inside that pool.
    * @dev Inspired by left join in relational databases, _coll1 is always taken while
    *    _tokens and _amounts are just added to that side. _coll1 index is actually equal
-   *    always to the index in YetiController of that token. Time complexity depends
+   *    always to the index in PreonController of that token. Time complexity depends
    *    here on the number of whitelisted tokens = L since that it equals pool coll length.
    *    Time complexity is therefore O(L)
    */
@@ -73,7 +73,7 @@ contract PoolBase2 is YetiCustomBase {
    *    Used by pool accounting of tokens inside that pool.
    * @dev Inspired by left join in relational databases, _coll1 is always taken while
    *    _tokens and _amounts are just subbed from that side. _coll1 index is actually equal
-   *    always to the index in YetiController of that token. Time complexity depends
+   *    always to the index in PreonController of that token. Time complexity depends
    *    here on the number of whitelisted tokens = L since that it equals pool coll length.
    *    Time complexity is therefore O(L)
    */
@@ -117,7 +117,7 @@ contract PoolBase2 is YetiCustomBase {
     return diffAmounts;
   }
 
-  function _requireCallerIsYetiController() internal view {
+  function _requireCallerIsPreonController() internal view {
     if (msg.sender != address(controller)) {
       _revertWrongFuncCaller();
     }

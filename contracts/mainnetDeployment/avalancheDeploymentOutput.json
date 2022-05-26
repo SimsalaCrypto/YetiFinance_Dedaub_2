@@ -43,7 +43,7 @@
     "address": "0xC72928315b2b4bc80FcEE34C01CF317E6110e9a1",
     "txHash": "0xae03b6ed91b275e39c45461fad3267730d62bcaf35ea45fd01dc9017b4d81f5b"
   },
-  "yusdToken": {
+  "pusdToken": {
     "address": "0x4fbf0429599460D327BD5F55625E30E4fC066095",
     "txHash": "0xded1cfc2af2bd731339ba56a1bf25ad70d938abfdea1ce70e3969500f674f747"
   },
@@ -54,7 +54,7 @@
     "address": "0x9717Ff7406Be065EA177bA9ab1bE704060Af8370",
     "txHash": "0xcf335c62218823dc9ad7c579a0343cd551170574e3c927b7500b67c93e9eae8d"
   },
-  "sYETI": {
+  "sPREON": {
     "address": "0xb4387D93B5A9392f64963cd44389e7D9D2E1053c",
     "txHash": "0x869b33f5b94925ed7b75a806892ce8050eb85cebef00e8fd5cc1470194f9b19b"
   },
@@ -66,7 +66,7 @@
     "address": "0xb4Fbc7839ce88029c8c1c6274660118e27B6f982",
     "txHash": "0x3f7e9edb0e3f125707ba2dbe2b8a2de52dc03f2009eed7a03961e796e2237b1c"
   },
-  "yetiToken": {
+  "preonToken": {
     "address": "0x094bd7B2D99711A1486FB94d4395801C6d0fdDcC",
     "txHash": "0x1a33587219c8ab940ea46409fddac6609df4abfb2c7de6311615f9dd08e1546a"
   },

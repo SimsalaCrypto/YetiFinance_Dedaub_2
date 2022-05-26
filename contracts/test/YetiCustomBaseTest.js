@@ -4,7 +4,7 @@ const testHelpers = require("../utils/testHelpers.js")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
 const NonPayable = artifacts.require('NonPayable.sol')
 const TroveManagerTester = artifacts.require("TroveManagerTester")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester")
 const LiquityBaseTester = artifacts.require("./LiquityBaseTester")
 
 const th = testHelpers.TestHelper
@@ -18,10 +18,10 @@ const ZERO_ADDRESS = th.ZERO_ADDRESS
 const assertRevert = th.assertRevert
 const WAVAX_ADDRESS = ZERO_ADDRESS;
 
-/* NOTE: Some of the borrowing tests do not test for specific YUSD fee values. They only test that the
+/* NOTE: Some of the borrowing tests do not test for specific PUSD fee values. They only test that the
  * fees are non-zero when they should occur, and that they decay over time.
  *
- * Specific YUSD fee values will depend on the final fee schedule used, and the final choice for
+ * Specific PUSD fee values will depend on the final fee schedule used, and the final choice for
  *  the parameter MINUTE_DECAY_FACTOR in the TroveManager, which is still TBD based on economic
  * modelling.
  * 
@@ -41,15 +41,15 @@ contract('newBorrowerOperations', async accounts => {
 
     let priceFeedAVAX
     let priceFeedETH
-    let yusdToken
+    let pusdToken
     let sortedTroves
     let troveManager
     let activePool
     let stabilityPool
     let defaultPool
     let borrowerOperations
-    let sYETI
-    let yetiToken
+    let sPREON
+    let preonToken
     let liquityBaseTester
 
     let a1
@@ -77,7 +77,7 @@ contract('newBorrowerOperations', async accounts => {
 
     let contracts
 
-    const getOpenTroveYUSDAmount = async (totalDebt) => th.getOpenTroveYUSDAmount(contracts, totalDebt)
+    const getOpenTrovePUSDAmount = async (totalDebt) => th.getOpenTrovePUSDAmount(contracts, totalDebt)
     const getNetBorrowingAmount = async (debtWithFee) => th.getNetBorrowingAmount(contracts, debtWithFee)
     const getActualDebtFromComposite = async (compositeDebt) => th.getActualDebtFromComposite(compositeDebt, contracts)
     const openTrove = async (params) => th.openTrove(contracts, params)
@@ -85,7 +85,7 @@ contract('newBorrowerOperations', async accounts => {
     const getTroveEntireDebt = async (trove) => th.getTroveEntireDebt(contracts, trove)
     const getTroveStake = async (trove) => th.getTroveStake(contracts, trove)
 
-    let YUSD_GAS_COMPENSATION
+    let PUSD_GAS_COMPENSATION
     let MIN_NET_DEBT
     let BORROWING_FEE_FLOOR
 
@@ -102,24 +102,24 @@ contract('newBorrowerOperations', async accounts => {
             LiquityBaseTester.setAsDeployed(defaultPool)
             liquityBaseTester = contracts.liquityBaseTester
             
-            contracts = await deploymentHelper.deployYUSDTokenTester(contracts)
-            const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+            contracts = await deploymentHelper.deployPUSDTokenTester(contracts)
+            const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
-            await deploymentHelper.connectYETIContracts(YETIContracts)
-            await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-            await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+            await deploymentHelper.connectPREONContracts(PREONContracts)
+            await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+            await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
             await liquityBaseTester.setAddresses(contracts.whitelist.address, contracts.defaultPool.address, contracts.activePool.address)
 
             if (withProxy) {
                 const users = [alice, bob, carol, dennis, whale, A, B, C, D, E]
-                await deploymentHelper.deployProxyScripts(contracts, YETIContracts, owner, users)
+                await deploymentHelper.deployProxyScripts(contracts, PREONContracts, owner, users)
             }
 
             // priceFeed = contracts.priceFeedTestnet
             priceFeedAVAX = contracts.priceFeedAVAX
             priceFeedETH = contracts.priceFeedETH
-            yusdToken = contracts.yusdToken
+            pusdToken = contracts.pusdToken
             sortedTroves = contracts.sortedTroves
             troveManager = contracts.troveManager
             activePool = contracts.activePool
@@ -127,10 +127,10 @@ contract('newBorrowerOperations', async accounts => {
             defaultPool = contracts.defaultPool
             borrowerOperations = contracts.borrowerOperations
 
-            sYETI = YETIContracts.sYETI
-            yetiToken = YETIContracts.yetiToken
+            sPREON = PREONContracts.sPREON
+            preonToken = PREONContracts.preonToken
 
-            YUSD_GAS_COMPENSATION = await borrowerOperations.YUSD_GAS_COMPENSATION()
+            PUSD_GAS_COMPENSATION = await borrowerOperations.PUSD_GAS_COMPENSATION()
             MIN_NET_DEBT = await borrowerOperations.MIN_NET_DEBT()
             BORROWING_FEE_FLOOR = await borrowerOperations.BORROWING_FEE_FLOOR()
 

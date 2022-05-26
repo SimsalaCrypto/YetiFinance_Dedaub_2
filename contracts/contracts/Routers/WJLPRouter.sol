@@ -2,13 +2,13 @@
 
 pragma solidity 0.6.11;
 
-import "../Interfaces/IYetiRouter.sol";
+import "../Interfaces/IPreonRouter.sol";
 import "../Interfaces/IWAsset.sol";
 import "../Interfaces/IJoeZapper.sol";
 import "../Interfaces/IERC20.sol";
 import "../Dependencies/SafeMath.sol";
 
-contract WJLPRouter is IYetiRouter {
+contract WJLPRouter is IPreonRouter {
   using SafeMath for uint256;
 
   address internal activePoolAddress;
@@ -16,21 +16,21 @@ contract WJLPRouter is IYetiRouter {
   address public WJLPAddress;
   IJoeZapper public joeZapper;
   IWAsset public WJLP;
-  address internal yusdTokenAddress;
+  address internal pusdTokenAddress;
 
   constructor(
     address _activePoolAddress,
     address _JLPAddress,
     address _WJLPAddress,
     address _joeZapperAddress,
-    address _yusdTokenAddress
+    address _pusdTokenAddress
   ) public {
     activePoolAddress = _activePoolAddress;
     JLPAddress = _JLPAddress;
     WJLPAddress = _WJLPAddress;
     WJLP = IWAsset(_WJLPAddress);
     joeZapper = IJoeZapper(_joeZapperAddress);
-    yusdTokenAddress = _yusdTokenAddress;
+    pusdTokenAddress = _pusdTokenAddress;
     // Approve the WJLP contract to take any of this contract's JLP tokens.
     IERC20(_WJLPAddress).approve(address(WJLP), 2**256 - 1);
   }

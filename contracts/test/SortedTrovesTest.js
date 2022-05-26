@@ -7,7 +7,7 @@ const SortedTrovesTester = artifacts.require("SortedTrovesTester")
 const TroveManagerTester = artifacts.require("TroveManagerTester")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
 const SortedTrovesBOTester = artifacts.require("./SortedTrovesBOTester.sol")
-const YUSDToken = artifacts.require("YUSDToken")
+const PUSDToken = artifacts.require("PUSDToken")
 
 const th = testHelpers.TestHelper
 const dec = th.dec
@@ -46,7 +46,7 @@ contract('SortedTroves', async accounts => {
   let troveManager
   let troveManagerLiquidations
   let borrowerOperations
-  let yusdToken
+  let pusdToken
 
   let stableCoin
   let priceFeedStableCoin
@@ -60,7 +60,7 @@ contract('SortedTroves', async accounts => {
 
   let contracts
 
-  const getOpenTroveYUSDAmount = async (totalDebt) => th.getOpenTroveYUSDAmount(contracts, totalDebt)
+  const getOpenTrovePUSDAmount = async (totalDebt) => th.getOpenTrovePUSDAmount(contracts, totalDebt)
   const openTrove = async (params) => th.openTrove(contracts, params)
 
   describe('SortedTroves', () => {
@@ -68,7 +68,7 @@ contract('SortedTroves', async accounts => {
       contracts = await deploymentHelper.deployLiquityCore()
       contracts.troveManager = await TroveManagerTester.new()
       //contracts.borrowerOperations = await BorrowerOperationsTester.new()
-      contracts.yusdToken = await YUSDToken.new(
+      contracts.pusdToken = await PUSDToken.new(
         contracts.troveManager.address,
         contracts.troveManagerLiquidations.address,
         contracts.troveManagerRedemptions.address,
@@ -76,15 +76,15 @@ contract('SortedTroves', async accounts => {
         contracts.borrowerOperations.address
       )
 
-      const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+      const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
       sortedTroves = contracts.sortedTroves
       troveManager = contracts.troveManager
       borrowerOperations = contracts.borrowerOperations
-      yusdToken = contracts.yusdToken
-      await deploymentHelper.connectYETIContracts(YETIContracts)
-      await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-      await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+      pusdToken = contracts.pusdToken
+      await deploymentHelper.connectPREONContracts(PREONContracts)
+      await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+      await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
     })
 
     it('contains(): returns true for addresses that have opened troves', async () => {
@@ -118,16 +118,16 @@ contract('SortedTroves', async accounts => {
     })
 
     it('contains(): returns false for addresses that opened and then closed a trove', async () => {
-      await openTrove({ ICR: toBN(dec(1000, 18)), extraYUSDAmount: toBN(dec(3000, 18)), extraParams: { from: whale } })
+      await openTrove({ ICR: toBN(dec(1000, 18)), extraPUSDAmount: toBN(dec(3000, 18)), extraParams: { from: whale } })
 
       await openTrove({ ICR: toBN(dec(150, 16)), extraParams: { from: alice } })
       await openTrove({ ICR: toBN(dec(20, 18)), extraParams: { from: bob } })
       await openTrove({ ICR: toBN(dec(2000, 18)), extraParams: { from: carol } })
 
       // to compensate borrowing fees
-      await yusdToken.transfer(alice, dec(1000, 18), { from: whale })
-      await yusdToken.transfer(bob, dec(1000, 18), { from: whale })
-      await yusdToken.transfer(carol, dec(1000, 18), { from: whale })
+      await pusdToken.transfer(alice, dec(1000, 18), { from: whale })
+      await pusdToken.transfer(bob, dec(1000, 18), { from: whale })
+      await pusdToken.transfer(carol, dec(1000, 18), { from: whale })
 
       // A, B, C close troves
       await borrowerOperations.closeTrove({ from: alice })
@@ -147,16 +147,16 @@ contract('SortedTroves', async accounts => {
 
     // true for addresses that opened -> closed -> opened a trove
     it('contains(): returns true for addresses that opened, closed and then re-opened a trove', async () => {
-      await openTrove({ ICR: toBN(dec(1000, 18)), extraYUSDAmount: toBN(dec(3000, 18)), extraParams: { from: whale } })
+      await openTrove({ ICR: toBN(dec(1000, 18)), extraPUSDAmount: toBN(dec(3000, 18)), extraParams: { from: whale } })
 
       await openTrove({ ICR: toBN(dec(150, 16)), extraParams: { from: alice } })
       await openTrove({ ICR: toBN(dec(20, 18)), extraParams: { from: bob } })
       await openTrove({ ICR: toBN(dec(2000, 18)), extraParams: { from: carol } })
 
       // to compensate borrowing fees
-      await yusdToken.transfer(alice, dec(1000, 18), { from: whale })
-      await yusdToken.transfer(bob, dec(1000, 18), { from: whale })
-      await yusdToken.transfer(carol, dec(1000, 18), { from: whale })
+      await pusdToken.transfer(alice, dec(1000, 18), { from: whale })
+      await pusdToken.transfer(bob, dec(1000, 18), { from: whale })
+      await pusdToken.transfer(carol, dec(1000, 18), { from: whale })
 
       // A, B, C close troves
       await borrowerOperations.closeTrove({ from: alice })
@@ -260,7 +260,7 @@ contract('SortedTroves', async accounts => {
       contracts.troveManager = await TroveManagerTester.new()
       contracts.borrowerOperations = await SortedTrovesBOTester.new()
       //contracts.borrowerOperations = await BorrowerOperationsTester.new()
-      contracts.yusdToken = await YUSDToken.new(
+      contracts.pusdToken = await PUSDToken.new(
         contracts.troveManager.address,
         contracts.troveManagerLiquidations.address,
         contracts.troveManagerRedemptions.address,
@@ -268,15 +268,15 @@ contract('SortedTroves', async accounts => {
         contracts.borrowerOperations.address
       )
 
-      const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+      const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
       sortedTroves = contracts.sortedTroves
       troveManager = contracts.troveManager
       borrowerOperations = contracts.borrowerOperations
-      yusdToken = contracts.yusdToken
-      await deploymentHelper.connectYETIContracts(YETIContracts)
-      await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-      await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+      pusdToken = contracts.pusdToken
+      await deploymentHelper.connectPREONContracts(PREONContracts)
+      await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+      await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
       sortedTrovesTester = await SortedTrovesTester.new()
 
@@ -347,14 +347,14 @@ contract('SortedTroves', async accounts => {
       contracts.borrowerOperations = await SortedTrovesBOTester.new()
       //contracts.borrowerOperations = await BorrowerOperationsTester.new()
       // contracts.troveManager = await TroveManagerTester.new()
-      contracts.yusdToken = await YUSDToken.new(
+      contracts.pusdToken = await PUSDToken.new(
         contracts.troveManager.address,
         contracts.troveManagerLiquidations.address,
         contracts.troveManagerRedemptions.address,
         contracts.stabilityPool.address,
         contracts.borrowerOperations.address
       )
-      const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+      const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
       sortedTrovesTester = await SortedTrovesTester.new()
       // await sortedTrovesTester.setParams(10, troveManager.address, borrowerOperations.address, contracts.troveManagerRedemptions.address)
@@ -362,10 +362,10 @@ contract('SortedTroves', async accounts => {
       sortedTroves = contracts.sortedTroves
       troveManager = contracts.troveManager
       borrowerOperations = contracts.borrowerOperations
-      yusdToken = contracts.yusdToken
-      await deploymentHelper.connectYETIContracts(YETIContracts)
-      await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-      await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+      pusdToken = contracts.pusdToken
+      await deploymentHelper.connectPREONContracts(PREONContracts)
+      await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+      await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
 
 
@@ -555,7 +555,7 @@ contract('SortedTroves', async accounts => {
   })
 
 
-  // Sequentially add coll and withdraw YUSD, 1 account at a time
+  // Sequentially add coll and withdraw PUSD, 1 account at a time
   const makeTrovesInSequence = async () => {
   // const makeTrovesInSequence = async () => {
     const allColls = [contracts.weth, contracts.wavax, stableCoin, tokenRisky]

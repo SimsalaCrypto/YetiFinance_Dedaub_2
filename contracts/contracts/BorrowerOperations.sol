@@ -4,13 +4,13 @@ pragma solidity 0.6.11;
 
 import "../Interfaces/IBorrowerOperations.sol";
 import "../Interfaces/ITroveManager.sol";
-import "../Interfaces/IYUSDToken.sol";
+import "../Interfaces/IPUSDToken.sol";
 import "../Interfaces/ICollSurplusPool.sol";
 import "../Interfaces/ISortedTroves.sol";
-import "../Interfaces/IYetiController.sol";
-import "../Interfaces/IYetiLever.sol";
+import "../Interfaces/IPreonController.sol";
+import "../Interfaces/IPreonLever.sol";
 import "../Interfaces/IERC20.sol";
-import "../Interfaces/IYetiVaultToken.sol";
+import "../Interfaces/IPreonVaultToken.sol";
 import "../Dependencies/LiquityBase.sol";
 import "../Dependencies/SafeMath.sol";
 import "../Dependencies/ReentrancyGuardUpgradeable.sol";
@@ -54,16 +54,16 @@ import "../Dependencies/SafeERC20.sol";
  *
  *
  * A summary of Lever Up:
- * Takes in a collateral token A, and simulates borrowing of YUSD at a certain collateral ratio and
+ * Takes in a collateral token A, and simulates borrowing of PUSD at a certain collateral ratio and
  * buying more token A, putting back into protocol, buying more A, etc. at a certain leverage amount.
- * So if at 3x leverage and 1000$ token A, it will mint 1000 * 3x * 2/3 = $2000 YUSD, then swap for
+ * So if at 3x leverage and 1000$ token A, it will mint 1000 * 3x * 2/3 = $2000 PUSD, then swap for
  * token A by using some router strategy, returning a little under $2000 token A to put back in the
  * trove. The number here is 2/3 because the math works out to be that collateral ratio is 150% if
  * we have a 3x leverage. They now have a trove with $3000 of token A and a collateral ratio of 150%.
- * Using leverage will not return YUSD debt for the borrower.
+ * Using leverage will not return PUSD debt for the borrower.
  *
  * Unlever is the opposite of this, and will take collateral in a borrower's trove, sell it on the market
- * for YUSD, and attempt to pay back a certain amount of YUSD debt in a user's trove with that amount.
+ * for PUSD, and attempt to pay back a certain amount of PUSD debt in a user's trove with that amount.
  *
  */
 
@@ -84,7 +84,7 @@ contract BorrowerOperations is
 
   ICollSurplusPool internal collSurplusPool;
 
-  IYUSDToken internal yusdToken;
+  IPUSDToken internal pusdToken;
 
   ISortedTroves internal sortedTroves;
 
@@ -102,8 +102,8 @@ contract BorrowerOperations is
     address[] _collsOut;
     uint256[] _amountsOut;
     uint256[] _maxSlippages;
-    uint256 _YUSDChange;
-    uint256 _totalYUSDDebtFromLever;
+    uint256 _PUSDChange;
+    uint256 _totalPUSDDebtFromLever;
     address _upperHint;
     address _lowerHint;
     uint256 _maxFeePercentage;
@@ -125,8 +125,8 @@ contract BorrowerOperations is
     uint256[] newAmounts;
     uint256 oldICR;
     uint256 newICR;
-    uint256 YUSDFee;
-    uint256 variableYUSDFee;
+    uint256 PUSDFee;
+    uint256 variablePUSDFee;
     uint256 newDebt;
     uint256 VCin;
     uint256 RVCin;
@@ -144,14 +144,14 @@ contract BorrowerOperations is
   struct OpenTrove_Params {
     uint256[] _leverages;
     uint256 _maxFeePercentage;
-    uint256 _YUSDAmount;
-    uint256 _totalYUSDDebtFromLever;
+    uint256 _PUSDAmount;
+    uint256 _totalPUSDDebtFromLever;
     address _upperHint;
     address _lowerHint;
   }
 
   struct LocalVariables_openTrove {
-    uint256 YUSDFee;
+    uint256 PUSDFee;
     uint256 netDebt;
     uint256 compositeDebt;
     uint256 ICR;
@@ -177,8 +177,8 @@ contract BorrowerOperations is
   struct ContractsCache {
     ITroveManager troveManager;
     IActivePool activePool;
-    IYUSDToken yusdToken;
-    IYetiController controller;
+    IPUSDToken pusdToken;
+    IPreonController controller;
   }
 
   enum BorrowerOperation {
@@ -196,9 +196,9 @@ contract BorrowerOperations is
     uint256[] _amounts,
     BorrowerOperation operation
   );
-  event YUSDBorrowingFeePaid(address indexed _borrower, uint256 _YUSDFee);
+  event PUSDBorrowingFeePaid(address indexed _borrower, uint256 _PUSDFee);
 
-  event VariableFeePaid(address indexed _borrower, uint256 _YUSDVariableFee);
+  event VariableFeePaid(address indexed _borrower, uint256 _PUSDVariableFee);
 
   // --- Dependency setters ---
   bool private addressSet;
@@ -213,7 +213,7 @@ contract BorrowerOperations is
     address _gasPoolAddress,
     address _collSurplusPoolAddress,
     address _sortedTrovesAddress,
-    address _yusdTokenAddress,
+    address _pusdTokenAddress,
     address _controllerAddress
   ) external override {
     require(addressSet == false, "Addresses already set");
@@ -224,11 +224,11 @@ contract BorrowerOperations is
     activePool = IActivePool(_activePoolAddress);
     activePoolAddress = _activePoolAddress;
     defaultPool = IDefaultPool(_defaultPoolAddress);
-    controller = IYetiController(_controllerAddress);
+    controller = IPreonController(_controllerAddress);
     gasPoolAddress = _gasPoolAddress;
     collSurplusPool = ICollSurplusPool(_collSurplusPoolAddress);
     sortedTroves = ISortedTroves(_sortedTrovesAddress);
-    yusdToken = IYUSDToken(_yusdTokenAddress);
+    pusdToken = IPUSDToken(_pusdTokenAddress);
   }
 
   // --- Borrower Trove Operations ---
@@ -238,8 +238,8 @@ contract BorrowerOperations is
    *  a collateralized debt position. The resulting ICR (individual collateral ratio) of the trove is indicative
    *  of the safety of the trove.
    * @param _maxFeePercentage The maximum percentage of the Collateral VC in that can be taken as fee.
-   * @param _YUSDAmount Amount of YUSD to open the trove with. The resulting YUSD Amount + 200 YUSD Gas compensation
-   *  plus any YUSD fees that occur must be > 2000. This min debt amount is intended to reduce the amount of small troves
+   * @param _PUSDAmount Amount of PUSD to open the trove with. The resulting PUSD Amount + 200 PUSD Gas compensation
+   *  plus any PUSD fees that occur must be > 2000. This min debt amount is intended to reduce the amount of small troves
    *  that are opened, since liquidating small troves may clog the network and we want to prioritize liquidations of larger
    *  troves in turbulant gas conditions.
    * @param _upperHint The address of the trove above this one in the sorted troves list.
@@ -247,13 +247,13 @@ contract BorrowerOperations is
    * @param _colls The addresses of collaterals to be used in the trove. Must be passed in, in order of the whitelisted collateral.
    * @param _amounts The amounts of each collateral to be used in the trove. If passing in a vault token, the amount must be the
    *  amount of the underlying asset, but the address passed in must be the vault token address. So, for example, if trying to
-   *  open a trove with Benqi USDC (qiUSDC), then the address passed in must be Yeti Vault qiUSDC, but the amount must be of
+   *  open a trove with Benqi USDC (qiUSDC), then the address passed in must be Preon Vault qiUSDC, but the amount must be of
    *  qiUSDC in your wallet. The resulting amount in your trove will be of the vault token, so to see how much actual qiUSDC you have
    *  you must use the conversion ratio on the vault contract.
    */
   function openTrove(
     uint256 _maxFeePercentage,
-    uint256 _YUSDAmount,
+    uint256 _PUSDAmount,
     address _upperHint,
     address _lowerHint,
     address[] calldata _colls,
@@ -262,7 +262,7 @@ contract BorrowerOperations is
     ContractsCache memory contractsCache = ContractsCache(
       troveManager,
       activePool,
-      yusdToken,
+      pusdToken,
       controller
     );
     _requireInputCorrect(_amounts.length != 0);
@@ -279,7 +279,7 @@ contract BorrowerOperations is
     OpenTrove_Params memory params = OpenTrove_Params(
       new uint256[](_colls.length),
       _maxFeePercentage,
-      _YUSDAmount,
+      _PUSDAmount,
       0,
       _upperHint,
       _lowerHint
@@ -290,7 +290,7 @@ contract BorrowerOperations is
   /**
    * @notice Opens a trove while leveraging up on the collateral passed in.
    * @dev Takes in a leverage amount (11x) and a token, and calculates the amount
-   * of that token that would be at the specific collateralization ratio. Mints YUSD
+   * of that token that would be at the specific collateralization ratio. Mints PUSD
    * according to the price of the token and the amount. Calls internal leverUp
    * function to perform the swap through a route.
    * Then opens a trove with the new collateral from the swap, ensuring that
@@ -298,8 +298,8 @@ contract BorrowerOperations is
    * not able to get the correct amount of collateral according to slippage passed in.
    * _leverage is like 11e18 for 11x.
    * @param _maxFeePercentage The maximum percentage of the Collateral VC in that can be taken as fee.
-   * @param _YUSDAmount Amount of YUSD to open the trove with. This is separate from the amount of YUSD taken against the leveraged amounts
-   *  for each collateral which is levered up on. The resulting YUSD Amount + 200 YUSD Gas compensation plus any YUSD
+   * @param _PUSDAmount Amount of PUSD to open the trove with. This is separate from the amount of PUSD taken against the leveraged amounts
+   *  for each collateral which is levered up on. The resulting PUSD Amount + 200 PUSD Gas compensation plus any PUSD
    *  fees plus amount from leverages must be > 2000. This min debt amount is intended to reduce the amount of small troves
    *  that are opened, since liquidating small troves may clog the network and we want to prioritize liquidations of larger
    *  troves in turbulant gas conditions.
@@ -308,15 +308,15 @@ contract BorrowerOperations is
    * @param _colls The addresses of collaterals to be used in the trove. Must be passed in, in order of the whitelisted collateral.
    * @param _amounts The amounts of each collateral to be used in the trove. If passing in a vault token, the amount must be the
    *  amount of the underlying asset, but the address passed in must be the vault token address. So, for example, if trying to
-   *  open a trove with Benqi USDC (qiUSDC), then the address passed in must be Yeti Vault qiUSDC, but the amount must be of
+   *  open a trove with Benqi USDC (qiUSDC), then the address passed in must be Preon Vault qiUSDC, but the amount must be of
    *  qiUSDC in your wallet. The resulting amount in your trove will be of the vault token, so to see how much actual qiUSDC you have
    *  you must use the conversion ratio on the vault contract.
    * @param _leverages The leverage amounts on each collateral to be used in the lever up function. If 0 there is no leverage on that coll
-   * @param _maxSlippages The max slippage amount when swapping YUSD for collateral
+   * @param _maxSlippages The max slippage amount when swapping PUSD for collateral
    */
   function openTroveLeverUp(
     uint256 _maxFeePercentage,
-    uint256 _YUSDAmount,
+    uint256 _PUSDAmount,
     address _upperHint,
     address _lowerHint,
     address[] memory _colls,
@@ -327,7 +327,7 @@ contract BorrowerOperations is
     ContractsCache memory contractsCache = ContractsCache(
       troveManager,
       activePool,
-      yusdToken,
+      pusdToken,
       controller
     );
     _requireLeverUpEnabled(contractsCache.controller);
@@ -341,13 +341,13 @@ contract BorrowerOperations is
     _requireInputCorrect(
       collsLen == _leverages.length && collsLen == _maxSlippages.length
     );
-    // Keep track of total YUSD from lever and pass into internal open trove.
-    uint256 totalYUSDDebtFromLever;
+    // Keep track of total PUSD from lever and pass into internal open trove.
+    uint256 totalPUSDDebtFromLever;
     for (uint256 i; i < collsLen; ++i) {
       if (_maxSlippages[i] != 0) {
         (
           uint256 additionalTokenAmount,
-          uint256 additionalYUSDDebt
+          uint256 additionalPUSDDebt
         ) = _singleLeverUp(
             _colls[i],
             _amounts[i],
@@ -361,7 +361,7 @@ contract BorrowerOperations is
         _amounts[i] = additionalTokenAmount.add(
           _singleTransferCollateralIntoActivePool(_colls[i], _amounts[i])
         );
-        totalYUSDDebtFromLever = totalYUSDDebtFromLever.add(additionalYUSDDebt);
+        totalPUSDDebtFromLever = totalPUSDDebtFromLever.add(additionalPUSDDebt);
       } else {
         // Otherwise skip and do normal transfer that amount into active pool.
         require(_leverages[i] == 0, "2");
@@ -371,13 +371,13 @@ contract BorrowerOperations is
         );
       }
     }
-    _YUSDAmount = _YUSDAmount.add(totalYUSDDebtFromLever);
+    _PUSDAmount = _PUSDAmount.add(totalPUSDDebtFromLever);
 
     OpenTrove_Params memory params = OpenTrove_Params(
       _leverages,
       _maxFeePercentage,
-      _YUSDAmount,
-      totalYUSDDebtFromLever,
+      _PUSDAmount,
+      totalPUSDDebtFromLever,
       _upperHint,
       _lowerHint
     );
@@ -385,14 +385,14 @@ contract BorrowerOperations is
   }
 
   /**
-   * @notice internal function for minting yusd at certain leverage and max slippage, and then performing
+   * @notice internal function for minting pusd at certain leverage and max slippage, and then performing
    * swap with controller's approved router.
    * @param _token collateral address
    * @param _amount amount of collateral to lever up on
    * @param _leverage amount to leverage. 11e18 = 11x
-   * @param _maxSlippage max slippage amount for swap YUSD to collateral
+   * @param _maxSlippage max slippage amount for swap PUSD to collateral
    * @return _finalTokenAmount final amount of the collateral token
-   * @return _additionalYUSDDebt Total amount of YUSD Minted to be added to total.
+   * @return _additionalPUSDDebt Total amount of PUSD Minted to be added to total.
    */
   function _singleLeverUp(
     address _token,
@@ -400,7 +400,7 @@ contract BorrowerOperations is
     uint256 _leverage,
     uint256 _maxSlippage,
     ContractsCache memory contractsCache
-  ) internal returns (uint256 _finalTokenAmount, uint256 _additionalYUSDDebt) {
+  ) internal returns (uint256 _finalTokenAmount, uint256 _additionalPUSDDebt) {
     require(
       _leverage > DECIMAL_PRECISION && _maxSlippage <= DECIMAL_PRECISION,
       "2"
@@ -413,8 +413,8 @@ contract BorrowerOperations is
     uint256 _additionalTokenAmount = _amount
       .mul(_leverage.sub(DECIMAL_PRECISION))
       .div(DECIMAL_PRECISION);
-    // Calculate USD value to see how much YUSD to mint.
-    _additionalYUSDDebt = _getValueUSD(
+    // Calculate USD value to see how much PUSD to mint.
+    _additionalPUSDDebt = _getValueUSD(
       contractsCache.controller,
       _token,
       _additionalTokenAmount
@@ -433,7 +433,7 @@ contract BorrowerOperations is
       .div(DECIMAL_PRECISION);
 
     // Mint to the router.
-    _yusdTokenMint(contractsCache.yusdToken, router, _additionalYUSDDebt);
+    _pusdTokenMint(contractsCache.pusdToken, router, _additionalPUSDDebt);
 
     // route will swap the tokens and transfer it to the active pool automatically. Router will send to active pool
     IERC20 erc20Token = IERC20(_token);
@@ -441,11 +441,11 @@ contract BorrowerOperations is
       erc20Token,
       activePoolAddress
     );
-    _finalTokenAmount = IYetiLever(router).route(
+    _finalTokenAmount = IPreonLever(router).route(
       activePoolAddress,
-      address(contractsCache.yusdToken),
+      address(contractsCache.pusdToken),
       _token,
-      _additionalYUSDDebt,
+      _additionalPUSDDebt,
       slippageAdjustedValue
     );
     require(
@@ -483,7 +483,7 @@ contract BorrowerOperations is
     _requireTroveStatus(contractsCache.troveManager, false);
 
     // Start with base amount before adding any fees.
-    vars.netDebt = params._YUSDAmount;
+    vars.netDebt = params._PUSDAmount;
 
     // For every collateral type in, calculate the VC, RVC, and get the variable fee
     (vars.VC, vars.RVC) = _getValuesVCAndRVC(
@@ -494,14 +494,14 @@ contract BorrowerOperations is
 
     if (!vars.isRecoveryMode) {
       // when not in recovery mode, add in the 0.5% fee
-      vars.YUSDFee = _triggerBorrowingFee(
+      vars.PUSDFee = _triggerBorrowingFee(
         contractsCache,
-        params._YUSDAmount,
-        vars.VC, // here it is just VC in, which is always larger than YUSD amount
+        params._PUSDAmount,
+        vars.VC, // here it is just VC in, which is always larger than PUSD amount
         params._maxFeePercentage
       );
       params._maxFeePercentage = params._maxFeePercentage.sub(
-        vars.YUSDFee.mul(DECIMAL_PRECISION).div(vars.VC)
+        vars.PUSDFee.mul(DECIMAL_PRECISION).div(vars.VC)
       );
     }
 
@@ -518,18 +518,18 @@ contract BorrowerOperations is
         0
       );
       _requireUserAcceptsFee(variableFee, vars.VC, params._maxFeePercentage);
-      _mintYUSDFeeAndSplit(contractsCache, variableFee);
-      vars.YUSDFee = vars.YUSDFee.add(variableFee);
+      _mintPUSDFeeAndSplit(contractsCache, variableFee);
+      vars.PUSDFee = vars.PUSDFee.add(variableFee);
       emit VariableFeePaid(msg.sender, variableFee);
     }
 
     // Adds total fees to netDebt
-    vars.netDebt = vars.netDebt.add(vars.YUSDFee); // The raw debt change includes the fee
+    vars.netDebt = vars.netDebt.add(vars.PUSDFee); // The raw debt change includes the fee
 
     _requireAtLeastMinNetDebt(vars.netDebt);
     // ICR is based on the composite debt,
-    // i.e. the requested YUSD amount + YUSD borrowing fee + YUSD deposit fee + YUSD gas comp.
-    // _getCompositeDebt returns  vars.netDebt + YUSD gas comp = 200
+    // i.e. the requested PUSD amount + PUSD borrowing fee + PUSD deposit fee + PUSD gas comp.
+    // _getCompositeDebt returns  vars.netDebt + PUSD gas comp = 200
     vars.compositeDebt = _getCompositeDebt(vars.netDebt);
 
     vars.ICR = _computeCR(vars.VC, vars.compositeDebt);
@@ -581,22 +581,22 @@ contract BorrowerOperations is
     // Receive collateral for tracking by active pool
     _activePoolReceiveCollateral(contractsCache.activePool, _colls, _amounts);
 
-    // Send the user the YUSD debt
-    _withdrawYUSD(
+    // Send the user the PUSD debt
+    _withdrawPUSD(
       contractsCache.activePool,
-      contractsCache.yusdToken,
+      contractsCache.pusdToken,
       msg.sender,
-      params._YUSDAmount.sub(params._totalYUSDDebtFromLever),
+      params._PUSDAmount.sub(params._totalPUSDDebtFromLever),
       vars.netDebt
     );
 
-    // Move the YUSD gas compensation to the Gas Pool
-    _withdrawYUSD(
+    // Move the PUSD gas compensation to the Gas Pool
+    _withdrawPUSD(
       contractsCache.activePool,
-      contractsCache.yusdToken,
+      contractsCache.pusdToken,
       gasPoolAddress,
-      YUSD_GAS_COMPENSATION,
-      YUSD_GAS_COMPENSATION
+      PUSD_GAS_COMPENSATION,
+      PUSD_GAS_COMPENSATION
     );
 
     emit TroveUpdated(
@@ -606,7 +606,7 @@ contract BorrowerOperations is
       _amounts,
       BorrowerOperation.openTrove
     );
-    emit YUSDBorrowingFeePaid(msg.sender, vars.YUSDFee);
+    emit PUSDBorrowingFeePaid(msg.sender, vars.PUSDFee);
   }
 
   /**
@@ -616,12 +616,12 @@ contract BorrowerOperations is
    * @param _collsIn The addresses of collaterals to be added to this trove. Must be passed in, in order of the whitelisted collateral.
    * @param _amountsIn The amounts of each collateral to be used in the trove. If passing in a vault token, the amount must be the
    *  amount of the underlying asset, but the address passed in must be the vault token address. So, for example, if trying to
-   *  open a trove with Benqi USDC (qiUSDC), then the address passed in must be Yeti Vault qiUSDC, but the amount must be of
+   *  open a trove with Benqi USDC (qiUSDC), then the address passed in must be Preon Vault qiUSDC, but the amount must be of
    *  qiUSDC in your wallet. The resulting amount in your trove will be of the vault token, so to see how much actual qiUSDC you have
    *  you must use the conversion ratio on the vault contract.
    * @param _leverages The leverage amounts on each collateral to be used in the lever up function. If 0 there is no leverage on that coll
-   * @param _maxSlippages The max slippage amount when swapping YUSD for collateral
-   * @param _YUSDAmount Amount of YUSD to add to the trove debt. This is separate from the amount of YUSD taken against the leveraged amounts
+   * @param _maxSlippages The max slippage amount when swapping PUSD for collateral
+   * @param _PUSDAmount Amount of PUSD to add to the trove debt. This is separate from the amount of PUSD taken against the leveraged amounts
    *  for each collateral which is levered up on. isDebtIncrease is automatically true.
    * @param _upperHint The address of the trove above this one in the sorted troves list.
    * @param _lowerHint The address of the trove below this one in the sorted troves list.
@@ -632,7 +632,7 @@ contract BorrowerOperations is
     uint256[] memory _amountsIn,
     uint256[] memory _leverages,
     uint256[] memory _maxSlippages,
-    uint256 _YUSDAmount,
+    uint256 _PUSDAmount,
     address _upperHint,
     address _lowerHint,
     uint256 _maxFeePercentage
@@ -640,7 +640,7 @@ contract BorrowerOperations is
     ContractsCache memory contractsCache = ContractsCache(
       troveManager,
       activePool,
-      yusdToken,
+      pusdToken,
       controller
     );
     _requireLeverUpEnabled(contractsCache.controller);
@@ -659,13 +659,13 @@ contract BorrowerOperations is
       collsLen == _leverages.length && collsLen == _maxSlippages.length
     );
 
-    // Keep track of total YUSD from levering up to pass into adjustTrove
-    uint256 totalYUSDDebtFromLever;
+    // Keep track of total PUSD from levering up to pass into adjustTrove
+    uint256 totalPUSDDebtFromLever;
     for (uint256 i; i < collsLen; ++i) {
       if (_maxSlippages[i] != 0) {
         (
           uint256 additionalTokenAmount,
-          uint256 additionalYUSDDebt
+          uint256 additionalPUSDDebt
         ) = _singleLeverUp(
             _collsIn[i],
             _amountsIn[i],
@@ -678,7 +678,7 @@ contract BorrowerOperations is
         _amountsIn[i] = additionalTokenAmount.add(
           _singleTransferCollateralIntoActivePool(_collsIn[i], _amountsIn[i])
         );
-        totalYUSDDebtFromLever = totalYUSDDebtFromLever.add(additionalYUSDDebt);
+        totalPUSDDebtFromLever = totalPUSDDebtFromLever.add(additionalPUSDDebt);
       } else {
         require(_leverages[i] == 0, "2");
         // Otherwise skip and do normal transfer that amount into active pool.
@@ -693,10 +693,10 @@ contract BorrowerOperations is
     params._lowerHint = _lowerHint;
     params._maxFeePercentage = _maxFeePercentage;
     params._leverages = _leverages;
-    _YUSDAmount = _YUSDAmount.add(totalYUSDDebtFromLever);
-    params._totalYUSDDebtFromLever = totalYUSDDebtFromLever;
+    _PUSDAmount = _PUSDAmount.add(totalPUSDDebtFromLever);
+    params._totalPUSDDebtFromLever = totalPUSDDebtFromLever;
 
-    params._YUSDChange = _YUSDAmount;
+    params._PUSDChange = _PUSDAmount;
     params._isDebtIncrease = true;
 
     params._collsIn = _collsIn;
@@ -711,14 +711,14 @@ contract BorrowerOperations is
    * @param _collsIn The addresses of collaterals to be added to this trove. Must be passed in, in order of the whitelisted collateral.
    * @param _amountsIn The amounts of each collateral to be used in the trove. If passing in a vault token, the amount must be the
    *  amount of the underlying asset, but the address passed in must be the vault token address. So, for example, if trying to
-   *  open a trove with Benqi USDC (qiUSDC), then the address passed in must be Yeti Vault qiUSDC, but the amount must be of
+   *  open a trove with Benqi USDC (qiUSDC), then the address passed in must be Preon Vault qiUSDC, but the amount must be of
    *  qiUSDC in your wallet. The resulting amount in your trove will be of the vault token, so to see how much actual qiUSDC you have
    *  you must use the conversion ratio on the vault contract.
    * @param _collsOut The addresses of collaterals to be removed from this trove. Must be passed in, in order of the whitelisted collateral.
    * @param _amountsOut The amounts of each collateral to be removed from this trove. Withdrawing a vault token would require you to have
    *  the amount of the vault token, unlike when depositing. So, for example, if trying to open a trove with Benqi USDC (qiUSDC), then the
-   *  address passed in must be Yeti Vault qiUSDC, and the amount is also Yeti Vault qi
-   * @param _YUSDChange Amount of YUSD to either withdraw or pay back. The resulting YUSD Amount + 200 YUSD Gas compensation plus any YUSD
+   *  address passed in must be Preon Vault qiUSDC, and the amount is also Preon Vault qi
+   * @param _PUSDChange Amount of PUSD to either withdraw or pay back. The resulting PUSD Amount + 200 PUSD Gas compensation plus any PUSD
    *  fees plus amount from leverages must be > 2000. This min debt amount is intended to reduce the amount of small troves
    *  that are opened, since liquidating small troves may clog the network and we want to prioritize liquidations of larger
    *  troves in turbulant gas conditions.
@@ -733,7 +733,7 @@ contract BorrowerOperations is
     uint256[] memory _amountsIn,
     address[] calldata _collsOut,
     uint256[] calldata _amountsOut,
-    uint256 _YUSDChange,
+    uint256 _PUSDChange,
     bool _isDebtIncrease,
     address _upperHint,
     address _lowerHint,
@@ -742,7 +742,7 @@ contract BorrowerOperations is
     ContractsCache memory contractsCache = ContractsCache(
       troveManager,
       activePool,
-      yusdToken,
+      pusdToken,
       controller
     );
     // check that all _collsIn collateral types are in the controller
@@ -773,7 +773,7 @@ contract BorrowerOperations is
     params._amountsIn = _amountsIn;
     params._collsOut = _collsOut;
     params._amountsOut = _amountsOut;
-    params._YUSDChange = _YUSDChange;
+    params._PUSDChange = _PUSDChange;
     params._isDebtIncrease = _isDebtIncrease;
     params._upperHint = _upperHint;
     params._lowerHint = _lowerHint;
@@ -811,7 +811,7 @@ contract BorrowerOperations is
     _requireNonZeroAdjustment(
       params._amountsIn,
       params._amountsOut,
-      params._YUSDChange
+      params._PUSDChange
     );
 
     // Require trove is active
@@ -834,28 +834,28 @@ contract BorrowerOperations is
     // If it is a debt increase then we need to take the max of VCin and debt increase and use that number to assess
     // the fee based on the new max fee percentage factor.
     if (params._isDebtIncrease) {
-      vars.maxFeePercentageFactor = (vars.VCin >= params._YUSDChange)
+      vars.maxFeePercentageFactor = (vars.VCin >= params._PUSDChange)
         ? vars.VCin
-        : params._YUSDChange;
+        : params._PUSDChange;
     } else {
       vars.maxFeePercentageFactor = vars.VCin;
     }
 
-    vars.netDebtChange = params._YUSDChange;
+    vars.netDebtChange = params._PUSDChange;
 
     // If the adjustment incorporates a debt increase and system is in Normal Mode, then trigger a borrowing fee
     if (params._isDebtIncrease && !vars.isRecoveryMode) {
-      vars.YUSDFee = _triggerBorrowingFee(
+      vars.PUSDFee = _triggerBorrowingFee(
         contractsCache,
-        params._YUSDChange,
-        vars.maxFeePercentageFactor, // max of VC in and YUSD change here to see what the max borrowing fee is triggered on.
+        params._PUSDChange,
+        vars.maxFeePercentageFactor, // max of VC in and PUSD change here to see what the max borrowing fee is triggered on.
         params._maxFeePercentage
       );
       // passed in max fee minus actual fee percent applied so far
       params._maxFeePercentage = params._maxFeePercentage.sub(
-        vars.YUSDFee.mul(DECIMAL_PRECISION).div(vars.maxFeePercentageFactor)
+        vars.PUSDFee.mul(DECIMAL_PRECISION).div(vars.maxFeePercentageFactor)
       );
-      vars.netDebtChange = vars.netDebtChange.add(vars.YUSDFee); // The raw debt change includes the fee
+      vars.netDebtChange = vars.netDebtChange.add(vars.PUSDFee); // The raw debt change includes the fee
     }
 
     // get current portfolio in trove
@@ -906,7 +906,7 @@ contract BorrowerOperations is
     // nonzero, then require the user accepts this fee as well.
     if (params._collsIn.length != 0) {
       (
-        vars.variableYUSDFee,
+        vars.variablePUSDFee,
         vars.boostFactor
       ) = _getTotalVariableDepositFeeAndUpdate(
         contractsCache.controller,
@@ -917,21 +917,21 @@ contract BorrowerOperations is
         vars.VCin,
         vars.VCout
       );
-      if (vars.variableYUSDFee != 0) {
+      if (vars.variablePUSDFee != 0) {
         _requireUserAcceptsFee(
-          vars.variableYUSDFee,
+          vars.variablePUSDFee,
           vars.maxFeePercentageFactor,
           params._maxFeePercentage
         );
-        _mintYUSDFeeAndSplit(contractsCache, vars.variableYUSDFee);
-        emit VariableFeePaid(msg.sender, vars.variableYUSDFee);
+        _mintPUSDFeeAndSplit(contractsCache, vars.variablePUSDFee);
+        emit VariableFeePaid(msg.sender, vars.variablePUSDFee);
       }
     }
 
     // Get the trove's old ICR before the adjustment, and what its new ICR will be after the adjustment
     vars.oldICR = _computeCR(vars.currVC, vars.debt);
 
-    vars.debt = vars.debt.add(vars.variableYUSDFee);
+    vars.debt = vars.debt.add(vars.variablePUSDFee);
     vars.newICR = _computeCR(
       vars.newVC, // if debt increase, then add net debt change and subtract otherwise.
       params._isDebtIncrease
@@ -986,20 +986,20 @@ contract BorrowerOperations is
       // if debt increase, increase by both amounts
       vars.newDebt = _increaseTroveDebt(
         contractsCache.troveManager,
-        vars.netDebtChange.add(vars.variableYUSDFee)
+        vars.netDebtChange.add(vars.variablePUSDFee)
       );
     } else {
-      if (vars.netDebtChange > vars.variableYUSDFee) {
+      if (vars.netDebtChange > vars.variablePUSDFee) {
         // if debt decrease, and greater than variable fee, decrease
         vars.newDebt = contractsCache.troveManager.decreaseTroveDebt(
           msg.sender,
-          vars.netDebtChange - vars.variableYUSDFee
+          vars.netDebtChange - vars.variablePUSDFee
         ); // already checked no safemath needed
       } else {
         // otherwise increase by opposite subtraction
         vars.newDebt = _increaseTroveDebt(
           contractsCache.troveManager,
-          vars.variableYUSDFee - vars.netDebtChange
+          vars.variablePUSDFee - vars.netDebtChange
         );
       }
     }
@@ -1033,44 +1033,44 @@ contract BorrowerOperations is
       );
     }
 
-    // When the adjustment is a debt repayment, check it's a valid amount and that the caller has enough YUSD
+    // When the adjustment is a debt repayment, check it's a valid amount and that the caller has enough PUSD
     if (
-      (!params._isDebtIncrease && params._YUSDChange != 0) || params._isUnlever
+      (!params._isDebtIncrease && params._PUSDChange != 0) || params._isUnlever
     ) {
       _requireAtLeastMinNetDebt(_getNetDebt(vars.debt).sub(vars.netDebtChange));
-      _requireValidYUSDRepayment(vars.debt, vars.netDebtChange);
-      _requireSufficientYUSDBalance(
-        contractsCache.yusdToken,
+      _requireValidPUSDRepayment(vars.debt, vars.netDebtChange);
+      _requireSufficientPUSDBalance(
+        contractsCache.pusdToken,
         vars.netDebtChange
       );
     }
 
     if (params._isUnlever) {
-      // 2. update the trove with the new collateral and debt, repaying the total amount of YUSD specified.
-      // if not enough coll sold for YUSD, must cover from user balance
-      _repayYUSD(
+      // 2. update the trove with the new collateral and debt, repaying the total amount of PUSD specified.
+      // if not enough coll sold for PUSD, must cover from user balance
+      _repayPUSD(
         contractsCache.activePool,
-        contractsCache.yusdToken,
+        contractsCache.pusdToken,
         msg.sender,
-        params._YUSDChange
+        params._PUSDChange
       );
     } else {
-      // Use the unmodified _YUSDChange here, as we don't send the fee to the user
-      _moveYUSD(
+      // Use the unmodified _PUSDChange here, as we don't send the fee to the user
+      _movePUSD(
         contractsCache.activePool,
-        contractsCache.yusdToken,
-        params._YUSDChange.sub(params._totalYUSDDebtFromLever), // 0 in non lever case
+        contractsCache.pusdToken,
+        params._PUSDChange.sub(params._totalPUSDDebtFromLever), // 0 in non lever case
         params._isDebtIncrease,
         vars.netDebtChange
       );
 
       // Additionally move the variable deposit fee to the active pool manually, as it is always an increase in debt
-      _withdrawYUSD(
+      _withdrawPUSD(
         contractsCache.activePool,
-        contractsCache.yusdToken,
+        contractsCache.pusdToken,
         msg.sender,
         0,
-        vars.variableYUSDFee
+        vars.variablePUSDFee
       );
 
       // transfer withdrawn collateral to msg.sender from ActivePool
@@ -1089,23 +1089,23 @@ contract BorrowerOperations is
       BorrowerOperation.adjustTrove
     );
 
-    emit YUSDBorrowingFeePaid(msg.sender, vars.YUSDFee);
+    emit PUSDBorrowingFeePaid(msg.sender, vars.PUSDFee);
   }
 
   /**
    * @notice internal function for un-levering up. Takes the collateral amount specified passed in, and swaps it using the whitelisted
-   * router back into YUSD, so that the debt can be paid back for a certain amount.
-   * @param _token The address of the collateral to swap to YUSD
+   * router back into PUSD, so that the debt can be paid back for a certain amount.
+   * @param _token The address of the collateral to swap to PUSD
    * @param _amount The amount of collateral to be swapped
    * @param _maxSlippage The maximum slippage allowed in the swap
-   * @return _finalYUSDAmount The amount of YUSD to be paid back to the borrower.
+   * @return _finalPUSDAmount The amount of PUSD to be paid back to the borrower.
    */
   function _singleUnleverUp(
     ContractsCache memory contractsCache,
     address _token,
     uint256 _amount,
     uint256 _maxSlippage
-  ) internal returns (uint256 _finalYUSDAmount) {
+  ) internal returns (uint256 _finalPUSDAmount) {
     _requireInputCorrect(_maxSlippage <= DECIMAL_PRECISION);
     // Send collaterals to the whitelisted router from the active pool so it can perform the swap
     address router = _getDefaultRouterAddress(
@@ -1114,7 +1114,7 @@ contract BorrowerOperations is
     );
     contractsCache.activePool.sendSingleCollateral(router, _token, _amount);
 
-    // then calculate value amount of expected YUSD output based on amount of token to sell
+    // then calculate value amount of expected PUSD output based on amount of token to sell
     uint256 valueOfCollateral = _getValueUSD(
       contractsCache.controller,
       _token,
@@ -1124,11 +1124,11 @@ contract BorrowerOperations is
       .mul(DECIMAL_PRECISION.sub(_maxSlippage))
       .div(DECIMAL_PRECISION);
 
-    // Perform swap in the router using router.unRoute, which sends the YUSD back to the msg.sender, guaranteeing at least slippageAdjustedValue out.
-    _finalYUSDAmount = IYetiLever(router).unRoute(
+    // Perform swap in the router using router.unRoute, which sends the PUSD back to the msg.sender, guaranteeing at least slippageAdjustedValue out.
+    _finalPUSDAmount = IPreonLever(router).unRoute(
       msg.sender,
       _token,
-      address(contractsCache.yusdToken),
+      address(contractsCache.pusdToken),
       _amount,
       slippageAdjustedValue
     );
@@ -1150,14 +1150,14 @@ contract BorrowerOperations is
     uint256[] memory _maxSlippages
   ) internal {
     uint256 balanceBefore = _IERC20TokenBalanceOf(
-      contractsCache.yusdToken,
+      contractsCache.pusdToken,
       msg.sender
     );
-    uint256 totalYUSDUnlevered;
+    uint256 totalPUSDUnlevered;
     for (uint256 i; i < _colls.length; ++i) {
       // If max slippages is 0, then it is a normal withdraw. Otherwise it needs to be unlevered.
       if (_maxSlippages[i] != 0) {
-        totalYUSDUnlevered = totalYUSDUnlevered.add(
+        totalPUSDUnlevered = totalPUSDUnlevered.add(
           _singleUnleverUp(
             contractsCache,
             _colls[i],
@@ -1173,10 +1173,10 @@ contract BorrowerOperations is
         );
       }
     }
-    // Do manual check of if balance increased by correct amount of YUSD
+    // Do manual check of if balance increased by correct amount of PUSD
     require(
-      _IERC20TokenBalanceOf(contractsCache.yusdToken, msg.sender) ==
-        balanceBefore.add(totalYUSDUnlevered),
+      _IERC20TokenBalanceOf(contractsCache.pusdToken, msg.sender) ==
+        balanceBefore.add(totalPUSDUnlevered),
       "6"
     );
   }
@@ -1186,15 +1186,15 @@ contract BorrowerOperations is
    * @dev Calls _adjustTrove with correct params.
    * Specifies amount of collateral to withdraw and how much debt to repay,
    * Can withdraw coll and *only* pay back debt using this function. Will take
-   * the collateral given and send YUSD back to user. Then they will pay back debt
+   * the collateral given and send PUSD back to user. Then they will pay back debt
    * first transfers amount of collateral from active pool then sells.
    * calls _singleUnleverUp() to perform the swaps using the wrappers. should have no fees.
    * @param _collsOut The addresses of collaterals to be removed from this trove. Must be passed in, in order of the whitelisted collateral.
    * @param _amountsOut The amounts of each collateral to be removed from this trove.
    *   The ith element of this array is the amount of the ith collateral in _collsOut
    * @param _maxSlippages Max slippage for each collateral type. If 0, then just withdraw without unlever
-   * @param _YUSDAmount Amount of YUSD to pay back. Pulls from user's balance after doing the unlever swap, so it can be from the swap itself
-   *  or it can be from their existing balance of YUSD. The resulting YUSD Amount + 200 YUSD Gas compensation plus any YUSD
+   * @param _PUSDAmount Amount of PUSD to pay back. Pulls from user's balance after doing the unlever swap, so it can be from the swap itself
+   *  or it can be from their existing balance of PUSD. The resulting PUSD Amount + 200 PUSD Gas compensation plus any PUSD
    *  fees plus amount from leverages must be > 2000. This min debt amount is intended to reduce the amount of small troves
    *  that are opened, since liquidating small troves may clog the network and we want to prioritize liquidations of larger
    *  troves in turbulant gas conditions.
@@ -1205,14 +1205,14 @@ contract BorrowerOperations is
     address[] calldata _collsOut,
     uint256[] calldata _amountsOut,
     uint256[] calldata _maxSlippages,
-    uint256 _YUSDAmount,
+    uint256 _PUSDAmount,
     address _upperHint,
     address _lowerHint
   ) external override nonReentrant {
     ContractsCache memory contractsCache = ContractsCache(
       troveManager,
       activePool,
-      yusdToken,
+      pusdToken,
       controller
     );
     // check that all _collsOut collateral types are in the controller, as well as that it doesn't overlap with itself.
@@ -1228,7 +1228,7 @@ contract BorrowerOperations is
     params._collsOut = _collsOut;
     params._amountsOut = _amountsOut;
     params._maxSlippages = _maxSlippages;
-    params._YUSDChange = _YUSDAmount;
+    params._PUSDChange = _PUSDAmount;
     params._upperHint = _upperHint;
     params._lowerHint = _lowerHint;
     // Will not be used but set to 100% to pass check for valid percent.
@@ -1240,7 +1240,7 @@ contract BorrowerOperations is
 
   /**
    * @notice Close trove and unlever a certain amount of collateral. For all amounts in amountsOut, transfer out that amount
-   *   of collateral and swap them for YUSD. Use that YUSD and YUSD from borrower's account to pay back remaining debt.
+   *   of collateral and swap them for PUSD. Use that PUSD and PUSD from borrower's account to pay back remaining debt.
    * @dev Calls _adjustTrove with correct params. nonReentrant
    * @param _collsOut Collateral types to withdraw
    * @param _amountsOut Amounts to withdraw. If 0, then just withdraw without unlever
@@ -1263,7 +1263,7 @@ contract BorrowerOperations is
   }
 
   /**
-   * @notice Closes trove by applying pending rewards, making sure that the YUSD Balance is sufficient, and transferring the
+   * @notice Closes trove by applying pending rewards, making sure that the PUSD Balance is sufficient, and transferring the
    * collateral to the owner, and repaying the debt.
    * @dev if it is a unlever, then it will transfer the collaterals / sell before. Otherwise it will just do it last.
    */
@@ -1276,7 +1276,7 @@ contract BorrowerOperations is
     ContractsCache memory contractsCache = ContractsCache(
       troveManager,
       activePool,
-      yusdToken,
+      pusdToken,
       controller
     );
     LocalVariables_closeTrove memory vars;
@@ -1307,18 +1307,18 @@ contract BorrowerOperations is
       // if unlever, will do extra.
       if (_isUnlever) {
         // Withdraw the collateral from active pool and perform swap using single unlever up and corresponding router.
-        // tracks the amount of YUSD that is received from swaps. Will send the _YUSDAmount back to repay debt while keeping remainder.
+        // tracks the amount of PUSD that is received from swaps. Will send the _PUSDAmount back to repay debt while keeping remainder.
         // The router itself handles unwrapping
         uint256 j;
         uint256 balanceBefore = _IERC20TokenBalanceOf(
-          contractsCache.yusdToken,
+          contractsCache.pusdToken,
           msg.sender
         );
-        uint256 totalYUSDUnlevered;
+        uint256 totalPUSDUnlevered;
         for (uint256 i; i < vars.colls.length; ++i) {
           uint256 thisAmount = vars.amounts[i];
           if (j < _collsOut.length && vars.colls[i] == _collsOut[j]) {
-            totalYUSDUnlevered = totalYUSDUnlevered.add(
+            totalPUSDUnlevered = totalPUSDUnlevered.add(
               _singleUnleverUp(
                 contractsCache,
                 _collsOut[j],
@@ -1339,19 +1339,19 @@ contract BorrowerOperations is
             );
           }
         }
-        // Do manual check of if balance increased by correct amount of YUSD
+        // Do manual check of if balance increased by correct amount of PUSD
         require(
-          _IERC20TokenBalanceOf(contractsCache.yusdToken, msg.sender) ==
-            balanceBefore.add(totalYUSDUnlevered),
+          _IERC20TokenBalanceOf(contractsCache.pusdToken, msg.sender) ==
+            balanceBefore.add(totalPUSDUnlevered),
           "6"
         );
       }
     }
 
     // do check after unlever (if applies)
-    _requireSufficientYUSDBalance(
-      contractsCache.yusdToken,
-      vars.debt.sub(YUSD_GAS_COMPENSATION)
+    _requireSufficientPUSDBalance(
+      contractsCache.pusdToken,
+      vars.debt.sub(PUSD_GAS_COMPENSATION)
     );
     _requireNewTCRisAboveCCR(
       _getNewTCRFromTroveChange(
@@ -1366,18 +1366,18 @@ contract BorrowerOperations is
 
     contractsCache.troveManager.removeStakeAndCloseTrove(msg.sender);
 
-    // Burn the repaid YUSD from the user's balance and the gas compensation from the Gas Pool
-    _repayYUSD(
+    // Burn the repaid PUSD from the user's balance and the gas compensation from the Gas Pool
+    _repayPUSD(
       contractsCache.activePool,
-      contractsCache.yusdToken,
+      contractsCache.pusdToken,
       msg.sender,
-      vars.debt.sub(YUSD_GAS_COMPENSATION)
+      vars.debt.sub(PUSD_GAS_COMPENSATION)
     );
-    _repayYUSD(
+    _repayPUSD(
       contractsCache.activePool,
-      contractsCache.yusdToken,
+      contractsCache.pusdToken,
       gasPoolAddress,
-      YUSD_GAS_COMPENSATION
+      PUSD_GAS_COMPENSATION
     );
 
     // Send the collateral back to the user
@@ -1434,7 +1434,7 @@ contract BorrowerOperations is
       // If vault asset then it wraps it and sends the wrapped version to the active pool
       // The amount is returned as the amount of receipt tokens that the user has.
       return
-        IYetiVaultToken(_coll).depositFor(
+        IPreonVaultToken(_coll).depositFor(
           msg.sender,
           address(activePool),
           _amount
@@ -1447,109 +1447,109 @@ contract BorrowerOperations is
 
   /**
    * @notice Triggers normal borrowing fee
-   * @dev Calculated from base rate and on YUSD amount.
-   * @param _YUSDAmount YUSD amount sent in
+   * @dev Calculated from base rate and on PUSD amount.
+   * @param _PUSDAmount PUSD amount sent in
    * @param _maxFeePercentageFactor the factor to assess the max fee on
    * @param _maxFeePercentage the passed in max fee percentage.
-   * @return YUSDFee The resulting one time borrow fee.
+   * @return PUSDFee The resulting one time borrow fee.
    */
   function _triggerBorrowingFee(
     ContractsCache memory contractsCache,
-    uint256 _YUSDAmount,
+    uint256 _PUSDAmount,
     uint256 _maxFeePercentageFactor,
     uint256 _maxFeePercentage
-  ) internal returns (uint256 YUSDFee) {
-    YUSDFee = contractsCache
+  ) internal returns (uint256 PUSDFee) {
+    PUSDFee = contractsCache
       .troveManager
-      .decayBaseRateFromBorrowingAndCalculateFee(_YUSDAmount); // decay the baseRate state variable
+      .decayBaseRateFromBorrowingAndCalculateFee(_PUSDAmount); // decay the baseRate state variable
 
-    _requireUserAcceptsFee(YUSDFee, _maxFeePercentageFactor, _maxFeePercentage);
+    _requireUserAcceptsFee(PUSDFee, _maxFeePercentageFactor, _maxFeePercentage);
 
-    // Send fee to YUSD Fee recipient (sYETI) contract
-    _mintYUSDFeeAndSplit(contractsCache, YUSDFee);
+    // Send fee to PUSD Fee recipient (sPREON) contract
+    _mintPUSDFeeAndSplit(contractsCache, PUSDFee);
   }
 
   /**
-   * @notice Function for minting YUSD to the treasury and to the recipient sYETI based on params in yeti controller
-   * @param _YUSDFee total fee to split
+   * @notice Function for minting PUSD to the treasury and to the recipient sPREON based on params in preon controller
+   * @param _PUSDFee total fee to split
    */
-  function _mintYUSDFeeAndSplit(
+  function _mintPUSDFeeAndSplit(
     ContractsCache memory contractsCache,
-    uint256 _YUSDFee
+    uint256 _PUSDFee
   ) internal {
     // Get fee splits and treasury address.
     (
       uint256 feeSplit,
-      address yetiTreasury,
-      address YUSDFeeRecipient
+      address preonTreasury,
+      address PUSDFeeRecipient
     ) = contractsCache.controller.getFeeSplitInformation();
-    uint256 treasurySplit = feeSplit.mul(_YUSDFee).div(DECIMAL_PRECISION);
+    uint256 treasurySplit = feeSplit.mul(_PUSDFee).div(DECIMAL_PRECISION);
     // Mint a percentage to the treasury
-    _yusdTokenMint(contractsCache.yusdToken, yetiTreasury, treasurySplit);
-    // And the rest to YUSD Fee recipient
-    _yusdTokenMint(
-      contractsCache.yusdToken,
-      YUSDFeeRecipient,
-      _YUSDFee - treasurySplit
+    _pusdTokenMint(contractsCache.pusdToken, preonTreasury, treasurySplit);
+    // And the rest to PUSD Fee recipient
+    _pusdTokenMint(
+      contractsCache.pusdToken,
+      PUSDFeeRecipient,
+      _PUSDFee - treasurySplit
     );
   }
 
   /**
-   * @notice Moves the YUSD around based on whether it is an increase or decrease in debt. Mints to active pool or takes from active pool
-   * @param _YUSDChange amount of YUSD to mint or burn
-   * @param _isDebtIncrease if true then withdraw (mint) YUSD, otherwise burn it.
+   * @notice Moves the PUSD around based on whether it is an increase or decrease in debt. Mints to active pool or takes from active pool
+   * @param _PUSDChange amount of PUSD to mint or burn
+   * @param _isDebtIncrease if true then withdraw (mint) PUSD, otherwise burn it.
    */
-  function _moveYUSD(
+  function _movePUSD(
     IActivePool _activePool,
-    IYUSDToken _yusdToken,
-    uint256 _YUSDChange,
+    IPUSDToken _pusdToken,
+    uint256 _PUSDChange,
     bool _isDebtIncrease,
     uint256 _netDebtChange
   ) internal {
     if (_isDebtIncrease) {
-      _withdrawYUSD(
+      _withdrawPUSD(
         _activePool,
-        _yusdToken,
+        _pusdToken,
         msg.sender,
-        _YUSDChange,
+        _PUSDChange,
         _netDebtChange
       );
     } else {
-      _repayYUSD(_activePool, _yusdToken, msg.sender, _YUSDChange);
+      _repayPUSD(_activePool, _pusdToken, msg.sender, _PUSDChange);
     }
   }
 
   /**
-   * @notice Issue the specified amount of YUSD to _account and increases the total active debt
-   * @dev _netDebtIncrease potentially includes a YUSDFee
+   * @notice Issue the specified amount of PUSD to _account and increases the total active debt
+   * @dev _netDebtIncrease potentially includes a PUSDFee
    */
-  function _withdrawYUSD(
+  function _withdrawPUSD(
     IActivePool _activePool,
-    IYUSDToken _yusdToken,
+    IPUSDToken _pusdToken,
     address _account,
-    uint256 _YUSDAmount,
+    uint256 _PUSDAmount,
     uint256 _netDebtIncrease
   ) internal {
-    _activePool.increaseYUSDDebt(_netDebtIncrease);
-    _yusdTokenMint(_yusdToken, _account, _YUSDAmount);
+    _activePool.increasePUSDDebt(_netDebtIncrease);
+    _pusdTokenMint(_pusdToken, _account, _PUSDAmount);
   }
 
   /**
-   * @notice Burn the specified amount of YUSD from _account and decreases the total active debt
+   * @notice Burn the specified amount of PUSD from _account and decreases the total active debt
    */
-  function _repayYUSD(
+  function _repayPUSD(
     IActivePool _activePool,
-    IYUSDToken _yusdToken,
+    IPUSDToken _pusdToken,
     address _account,
-    uint256 _YUSDAmount
+    uint256 _PUSDAmount
   ) internal {
-    _activePool.decreaseYUSDDebt(_YUSDAmount);
-    _yusdToken.burn(_account, _YUSDAmount);
+    _activePool.decreasePUSDDebt(_PUSDAmount);
+    _pusdToken.burn(_account, _PUSDAmount);
   }
 
   /**
    * @notice Returns _coll1.amounts minus _amounts2. Used
-   * @dev Invariant that _coll1.tokens and _tokens2 are sorted by whitelist order of token indices from the YetiController.
+   * @dev Invariant that _coll1.tokens and _tokens2 are sorted by whitelist order of token indices from the PreonController.
    *    So, if WAVAX is whitelisted first, then WETH, then USDC, then [WAVAX, USDC] is a valid input order but [USDC, WAVAX] is not.
    *    This is done for gas efficiency. It will revert if there is a token existing in _tokens2 that is not in _coll1.tokens.
    *    Each iteration we increase the index for _coll1.tokens, and if the token is next in _tokens2, we perform the subtraction
@@ -1642,7 +1642,7 @@ contract BorrowerOperations is
   /**
    * @notice Require that the amount of collateral in the trove is not more than the max
    */
-  function _requireValidTroveCollsLen(IYetiController controller, uint256 _n)
+  function _requireValidTroveCollsLen(IPreonController controller, uint256 _n)
     internal
     view
   {
@@ -1656,7 +1656,7 @@ contract BorrowerOperations is
   function _requireValidCollateral(
     address[] memory _colls,
     uint256[] memory _amounts,
-    IYetiController controller,
+    IPreonController controller,
     bool _deposit
   ) internal view {
     uint256 collsLen = _colls.length;
@@ -1675,18 +1675,18 @@ contract BorrowerOperations is
   function _requireNonZeroAdjustment(
     uint256[] memory _amountsIn,
     uint256[] memory _amountsOut,
-    uint256 _YUSDChange
+    uint256 _PUSDChange
   ) internal pure {
     require(
-      _YUSDChange != 0 || _amountsIn.length != 0 || _amountsOut.length != 0,
+      _PUSDChange != 0 || _amountsIn.length != 0 || _amountsOut.length != 0,
       "1"
     );
   }
 
   /**
-   * @notice require that lever up is enabled, stored in the Yeti Controller.
+   * @notice require that lever up is enabled, stored in the Preon Controller.
    */
-  function _requireLeverUpEnabled(IYetiController _controller) internal view {
+  function _requireLeverUpEnabled(IPreonController _controller) internal view {
     require(_controller.leverUpEnabled(), "13");
   }
 
@@ -1736,24 +1736,24 @@ contract BorrowerOperations is
   }
 
   /**
-   * @notice Require that the YUSD repayment is valid at current debt.
+   * @notice Require that the PUSD repayment is valid at current debt.
    */
-  function _requireValidYUSDRepayment(
+  function _requireValidPUSDRepayment(
     uint256 _currentDebt,
     uint256 _debtRepayment
   ) internal pure {
-    require(_debtRepayment <= _currentDebt.sub(YUSD_GAS_COMPENSATION), "9");
+    require(_debtRepayment <= _currentDebt.sub(PUSD_GAS_COMPENSATION), "9");
   }
 
   /**
-   * @notice Require the borrower has enough YUSD to pay back the debt they are supposed to pay back.
+   * @notice Require the borrower has enough PUSD to pay back the debt they are supposed to pay back.
    */
-  function _requireSufficientYUSDBalance(
-    IYUSDToken _yusdToken,
+  function _requireSufficientPUSDBalance(
+    IPUSDToken _pusdToken,
     uint256 _debtRepayment
   ) internal view {
     require(
-      _IERC20TokenBalanceOf(_yusdToken, msg.sender) >= _debtRepayment,
+      _IERC20TokenBalanceOf(_pusdToken, msg.sender) >= _debtRepayment,
       "26"
     );
   }
@@ -1807,14 +1807,14 @@ contract BorrowerOperations is
   }
 
   /**
-   * @notice calls yusd token mint function
+   * @notice calls pusd token mint function
    */
-  function _yusdTokenMint(
-    IYUSDToken _yusdToken,
+  function _pusdTokenMint(
+    IPUSDToken _pusdToken,
     address _to,
     uint256 _amount
   ) internal {
-    _yusdToken.mint(_to, _amount);
+    _pusdToken.mint(_to, _amount);
   }
 
   /**
@@ -1891,9 +1891,9 @@ contract BorrowerOperations is
   }
 
   /**
-   * @notice Gets the default router address from the yeti controller.
+   * @notice Gets the default router address from the preon controller.
    */
-  function _getDefaultRouterAddress(IYetiController _controller, address _token)
+  function _getDefaultRouterAddress(IPreonController _controller, address _token)
     internal
     view
     returns (address)
@@ -1905,7 +1905,7 @@ contract BorrowerOperations is
    * @notice Gets the value in USD of the collateral (no collateral weight)
    */
   function _getValueUSD(
-    IYetiController _controller,
+    IPreonController _controller,
     address _token,
     uint256 _amount
   ) internal view returns (uint256) {
@@ -1916,7 +1916,7 @@ contract BorrowerOperations is
    * @notice Gets the value in both VC and RVC from Controller at once to prevent additional loops.
    */
   function _getValuesVCAndRVC(
-    IYetiController _controller,
+    IPreonController _controller,
     address[] memory _colls,
     uint256[] memory _amounts
   ) internal view returns (uint256, uint256) {
@@ -1925,10 +1925,10 @@ contract BorrowerOperations is
 
   /**
    * @notice Gets the total variable deposit fee, and updates the last fee seen. See
-   *   YetiController and ThreePieceWiseFeeCurve for implementation details.
+   *   PreonController and ThreePieceWiseFeeCurve for implementation details.
    */
   function _getTotalVariableDepositFeeAndUpdate(
-    IYetiController controller,
+    IPreonController controller,
     address[] memory _colls,
     uint256[] memory _amounts,
     uint256[] memory _leverages,
@@ -1948,7 +1948,7 @@ contract BorrowerOperations is
   }
 
   /**
-   * @notice Gets YUSD or some other token balance of an account.
+   * @notice Gets PUSD or some other token balance of an account.
    */
   function _IERC20TokenBalanceOf(IERC20 _token, address _borrower)
     internal

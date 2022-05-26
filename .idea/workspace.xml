@@ -1,16 +1,225 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="8acb2d09-a8be-4973-9dea-044c162d1acd" name="Changes" comment="updated to BorrowerOperations.sol">
-      <change afterPath="$PROJECT_DIR$/contracts/contracts/YETI/veYETIEmissions.sol" afterDir="false" />
+    <list default="true" id="8acb2d09-a8be-4973-9dea-044c162d1acd" name="Changes" comment="refactor Yeti -&gt; Preon">
+      <change afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IvePREON.sol" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/contracts/contracts/Proxy/SPREONScript.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/UnneededContracts/LQTYStaking.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/UnneededContracts/LQTYStaking.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/UnneededContracts/LQTYToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/UnneededContracts/LQTYToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/UnneededContracts/Swapper/Swapper.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/UnneededContracts/Swapper/Swapper.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/UnneededContracts/YETIStaking.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/UnneededContracts/YETIStaking.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/UnneededContracts/leverUp.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/UnneededContracts/leverUp.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/UnneededContracts/sYETIStakingTester.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/UnneededContracts/sYETIStakingTester.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/ActivePool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/ActivePool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/AssetWrappers/WAAVE.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/AssetWrappers/WAAVE.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/AssetWrappers/WBQI.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/AssetWrappers/WBQI.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/AssetWrappers/WCRV.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/AssetWrappers/WCRV.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/AssetWrappers/WJLP.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/AssetWrappers/WJLP.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/BorrowerOperations.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/BorrowerOperations.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/contracts/CollSurplusPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/CollSurplusPool.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/contracts/DefaultPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/DefaultPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/LiquityBase.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/LiquityBase.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/LiquityMath.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/LiquityMath.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/PoolBase2.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/PoolBase2.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/TroveManagerBase.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/TroveManagerBase.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/Whitelist.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/Whitelist.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/YetiCustomBase.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/PreonCustomBase.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Dependencies/YetiMath.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Dependencies/PreonMath.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/GasPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/GasPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/HintHelpers.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/HintHelpers.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IActivePool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IActivePool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IBorrowerOperations.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IBorrowerOperations.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICollSurplusPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICollSurplusPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICommunityIssuance.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ICommunityIssuance.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IDefaultPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IDefaultPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ILQTYStaking.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ILQTYStaking.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ILockupContractFactory.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ILockupContractFactory.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ISYETI.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ISPREON.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ISortedTroves.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ISortedTroves.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IStabilityPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IStabilityPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ITroveManager.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ITroveManager.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/ITroveManagerRedemptions.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/ITroveManagerRedemptions.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYETIToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPREONToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYUSDToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYUSDToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiController.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPreonController.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiLever.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPreonLever.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiRouter.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPreonRouter.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Interfaces/IYetiVaultToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Interfaces/IPreonVaultToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/LPRewards/Farm.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/LPRewards/Farm.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/LPRewards/Interfaces/IUnipool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/LPRewards/Interfaces/IUnipool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/LPRewards/Pool2Unipool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/LPRewards/Pool2Unipool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/LPRewards/Unipool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/LPRewards/Unipool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/MultiTroveGetter.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/MultiTroveGetter.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/PoolBase2.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PoolBase2.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/PriceCurves/ThreePieceWiseLinearPriceCurve.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PriceCurves/ThreePieceWiseLinearPriceCurve.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/PriceFeed.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PriceFeed.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Proxy/BorrowerOperationsScript.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Proxy/BorrowerOperationsScript.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Proxy/BorrowerWrappersScript.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Proxy/BorrowerWrappersScript.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Proxy/SYETIScript.sol" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Proxy/TroveManagerScript.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Proxy/TroveManagerScript.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Routers/ERC20Router.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Routers/ERC20Router.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Routers/ERC20RouterV2.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Routers/ERC20RouterV2.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/Routers/WJLPRouter.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/Routers/WJLPRouter.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/SortedTroves.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/SortedTroves.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/StabilityPool.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/StabilityPool.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TeamAllocation.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TeamAllocation.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TestContracts/ActivePoolTester.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TestContracts/ActivePoolTester.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TestContracts/CDPManagerTester.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TestContracts/CDPManagerTester.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TestContracts/CommunityIssuanceTester.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TestContracts/CommunityIssuanceTester.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TestContracts/DefaultPoolTester.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TestContracts/DefaultPoolTester.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TestContracts/EchidnaProxy.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TestContracts/EchidnaProxy.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TestContracts/EchidnaTester.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TestContracts/EchidnaTester.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TestContracts/FunctionCaller.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TestContracts/FunctionCaller.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TestContracts/LUSDTokenCaller.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TestContracts/LUSDTokenCaller.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TestContracts/YETITokenTester.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TestContracts/YETITokenTester.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TestContracts/YUSDTokenTester.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TestContracts/YUSDTokenTester.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/TestContracts/sYETITokenTester.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TestContracts/sYETITokenTester.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/contracts/TroveManager.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TroveManager.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/contracts/TroveManagerLiquidations.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TroveManagerLiquidations.sol" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/contracts/contracts/TroveManagerRedemptions.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/TroveManagerRedemptions.sol" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/CommunityIssuance.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/YETI/CommunityIssuance.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/BoringCrypto/BoringBatchable.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/BoringCrypto/BoringBatchable.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/BoringCrypto/BoringERC20.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/BoringCrypto/BoringERC20.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/BoringCrypto/BoringMath.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/BoringCrypto/BoringMath.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/BoringCrypto/BoringOwnable.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/BoringCrypto/BoringOwnable.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/BoringCrypto/Domain.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/BoringCrypto/Domain.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/BoringCrypto/ERC20.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/BoringCrypto/ERC20.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/BoringCrypto/IERC20.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/BoringCrypto/IERC20.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/CommunityIssuance.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/CommunityIssuance.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/IsYETIRouter.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/IsPREONRouter.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/LockupContract.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/LockupContract.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/LockupContractFactory.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/LockupContractFactory.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/ShortLockupContract.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/ShortLockupContract.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/TeamLockup.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/TeamLockup.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/YETIToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/PREONToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/YUSDToYETIRouters/dummyUniV2Router.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/PUSDToPREONRouters/dummyUniV2Router.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/sYETIToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/sPREONToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YETI/veYETIEmissions.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PREON/vePREONEmissions.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YUSDToken.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PUSDToken.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/YetiFinanceTreasury.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/PreonFinanceTreasury.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/contracts/veYETI.sol" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/contracts/vePREON.sol" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/errorAccumulationTest/errorAccumulationTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/errorAccumulationTest/errorAccumulationTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/fuzzTests/PoolManager_AllDepositorsCanWithdrawTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/fuzzTests/PoolManager_AllDepositorsCanWithdrawTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/fuzzTests/echidna_debug.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/fuzzTests/echidna_debug.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/gasTest/gasCalc.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/gasTest/gasCalc.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/gasTest/gasCalc_Math.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/gasTest/gasCalc_Math.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/gasTest/gasCalc_liquidateTroves.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/gasTest/gasCalc_liquidateTroves.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/gasTest/gasCalc_liquidateTroves_RecoveryMode.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/gasTest/gasCalc_liquidateTroves_RecoveryMode.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/hardhat.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/hardhat.config.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/macroModel/macro_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/macroModel/macro_model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/avalancheDeploymentOutput.json" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/avalancheDeploymentOutput.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/balancerDeploymentOutput/balancerOutput_20210629.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/balancerDeploymentOutput/balancerOutput_20210629.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/balancerPoolDeployment.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/balancerPoolDeployment.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/deploymentParams.avalanche.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/deploymentParams.avalanche.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/deploymentParams.fuji.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/deploymentParams.fuji.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/deploymentParams.localFork.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/deploymentParams.localFork.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/deploymentParams.mainnet.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/deploymentParams.mainnet.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/deploymentParams.rinkeby.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/deploymentParams.rinkeby.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/fujiDeploymentOutput.json" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/fujiDeploymentOutput.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/localForkDeploymentOutput.json" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/localForkDeploymentOutput.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/mainnetDeployment.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/mainnetDeployment.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/mainnetDeploymentOutput.json" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/mainnetDeploymentOutput.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output1.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output1.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output10.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output10.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output11.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output11.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output2.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output2.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output3.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output3.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output4.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output4.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output5.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output5.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output6.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output6.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output7.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output7.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output8.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output8.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output9.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/realDeploymentOutput/output9.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/rinkebyDeploymentOutput.json" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/rinkebyDeploymentOutput.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output12.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output12.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output13.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output13.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output14.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output14.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output15.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output15.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output16.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output16.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output17.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output17.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output18.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output18.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output19.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output19.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output20.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output20.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output21.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output21.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output22.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output22.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output23.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output23.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output3.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output3.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output4.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output4.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output_1.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output_1.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output_2.txt" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/mainnetDeployment/testDeploymentTextOutput/output_2.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/migrations/2_deploy_contracts.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/migrations/2_deploy_contracts.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/migrations/deploy_contracts_buidler.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/migrations/deploy_contracts_buidler.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/model/model.py" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/model/model.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/model/model_v2.py" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/model/model_v2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/scripts/serializeDeployment.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/scripts/serializeDeployment.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/AccessControlTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/AccessControlTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/BorrowerOperationsTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/BorrowerOperationsTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/BorrowerOperationsTestMultiCollateral.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/BorrowerOperationsTestMultiCollateral.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/CollSurplusPool.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/CollSurplusPool.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/ConnectContractsTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/ConnectContractsTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/DefaultPoolTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/DefaultPoolTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/FarmTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/FarmTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/FarmTest2.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/FarmTest2.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/FeeArithmeticTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/FeeArithmeticTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/GasCompensationTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/GasCompensationTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/GrowthTokenTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/GrowthTokenTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/HintHelpers_getApproxHintTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/HintHelpers_getApproxHintTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/LQTYIssuanceArithmeticTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/LQTYIssuanceArithmeticTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/LQTYStakingFeeRewardsTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/LQTYStakingFeeRewardsTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/LUSDTokenTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/LUSDTokenTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/MultiCollateralStabilityPoolTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/MultiCollateralStabilityPoolTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/OwnershipTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/OwnershipTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/PoolsTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/PoolsTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/PriceCurveTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/PriceCurveTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/ProxyBorrowerWrappersScript.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/ProxyBorrowerWrappersScript.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/SortedTrovesTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/SortedTrovesTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/StabilityPoolTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/StabilityPoolTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/StabilityPool_LQTYIssuanceTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/StabilityPool_LQTYIssuanceTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/StabilityPool_RoundingErrors.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/StabilityPool_RoundingErrors.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/StabilityPool_SPWithdrawalTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/StabilityPool_SPWithdrawalTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/StabilityPool_SPWithdrawalToCDPTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/StabilityPool_SPWithdrawalToCDPTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/TroveManagerTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/TroveManagerTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/TroveManagerTest16Dec.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/TroveManagerTest16Dec.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/TroveManager_LiquidationRewardsTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/TroveManager_LiquidationRewardsTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/TroveManager_RecoveryModeTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/TroveManager_RecoveryModeTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/TroveManager_RecoveryMode_Batch_Liqudation_Test.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/TroveManager_RecoveryMode_Batch_Liqudation_Test.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/Unipool.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/Unipool.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/WAssetTroveManagerTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/WAssetTroveManagerTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/WJLPRouterTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/WJLPRouterTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/YetiCustomBaseTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/YetiCustomBaseTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/YetiDeploymentTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/YetiDeploymentTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/launchSequenceTest/DeployAndFundLCsTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/launchSequenceTest/DeployAndFundLCsTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/launchSequenceTest/DeployLQTYContractsTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/launchSequenceTest/DeployLQTYContractsTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/launchSequenceTest/DuringLockupPeriodTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/launchSequenceTest/DuringLockupPeriodTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/launchSequenceTest/PostLockupPeriodTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/launchSequenceTest/PostLockupPeriodTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/newBorrowerOperationsTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/newBorrowerOperationsTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/newBorrowerOperationsTest2.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/newBorrowerOperationsTest2.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/newHintHelpers_getApproxHintTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/newHintHelpers_getApproxHintTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/newStabilityPoolTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/newStabilityPoolTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/newTroveManagerTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/newTroveManagerTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/sYETITokenTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/sYETITokenTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/sYETITokenTestBuyback.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/sYETITokenTestBuyback.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/stakeDeclineTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/stakeDeclineTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/wAAVETest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/wAAVETest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/wBQITest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/wBQITest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/wCRVTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/wCRVTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/wJLPTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/wJLPTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/test/whitelistTest.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/test/whitelistTest.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/tests/helpers.py" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/tests/helpers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/tests/simulation_helpers.py" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/tests/simulation_helpers.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/tests/simulation_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/tests/simulation_test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/utils/deploymentGasAndBytecode.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/utils/deploymentGasAndBytecode.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/utils/deploymentHelpers.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/utils/deploymentHelpers.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/utils/hintExamples.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/utils/hintExamples.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/utils/mainnetDeploymentHelpers.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/utils/mainnetDeploymentHelpers.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/utils/mathPlayground.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/utils/mathPlayground.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/utils/proxyHelpers.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/utils/proxyHelpers.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/utils/testHelpers.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/utils/testHelpers.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/contracts/utils/truffleDeploymentHelpers.js" beforeDir="false" afterPath="$PROJECT_DIR$/contracts/utils/truffleDeploymentHelpers.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/package-lock.json" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -35,16 +244,16 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "C:/Users/49176/YetiFinance/YetiFinance_Dedaub_2",
-    "nodejs_package_manager_path": "yarn",
-    "settings.editor.selected.configurable": "settings.nodejs"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/49176/YetiFinance/YetiFinance_Dedaub_2&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;yarn&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;settings.nodejs&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="prepare:compile" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
       <package-json value="$PROJECT_DIR$/contracts/package.json" />
@@ -73,7 +282,8 @@
       <workItem from="1653039910301" duration="1463000" />
       <workItem from="1653041389983" duration="3100000" />
       <workItem from="1653132954149" duration="269000" />
-      <workItem from="1653137620031" duration="3746000" />
+      <workItem from="1653137620031" duration="6285000" />
+      <workItem from="1653325949066" duration="2030000" />
     </task>
     <task id="LOCAL-00001" summary="reformat code to match newest Solidity standards">
       <created>1653137819775</created>
@@ -89,7 +299,14 @@
       <option name="project" value="LOCAL" />
       <updated>1653139219181</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="update to latest Yeti version">
+      <created>1653141584615</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1653141584615</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -109,7 +326,9 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="reformat code to match newest Solidity standards" />
     <MESSAGE value="updated to BorrowerOperations.sol" />
-    <option name="LAST_COMMIT_MESSAGE" value="updated to BorrowerOperations.sol" />
+    <MESSAGE value="update to latest Yeti version" />
+    <MESSAGE value="refactor Yeti -&gt; Preon" />
+    <option name="LAST_COMMIT_MESSAGE" value="refactor Yeti -&gt; Preon" />
   </component>
   <component name="XSLT-Support.FileAssociations.UIState">
     <expand />

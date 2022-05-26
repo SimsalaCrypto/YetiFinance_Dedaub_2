@@ -5,7 +5,7 @@ pragma solidity 0.6.11;
 interface ILockupContractFactory {
   // --- Events ---
 
-  event YETITokenAddressSet(address _yetiTokenAddress);
+  event PREONTokenAddressSet(address _preonTokenAddress);
   event LockupContractDeployedThroughFactory(
     address _lockupContractAddress,
     address _beneficiary,
@@ -15,7 +15,7 @@ interface ILockupContractFactory {
 
   // --- Functions ---
 
-  function setYETITokenAddress(address _yetiTokenAddress) external;
+  function setPREONTokenAddress(address _preonTokenAddress) external;
 
   function deployLockupContract(address _beneficiary, uint256 _unlockTime)
     external;

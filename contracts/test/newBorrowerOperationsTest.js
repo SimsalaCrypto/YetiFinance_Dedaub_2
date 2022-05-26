@@ -4,7 +4,7 @@ const testHelpers = require("../utils/testHelpers.js")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
 const NonPayable = artifacts.require('NonPayable.sol')
 const TroveManagerTester = artifacts.require("TroveManagerTester")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester")
 
 const th = testHelpers.TestHelper
 
@@ -17,10 +17,10 @@ const ZERO_ADDRESS = th.ZERO_ADDRESS
 const assertRevert = th.assertRevert
 const WAVAX_ADDRESS = ZERO_ADDRESS;
 
-/* NOTE: Some of the borrowing tests do not test for specific YUSD fee values. They only test that the
+/* NOTE: Some of the borrowing tests do not test for specific PUSD fee values. They only test that the
  * fees are non-zero when they should occur, and that they decay over time.
  *
- * Specific YUSD fee values will depend on the final fee schedule used, and the final choice for
+ * Specific PUSD fee values will depend on the final fee schedule used, and the final choice for
  *  the parameter MINUTE_DECAY_FACTOR in the TroveManager, which is still TBD based on economic
  * modelling.
  * 
@@ -40,19 +40,19 @@ contract('newBorrowerOperations', async accounts => {
 
     let priceFeedAVAX
     let priceFeedETH
-    let yusdToken
+    let pusdToken
     let sortedTroves
     let troveManager
     let activePool
     let stabilityPool
     let defaultPool
     let borrowerOperations
-    let sYETI
-    let yetiToken
+    let sPREON
+    let preonToken
 
     let contracts
 
-    const getOpenTroveYUSDAmount = async (totalDebt) => th.getOpenTroveYUSDAmount(contracts, totalDebt)
+    const getOpenTrovePUSDAmount = async (totalDebt) => th.getOpenTrovePUSDAmount(contracts, totalDebt)
     const getNetBorrowingAmount = async (debtWithFee) => th.getNetBorrowingAmount(contracts, debtWithFee)
     const getActualDebtFromComposite = async (compositeDebt) => th.getActualDebtFromComposite(compositeDebt, contracts)
     const openTrove = async (params) => th.openTrove(contracts, params)
@@ -60,7 +60,7 @@ contract('newBorrowerOperations', async accounts => {
     const getTroveEntireDebt = async (trove) => th.getTroveEntireDebt(contracts, trove)
     const getTroveStake = async (trove) => th.getTroveStake(contracts, trove)
 
-    let YUSD_GAS_COMPENSATION
+    let PUSD_GAS_COMPENSATION
     let MIN_NET_DEBT
     let BORROWING_FEE_FLOOR
 
@@ -73,22 +73,22 @@ contract('newBorrowerOperations', async accounts => {
             contracts = await deploymentHelper.deployLiquityCore()
             contracts.borrowerOperations = await BorrowerOperationsTester.new()
             contracts.troveManager = await TroveManagerTester.new()
-            contracts = await deploymentHelper.deployYUSDTokenTester(contracts)
-            const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+            contracts = await deploymentHelper.deployPUSDTokenTester(contracts)
+            const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
-            await deploymentHelper.connectYETIContracts(YETIContracts)
-            await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-            await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+            await deploymentHelper.connectPREONContracts(PREONContracts)
+            await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+            await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
             if (withProxy) {
                 const users = [alice, bob, carol, dennis, whale, A, B, C, D, E]
-                await deploymentHelper.deployProxyScripts(contracts, YETIContracts, owner, users)
+                await deploymentHelper.deployProxyScripts(contracts, PREONContracts, owner, users)
             }
 
             // priceFeed = contracts.priceFeedTestnet
             priceFeedAVAX = contracts.priceFeedAVAX
             priceFeedETH = contracts.priceFeedETH
-            yusdToken = contracts.yusdToken
+            pusdToken = contracts.pusdToken
             sortedTroves = contracts.sortedTroves
             troveManager = contracts.troveManager
             activePool = contracts.activePool
@@ -98,12 +98,12 @@ contract('newBorrowerOperations', async accounts => {
             hintHelpers = contracts.hintHelpers
             whitelist = contracts.whitelist
 
-            sYETI = YETIContracts.sYETI
-            yetiToken = YETIContracts.yetiToken
-            communityIssuance = YETIContracts.communityIssuance
-            lockupContractFactory = YETIContracts.lockupContractFactory
+            sPREON = PREONContracts.sPREON
+            preonToken = PREONContracts.preonToken
+            communityIssuance = PREONContracts.communityIssuance
+            lockupContractFactory = PREONContracts.lockupContractFactory
 
-            YUSD_GAS_COMPENSATION = await borrowerOperations.YUSD_GAS_COMPENSATION()
+            PUSD_GAS_COMPENSATION = await borrowerOperations.PUSD_GAS_COMPENSATION()
             MIN_NET_DEBT = await borrowerOperations.MIN_NET_DEBT()
             BORROWING_FEE_FLOOR = await borrowerOperations.BORROWING_FEE_FLOOR()
         })
@@ -126,10 +126,10 @@ contract('newBorrowerOperations', async accounts => {
             const priceFeeds = [contracts.priceFeedETH, contracts.priceFeedAVAX]
 
             // await th.openTroveWithCollsAndMint(contracts, { ICR: toBN(dec(2, 18)), 
-            //     extraParams: { from: alice, _colls: colls, _amounts: amounts, _yusdAmount: toBN(dec(2000, 18)), _priceFeeds: priceFeeds } })
+            //     extraParams: { from: alice, _colls: colls, _amounts: amounts, _pusdAmount: toBN(dec(2000, 18)), _priceFeeds: priceFeeds } })
 
             await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)), 
-                extraParams: { from: alice, _colls: colls, _amounts: amounts, _yusdAmount: toBN(dec(2000, 18)), _priceFeeds: priceFeeds } })
+                extraParams: { from: alice, _colls: colls, _amounts: amounts, _pusdAmount: toBN(dec(2000, 18)), _priceFeeds: priceFeeds } })
 
             const troveColls2 = await troveManager.getTroveColls(alice)
             console.log("trove coll address " + troveColls2[0])
@@ -141,8 +141,8 @@ contract('newBorrowerOperations', async accounts => {
             const activePoolWavax = await contracts.wavax.balanceOf(activePool.address)
             console.log("wavax activepool has:", (activePoolWavax.div(toBN(10 ** 18))).toNumber());
 
-            const aliceYUSD = await yusdToken.balanceOf(alice)
-            console.log("yusd MINTED:", (aliceYUSD.div(toBN(10 ** 18))).toNumber());
+            const alicePUSD = await pusdToken.balanceOf(alice)
+            console.log("pusd MINTED:", (alicePUSD.div(toBN(10 ** 18))).toNumber());
 
             const aliceAvax = await contracts.wavax.balanceOf(alice)
             console.log("wavax alice has:", (aliceAvax.div(toBN(10 ** 18))).toNumber());
@@ -185,12 +185,12 @@ contract('newBorrowerOperations', async accounts => {
 
             const troveDebt3 = await troveManager.getTroveDebt(alice)
             console.log("Trove debt3: " + troveDebt3)
-            const mintedYUSDb = await contracts.yusdToken.balanceOf(alice)
-            console.log(th.toNormalBase(mintedYUSDb))
+            const mintedPUSDb = await contracts.pusdToken.balanceOf(alice)
+            console.log(th.toNormalBase(mintedPUSDb))
 
-            const result = await th.mintAndApproveYUSDToken(contracts, alice, borrowerOperations.address, amountToMint)
-            const mintedYUSD = await contracts.yusdToken.balanceOf(alice)
-            console.log(th.toNormalBase(mintedYUSD))
+            const result = await th.mintAndApprovePUSDToken(contracts, alice, borrowerOperations.address, amountToMint)
+            const mintedPUSD = await contracts.pusdToken.balanceOf(alice)
+            console.log(th.toNormalBase(mintedPUSD))
             console.log("result " + result)
 
 
@@ -207,7 +207,7 @@ contract('newBorrowerOperations', async accounts => {
             // const amountsBob = [amountToMint, amountToMint]
             // const priceFeedsBob = [contracts.priceFeedETH, contracts.priceFeedAVAX]
             await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)), 
-                extraParams: { from: bob, _colls: colls, _amounts: amounts, _yusdAmount: toBN(dec(2000, 18)), _priceFeeds: priceFeeds } })
+                extraParams: { from: bob, _colls: colls, _amounts: amounts, _pusdAmount: toBN(dec(2000, 18)), _priceFeeds: priceFeeds } })
 
 
             await contracts.borrowerOperations.closeTrove({from:alice})
@@ -218,8 +218,8 @@ contract('newBorrowerOperations', async accounts => {
             const activePoolWavax2 = await contracts.wavax.balanceOf(activePool.address)
             console.log("wavax activepool has:", (activePoolWavax2.div(toBN(10 ** 18))).toNumber());
 
-            const aliceYUSD2 = await yusdToken.balanceOf(alice)
-            console.log("yusd MINTED:", (aliceYUSD2.div(toBN(10 ** 18))).toNumber());
+            const alicePUSD2 = await pusdToken.balanceOf(alice)
+            console.log("pusd MINTED:", (alicePUSD2.div(toBN(10 ** 18))).toNumber());
 
             const aliceAvax2 = await contracts.wavax.balanceOf(alice)
             console.log("wavax alice has:", (aliceAvax2.div(toBN(10 ** 18))).toNumber());

@@ -2,26 +2,26 @@
 const SortedTroves = artifacts.require("./SortedTroves.sol")
 const TroveManager = artifacts.require("./TroveManager.sol")
 const PriceFeed = artifacts.require("./PriceFeed.sol")
-const YUSDToken = artifacts.require("./YUSDToken.sol")
+const PUSDToken = artifacts.require("./PUSDToken.sol")
 const ActivePool = artifacts.require("./ActivePool.sol");
 const DefaultPool = artifacts.require("./DefaultPool.sol");
 const StabilityPool = artifacts.require("./StabilityPool.sol")
 const FunctionCaller = artifacts.require("./FunctionCaller.sol")
 const BorrowerOperations = artifacts.require("./BorrowerOperations.sol")
 
-const SYETI = artifacts.require("./YETI/sYETIToken.sol")
-const YETIToken = artifacts.require("./YETI/YETIToken.sol")
-const LockupContractFactory = artifacts.require("./YETI/LockupContractFactory.sol")
-const CommunityIssuance = artifacts.require("./YETI/CommunityIssuance.sol")
+const SPREON = artifacts.require("./PREON/sPREONToken.sol")
+const PREONToken = artifacts.require("./PREON/PREONToken.sol")
+const LockupContractFactory = artifacts.require("./PREON/LockupContractFactory.sol")
+const CommunityIssuance = artifacts.require("./PREON/CommunityIssuance.sol")
 const HintHelpers = artifacts.require("./HintHelpers.sol")
 
-const CommunityIssuanceTester = artifacts.require("./YETI/CommunityIssuanceTester.sol")
+const CommunityIssuanceTester = artifacts.require("./PREON/CommunityIssuanceTester.sol")
 const ActivePoolTester = artifacts.require("./ActivePoolTester.sol")
 const DefaultPoolTester = artifacts.require("./DefaultPoolTester.sol")
 const LiquityMathTester = artifacts.require("./LiquityMathTester.sol")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
 const TroveManagerTester = artifacts.require("./TroveManagerTester.sol")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester.sol")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester.sol")
 
 const { TestHelper: th } = require("../utils/testHelpers.js")
 
@@ -31,7 +31,7 @@ const ARBITRARY_ADDRESS = "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419"   // plac
 const coreContractABIs = [
   BorrowerOperations,
   PriceFeed,
-  YUSDToken,
+  PUSDToken,
   SortedTroves,
   TroveManager,
   ActivePool,
@@ -41,9 +41,9 @@ const coreContractABIs = [
   HintHelpers,
 ]
 
-const YETIContractABIs = [
-  SYETI,
-  YETIToken,
+const PREONContractABIs = [
+  SPREON,
+  PREONToken,
   LockupContractFactory,
   CommunityIssuance
 ]
@@ -55,7 +55,7 @@ const TesterContractABIs  = [
   LiquityMathTester,
   BorrowerOperationsTester,
   TroveManagerTester,
-  YUSDTokenTester,
+  PUSDTokenTester,
 ]
 
 const getGasFromContractDeployment = async (contractObject, name) => {
@@ -109,19 +109,19 @@ const logContractBytecodeLengths = (contractABIs) => {
 // Run script: log deployment gas costs and bytecode lengths for all contracts
 async function main() {
   const coreContracts = await dh.deployLiquityCoreHardhat()
-  const YETIContracts = await dh.deployYETIContractsHardhat(ARBITRARY_ADDRESS, ARBITRARY_ADDRESS)
+  const PREONContracts = await dh.deployPREONContractsHardhat(ARBITRARY_ADDRESS, ARBITRARY_ADDRESS)
   const testerContracts = await dh.deployTesterContractsHardhat()
 
-  await dh.connectCoreContracts(coreContracts, YETIContracts)
-  await dh.connectYETIContracts(YETIContracts)
-  await dh.connectYETIContractsToCore(YETIContracts, coreContracts)
+  await dh.connectCoreContracts(coreContracts, PREONContracts)
+  await dh.connectPREONContracts(PREONContracts)
+  await dh.connectPREONContractsToCore(PREONContracts, coreContracts)
 
 
   console.log(`\n`)
-  console.log(`YETI CONTRACTS`)
-  await logContractDeploymentCosts(YETIContracts)
+  console.log(`PREON CONTRACTS`)
+  await logContractDeploymentCosts(PREONContracts)
   console.log(`\n`)
-  logContractBytecodeLengths(YETIContractABIs)
+  logContractBytecodeLengths(PREONContractABIs)
   console.log(`\n`)
 
   console.log(`CORE CONTRACTS`)

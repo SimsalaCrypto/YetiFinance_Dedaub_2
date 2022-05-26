@@ -6,10 +6,10 @@ const USAGE = "USAGE: serializeDeployment.js NETWORK_OUTPUT.json"
 
 const deployment = {
   "bootstrapPeriod": 1209600,
-  "totalStabilityPoolYETIReward": "50000000",
-  "liquidityMiningYETIRewardRate": "0.257201646090534979",
-  "tjLiquidityMiningYETIRewardRate": "0",
-  "pngLiquidityMiningYETIRewardRate": "0.41335978835978837",
+  "totalStabilityPoolPREONReward": "50000000",
+  "liquidityMiningPREONRewardRate": "0.257201646090534979",
+  "tjLiquidityMiningPREONRewardRate": "0",
+  "pngLiquidityMiningPREONRewardRate": "0.41335978835978837",
   "_priceFeedIsTestnet": false,
   "_uniTokenIsMock": false,
   "_isDev": false,

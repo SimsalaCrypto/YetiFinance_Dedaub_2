@@ -36,7 +36,7 @@ import "./Dependencies/CheckContract.sol";
  *
  * - Public functions with parameters have been made internal to save gas, and given an external wrapper function for external access
  *
- * Changes made in Yeti Finance implementation:
+ * Changes made in Preon Finance implementation:
  * Since the nodes are no longer just reliant on the nominal ICR which is just amount of ETH / debt, we now have to use the ICR based
  * on the VC value of the node. This changes with any price change, as the composition of any trove does not stay constant. Therefore
  * the list can easily become stale. This is a compromise that we had to make due to it being too expensive gas wise to keep the list

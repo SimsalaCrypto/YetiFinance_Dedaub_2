@@ -2,17 +2,17 @@
 
 pragma solidity 0.6.11;
 
-import "../Interfaces/IYETIToken.sol";
+import "../Interfaces/IPREONToken.sol";
 import "../Interfaces/ICommunityIssuance.sol";
-import "../Dependencies/YetiMath.sol";
+import "../Dependencies/PreonMath.sol";
 import "../Dependencies/OwnableUpgradeable.sol";
 import "../Dependencies/CheckContract.sol";
 import "../Dependencies/SafeMath.sol";
 
 /*
- * The treasury needs to keep this contract supplied with YETI tokens.
- * The amount of issued YETI is equal to rewardRate * deltaT (time since emission)
- * Yeti emissions are split on a pro-rata basis across stability pool depositors.
+ * The treasury needs to keep this contract supplied with PREON tokens.
+ * The amount of issued PREON is equal to rewardRate * deltaT (time since emission)
+ * Preon emissions are split on a pro-rata basis across stability pool depositors.
  * This tracking is done with the "G" parameter in the stability pool
  */
 contract CommunityIssuance is
@@ -26,7 +26,7 @@ contract CommunityIssuance is
 
   string public constant NAME = "CommunityIssuance";
 
-  IYETIToken public yetiToken;
+  IPREONToken public preonToken;
 
   address public stabilityPoolAddress;
 
@@ -36,22 +36,22 @@ contract CommunityIssuance is
   bool public rateUpdate;
 
   uint256 public lastUpdateTime;
-  uint256 public unclaimedIssuedYeti;
-  uint256 public totalYetiIssued;
+  uint256 public unclaimedIssuedPreon;
+  uint256 public totalPreonIssued;
 
   bool internal addressesSet;
 
   // --- Functions ---
 
   function setAddresses(
-    address _yetiTokenAddress,
+    address _preonTokenAddress,
     address _stabilityPoolAddress
   ) external override {
     require(!addressesSet, "Addresses Already Set");
     _transferOwnership(msg.sender);
     lastUpdateTime = block.timestamp;
 
-    yetiToken = IYETIToken(_yetiTokenAddress);
+    preonToken = IPREONToken(_preonTokenAddress);
     stabilityPoolAddress = _stabilityPoolAddress;
 
     addressesSet = true;
@@ -59,7 +59,7 @@ contract CommunityIssuance is
 
   /**
    * @notice rewardRate will be set to newRate
-   * @param _newRewardRate New YETI / second emission rate
+   * @param _newRewardRate New PREON / second emission rate
    */
   function setRate(uint256 _newRewardRate) external override onlyOwner {
     newRate = _newRewardRate;
@@ -71,31 +71,31 @@ contract CommunityIssuance is
 
   /**
    * @notice Called by SP whenever an action takes place.
-   * New YETI tokens are emitted and the amount emitted
+   * New PREON tokens are emitted and the amount emitted
    * is returned
    */
-  function issueYETI() external override returns (uint256) {
+  function issuePREON() external override returns (uint256) {
     _requireCallerIsSP();
 
     uint256 issuance = _getNewIssuance();
 
-    unclaimedIssuedYeti = unclaimedIssuedYeti.add(issuance);
-    totalYetiIssued = totalYetiIssued.add(issuance);
+    unclaimedIssuedPreon = unclaimedIssuedPreon.add(issuance);
+    totalPreonIssued = totalPreonIssued.add(issuance);
 
     lastUpdateTime = block.timestamp;
 
-    emit NewYetiIssued(issuance);
-    emit TotalYETIIssuedUpdated(totalYetiIssued);
+    emit NewPreonIssued(issuance);
+    emit TotalPREONIssuedUpdated(totalPreonIssued);
 
     return issuance;
   }
 
   /**
-   * @notice Returns the amount of Yeti to emit given the reward rate
+   * @notice Returns the amount of Preon to emit given the reward rate
    * and how long it has been since the last emission.
-   * Returns the minimum between the amount of Yeti tokens
+   * Returns the minimum between the amount of Preon tokens
    * in this contract that have not been allocated,
-   * and the amount of YETI that should be issued at the
+   * and the amount of PREON that should be issued at the
    * given reward rate.
    */
   function _getNewIssuance() internal returns (uint256) {
@@ -113,25 +113,25 @@ contract CommunityIssuance is
     }
 
     uint256 availableToEmit;
-    if (yetiToken.balanceOf(address(this)) > unclaimedIssuedYeti) {
-      availableToEmit = yetiToken.balanceOf(address(this)).sub(
-        unclaimedIssuedYeti
+    if (preonToken.balanceOf(address(this)) > unclaimedIssuedPreon) {
+      availableToEmit = preonToken.balanceOf(address(this)).sub(
+        unclaimedIssuedPreon
       );
     }
 
-    return YetiMath._min(newIssuance, availableToEmit);
+    return PreonMath._min(newIssuance, availableToEmit);
   }
 
   /**
-   * @notice Send YETI to an address-only callable by SP
+   * @notice Send PREON to an address-only callable by SP
    */
-  function sendYETI(address _account, uint256 _YETIamount) external override {
+  function sendPREON(address _account, uint256 _PREONamount) external override {
     _requireCallerIsSP();
 
-    unclaimedIssuedYeti = unclaimedIssuedYeti.sub(_YETIamount);
-    require(yetiToken.transfer(_account, _YETIamount));
+    unclaimedIssuedPreon = unclaimedIssuedPreon.sub(_PREONamount);
+    require(preonToken.transfer(_account, _PREONamount));
 
-    emit RewardPaid(_account, _YETIamount);
+    emit RewardPaid(_account, _PREONamount);
   }
 
   /**

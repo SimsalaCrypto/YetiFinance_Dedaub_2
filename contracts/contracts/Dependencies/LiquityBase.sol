@@ -2,36 +2,36 @@
 
 pragma solidity 0.6.11;
 
-import "./YetiMath.sol";
+import "./PreonMath.sol";
 import "../Interfaces/IActivePool.sol";
 import "../Interfaces/IDefaultPool.sol";
 import "../Interfaces/ILiquityBase.sol";
-import "./YetiCustomBase.sol";
+import "./PreonCustomBase.sol";
 
 /**
  * Base contract for TroveManager, TroveManagerLiquidations, TroveManagerRedemptions,
  * and BorrowerOperations.
  * Contains global system constants and common functions.
  */
-contract LiquityBase is ILiquityBase, YetiCustomBase {
+contract LiquityBase is ILiquityBase, PreonCustomBase {
   // Minimum collateral ratio for individual troves
   uint256 internal constant MCR = 11e17; // 110%
 
   // Critical system collateral ratio. If the system's total collateral ratio (TCR) falls below the CCR, Recovery Mode is triggered.
   uint256 internal constant CCR = 15e17; // 150%
 
-  // Amount of YUSD to be locked in gas pool on opening troves
-  // This YUSD goes to the liquidator in the event the trove is liquidated.
-  uint256 internal constant YUSD_GAS_COMPENSATION = 200e18;
+  // Amount of PUSD to be locked in gas pool on opening troves
+  // This PUSD goes to the liquidator in the event the trove is liquidated.
+  uint256 internal constant PUSD_GAS_COMPENSATION = 200e18;
 
-  // Minimum amount of net YUSD debt a must have
+  // Minimum amount of net PUSD debt a must have
   uint256 internal constant MIN_NET_DEBT = 1800e18;
 
-  // Minimum fee on issuing new debt, paid in YUSD
+  // Minimum fee on issuing new debt, paid in PUSD
   uint256 internal constant BORROWING_FEE_FLOOR =
     (DECIMAL_PRECISION / 1000) * 5; // 0.5%
 
-  // Minimum fee paid on redemption, paid in YUSD
+  // Minimum fee paid on redemption, paid in PUSD
   uint256 internal constant REDEMPTION_FEE_FLOOR =
     (DECIMAL_PRECISION / 1000) * 5; // 0.5%
 
@@ -50,21 +50,21 @@ contract LiquityBase is ILiquityBase, YetiCustomBase {
 
   /**
    * @notice Returns the total debt of a trove (net debt + gas compensation)
-   * @dev The net debt is how much YUSD the user can actually withdraw from the system.
+   * @dev The net debt is how much PUSD the user can actually withdraw from the system.
    * The composite debt is the trove's total debt and is used for ICR calculations
-   * @return Trove withdrawable debt (net debt) plus YUSD_GAS_COMPENSATION
+   * @return Trove withdrawable debt (net debt) plus PUSD_GAS_COMPENSATION
    */
   function _getCompositeDebt(uint256 _debt) internal pure returns (uint256) {
-    return _debt.add(YUSD_GAS_COMPENSATION);
+    return _debt.add(PUSD_GAS_COMPENSATION);
   }
 
   /**
    * @notice Returns the net debt, which is total (composite) debt of a trove minus gas compensation
-   * @dev The net debt is how much YUSD the user can actually withdraw from the system.
+   * @dev The net debt is how much PUSD the user can actually withdraw from the system.
    * @return Trove total debt minus the gas compensation
    */
   function _getNetDebt(uint256 _debt) internal pure returns (uint256) {
-    return _debt.sub(YUSD_GAS_COMPENSATION);
+    return _debt.sub(PUSD_GAS_COMPENSATION);
   }
 
   /**
@@ -79,14 +79,14 @@ contract LiquityBase is ILiquityBase, YetiCustomBase {
 
   /**
    * @notice Calculate and return the System's Total Debt
-   * @dev Includes debt held by active troves (activePool.getYUSDDebt())
+   * @dev Includes debt held by active troves (activePool.getPUSDDebt())
    * as well as debt from liquidated troves that has yet to be redistributed
-   * (defaultPool.getYUSDDebt())
+   * (defaultPool.getPUSDDebt())
    * @return Return the System's Total Debt
    */
   function getEntireSystemDebt() public view override returns (uint256) {
-    uint256 activeDebt = activePool.getYUSDDebt();
-    uint256 closedDebt = defaultPool.getYUSDDebt();
+    uint256 activeDebt = activePool.getPUSDDebt();
+    uint256 closedDebt = defaultPool.getPUSDDebt();
     return activeDebt.add(closedDebt);
   }
 

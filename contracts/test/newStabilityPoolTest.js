@@ -2,7 +2,7 @@ const { assert } = require("hardhat")
 const deploymentHelper = require("../utils/deploymentHelpers.js")
 const testHelpers = require("../utils/testHelpers.js")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester")
 const TroveManagerLiquidations = artifacts.require("./TroveManagerLiquidations.sol")
 const th = testHelpers.TestHelper
 const dec = th.dec
@@ -11,7 +11,7 @@ const mv = testHelpers.MoneyValues
 const timeValues = testHelpers.TimeValues
 
 const TroveManagerTester = artifacts.require("TroveManagerTester")
-const YUSDToken = artifacts.require("YUSDToken")
+const PUSDToken = artifacts.require("PUSDToken")
 const NonPayable = artifacts.require('NonPayable.sol')
 
 const ZERO = toBN('0')
@@ -37,18 +37,18 @@ contract('StabilityPool', async accounts => {
   const frontEnds = [frontEnd_1, frontEnd_2, frontEnd_3]
   let contracts
   let priceFeed
-  let yusdToken
+  let pusdToken
   let sortedTroves
   let troveManager
   let activePool
   let stabilityPool
   let defaultPool
   let borrowerOperations
-  let yetiToken
+  let preonToken
   let communityIssuance
   let hintHelpers
   let whitelist
-  let sYETI
+  let sPREON
   let lockupContractFactory
 
   let weth
@@ -95,11 +95,11 @@ contract('StabilityPool', async accounts => {
 
   let gasPriceInWei
 
-  let YUSD_GAS_COMPENSATION
+  let PUSD_GAS_COMPENSATION
   let MIN_NET_DEBT
   let BORROWING_FEE_FLOOR
 
-  const getOpenTroveYUSDAmount = async (totalDebt) => th.getOpenTroveYUSDAmount(contracts, totalDebt)
+  const getOpenTrovePUSDAmount = async (totalDebt) => th.getOpenTrovePUSDAmount(contracts, totalDebt)
   const openTrove = async (params) => th.openTrove(contracts, params)
   const assertRevert = th.assertRevert
   const getTroveEntireDebt = async (trove) => th.getTroveEntireDebt(contracts, trove)
@@ -114,20 +114,20 @@ contract('StabilityPool', async accounts => {
         contracts = await deploymentHelper.deployLiquityCore()
         contracts.borrowerOperations = await BorrowerOperationsTester.new()
         contracts.troveManager = await TroveManagerTester.new()
-        contracts = await deploymentHelper.deployYUSDTokenTester(contracts)
-        const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+        contracts = await deploymentHelper.deployPUSDTokenTester(contracts)
+        const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
-        await deploymentHelper.connectYETIContracts(YETIContracts)
-        await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-        await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+        await deploymentHelper.connectPREONContracts(PREONContracts)
+        await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+        await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
         // if (withProxy) {
         //     const users = [alice, bob, carol, dennis, whale, A, B, C, D, E]
-        //     await deploymentHelper.deployProxyScripts(contracts, YETIContracts, owner, users)
+        //     await deploymentHelper.deployProxyScripts(contracts, PREONContracts, owner, users)
         // }
 
         // priceFeed = contracts.priceFeedTestnet
-        yusdToken = contracts.yusdToken
+        pusdToken = contracts.pusdToken
         sortedTroves = contracts.sortedTroves
         troveManager = contracts.troveManager
         activePool = contracts.activePool
@@ -137,12 +137,12 @@ contract('StabilityPool', async accounts => {
         hintHelpers = contracts.hintHelpers
         whitelist = contracts.whitelist
 
-        sYETI = YETIContracts.sYETI
-        yetiToken = YETIContracts.yetiToken
-        communityIssuance = YETIContracts.communityIssuance
-        lockupContractFactory = YETIContracts.lockupContractFactory
+        sPREON = PREONContracts.sPREON
+        preonToken = PREONContracts.preonToken
+        communityIssuance = PREONContracts.communityIssuance
+        lockupContractFactory = PREONContracts.lockupContractFactory
 
-        YUSD_GAS_COMPENSATION = await borrowerOperations.YUSD_GAS_COMPENSATION()
+        PUSD_GAS_COMPENSATION = await borrowerOperations.PUSD_GAS_COMPENSATION()
         MIN_NET_DEBT = await borrowerOperations.MIN_NET_DEBT()
         BORROWING_FEE_FLOOR = await borrowerOperations.BORROWING_FEE_FLOOR()
 
@@ -263,8 +263,8 @@ contract('StabilityPool', async accounts => {
 
     describe("Single Collateral, Normal Mode, one SP depositor liquidations, full offset", async () => {
       /* Alice mints 1000 Super Risky tokens, then deposits it into trove
-     * while taking on 2000 of extraYUSD debt.
-     * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
+     * while taking on 2000 of extraPUSD debt.
+     * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
      * Then Alice gets liquidated
      * TODO: error is somewhat large
      */
@@ -285,8 +285,8 @@ contract('StabilityPool', async accounts => {
       })
 
       /* Alice mints 1000 stablecoin tokens, then deposits it into trove
-       * while taking on 2000 of extraYUSD debt.
-       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
+       * while taking on 2000 of extraPUSD debt.
+       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
        * Then Alice gets liquidated
        */
       it("provideToSP(): Liquidation single collateral high ratio full offset", async () => {
@@ -306,8 +306,8 @@ contract('StabilityPool', async accounts => {
       })
 
       /* Alice mints 1000 lowDecimal tokens, then deposits it into trove
-       * while taking on 2000 of extraYUSD debt.
-       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
+       * while taking on 2000 of extraPUSD debt.
+       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
        * Then Alice gets liquidated
        */
       it("provideToSP(): Liquidation single collateral low decimal full offset", async () => {
@@ -327,8 +327,8 @@ contract('StabilityPool', async accounts => {
       })
 
       /* Alice mints 1000 Risky tokens, then deposits it into trove
-       * while taking on 2000 of extraYUSD debt.
-       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
+       * while taking on 2000 of extraPUSD debt.
+       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
        * Then Alice gets liquidated
        */
       it("provideToSP(): Liquidation single collateral high decimal full offset", async () => {
@@ -349,9 +349,9 @@ contract('StabilityPool', async accounts => {
 
     describe("Single Collateral Normal Mode, one SP depositor liquidations, partial offset", async () => {
       /* Alice mints 1000 Super Risky tokens, then deposits it into trove
-   * while taking on 2000 of extraYUSD debt.
-   * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
-   * Bob only deposits 500 YUSD into SP
+   * while taking on 2000 of extraPUSD debt.
+   * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
+   * Bob only deposits 500 PUSD into SP
    * Then Alice gets liquidated
    */
       it("provideToSP(): Liquidation single collateral low ratio partial offset", async () => {
@@ -371,9 +371,9 @@ contract('StabilityPool', async accounts => {
       })
 
       /* Alice mints 1000 stablecoin tokens, then deposits it into trove
-       * while taking on 2000 of extraYUSD debt.
-       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
-       * Bob only deposits 500 YUSD into SP
+       * while taking on 2000 of extraPUSD debt.
+       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
+       * Bob only deposits 500 PUSD into SP
        * Then Alice gets liquidated
        */
       it("provideToSP(): Liquidation single collateral high ratio partial offset", async () => {
@@ -393,9 +393,9 @@ contract('StabilityPool', async accounts => {
       })
 
       /* Alice mints 1000 tokenHighDecimal tokens, then deposits it into trove
-       * while taking on 2000 of extraYUSD debt.
-       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
-       * Bob only deposits 500 YUSD into SP
+       * while taking on 2000 of extraPUSD debt.
+       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
+       * Bob only deposits 500 PUSD into SP
        * Then Alice gets liquidated
        */
       it("provideToSP(): Liquidation single collateral high decimal partial offset", async () => {
@@ -415,9 +415,9 @@ contract('StabilityPool', async accounts => {
       })
 
       /* Alice mints 1000 tokenLowDecimal tokens, then deposits it into trove
-       * while taking on 2000 of extraYUSD debt.
-       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
-       * Bob only deposits 500 YUSD into SP
+       * while taking on 2000 of extraPUSD debt.
+       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
+       * Bob only deposits 500 PUSD into SP
        * Then Alice gets liquidated
        */
       it("provideToSP(): Liquidation single collateral low decimal partial offset", async () => {
@@ -442,8 +442,8 @@ contract('StabilityPool', async accounts => {
     // from single collateral normal mode
     describe.skip("Single Collateral, Recovery Mode, one SP depositor liquidations, full offset", async () => {
       /* Alice mints 1000 Super Risky tokens, then deposits it into trove
-     * while taking on 2000 of extraYUSD debt.
-     * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
+     * while taking on 2000 of extraPUSD debt.
+     * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
      * Then Alice gets liquidated
      * TODO: error is somewhat large
      */
@@ -464,8 +464,8 @@ contract('StabilityPool', async accounts => {
       })
 
       /* Alice mints 1000 stablecoin tokens, then deposits it into trove
-       * while taking on 2000 of extraYUSD debt.
-       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
+       * while taking on 2000 of extraPUSD debt.
+       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
        * Then Alice gets liquidated
        */
       it("provideToSP(): Liquidation single collateral high ratio full offset", async () => {
@@ -485,8 +485,8 @@ contract('StabilityPool', async accounts => {
       })
 
       /* Alice mints 1000 lowDecimal tokens, then deposits it into trove
-       * while taking on 2000 of extraYUSD debt.
-       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
+       * while taking on 2000 of extraPUSD debt.
+       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
        * Then Alice gets liquidated
        */
       it("provideToSP(): Liquidation single collateral low decimal full offset", async () => {
@@ -506,8 +506,8 @@ contract('StabilityPool', async accounts => {
       })
 
       /* Alice mints 1000 Risky tokens, then deposits it into trove
-       * while taking on 2000 of extraYUSD debt.
-       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
+       * while taking on 2000 of extraPUSD debt.
+       * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
        * Then Alice gets liquidated
        */
       it("provideToSP(): Liquidation single collateral high decimal full offset", async () => {
@@ -529,12 +529,12 @@ contract('StabilityPool', async accounts => {
 
     describe("Multi Collateral, Normal Mode, one SP depositor liquidations, full offset", async () => {
 
-    /* Alice mints 1000 WAVAX and 1000 WETH, then deposits both into a trove will taking at 1000 YUSD debt.
-     * Then bob mints 500k weth and deposits it into a trove while borrowing YUSD.
-     * Then bob deposits 5000 YUSD into stability pool. Then Alice gets liquidated.
+    /* Alice mints 1000 WAVAX and 1000 WETH, then deposits both into a trove will taking at 1000 PUSD debt.
+     * Then bob mints 500k weth and deposits it into a trove while borrowing PUSD.
+     * Then bob deposits 5000 PUSD into stability pool. Then Alice gets liquidated.
      * Checks that her collateral is transferred into the
      * stability pool and that bob can withdraw it successfully
-     * TODO: error on Bob's received YUSD is quite large
+     * TODO: error on Bob's received PUSD is quite large
      */
       it("provideToSP(): Liquidation multicollateral full offset ratio = 1, one SP depositor", async () => {
         // --- SETUP --- Mint Alice 1000 WETH and 1000 WAVAX and deposit into trove with debt of 2000
@@ -552,16 +552,16 @@ contract('StabilityPool', async accounts => {
           colls: colls, amounts: amounts, from: alice })
 
         await th.openTroveWithColls(contracts, {
-          colls: collsBob, amounts: amountsBob, extraYUSDAmount: SP_Deposit_Bob, from: bob })
+          colls: collsBob, amounts: amountsBob, extraPUSDAmount: SP_Deposit_Bob, from: bob })
 
         // --- TEST ---
 
         // provideToSP()
         await stabilityPool.provideToSP(SP_Deposit_Bob, ZERO_ADDRESS, { from: bob })
 
-        // check YUSD balances after
-        const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-        assert.equal(stabilityPool_YUSD_After.toString(), SP_Deposit_Bob.toString())
+        // check PUSD balances after
+        const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+        assert.equal(stabilityPool_PUSD_After.toString(), SP_Deposit_Bob.toString())
 
         const aliceICRPre = await troveManager.getCurrentICR(alice);
         console.log("Alice ICR Pre Price", aliceICRPre.toString());
@@ -602,26 +602,26 @@ contract('StabilityPool', async accounts => {
         // SP Depositor (bob) receives correct rewards upon withdrawal
         const bob_pre_WETH = await contracts.weth.balanceOf(bob);
         const bob_pre_WAVAX = await contracts.wavax.balanceOf(bob);
-        const bob_pre_YUSD = await contracts.yusdToken.balanceOf(bob);
-        console.log("Bob Pre YUSD", bob_pre_YUSD.toString())
+        const bob_pre_PUSD = await contracts.pusdToken.balanceOf(bob);
+        console.log("Bob Pre PUSD", bob_pre_PUSD.toString())
 
         await contracts.stabilityPool.withdrawFromSP(SP_Deposit_Bob, {from: bob});
 
         const bob_post_WETH = await contracts.weth.balanceOf(bob);
         const bob_post_WAVAX = await contracts.wavax.balanceOf(bob);
-        const bob_post_YUSD = await contracts.yusdToken.balanceOf(bob);
-        console.log("Bob Post YUSD", bob_post_YUSD.toString())
+        const bob_post_PUSD = await contracts.pusdToken.balanceOf(bob);
+        console.log("Bob Post PUSD", bob_post_PUSD.toString())
 
         const bob_WETH_gain = bob_post_WETH - bob_pre_WETH;
         const bob_WAVAX_gain = bob_post_WAVAX - bob_pre_WAVAX;
-        const bob_YUSD_gain_fromWithdrawal = bob_post_YUSD.sub(bob_pre_YUSD);
+        const bob_PUSD_gain_fromWithdrawal = bob_post_PUSD.sub(bob_pre_PUSD);
 
-        const bob_expected_YUSD_gain_fromWithdrawal = SP_Deposit_Bob.sub(aliceTotalTroveDebt);
+        const bob_expected_PUSD_gain_fromWithdrawal = SP_Deposit_Bob.sub(aliceTotalTroveDebt);
 
-        console.log("expected YUSD GAIN BOB", (bob_expected_YUSD_gain_fromWithdrawal.toString()));
-        console.log("Actual YUSD GAIN BOB", (bob_YUSD_gain_fromWithdrawal.toString()));
+        console.log("expected PUSD GAIN BOB", (bob_expected_PUSD_gain_fromWithdrawal.toString()));
+        console.log("Actual PUSD GAIN BOB", (bob_PUSD_gain_fromWithdrawal.toString()));
 
-        th.assertIsApproximatelyEqual(bob_YUSD_gain_fromWithdrawal, bob_expected_YUSD_gain_fromWithdrawal, 10000000)
+        th.assertIsApproximatelyEqual(bob_PUSD_gain_fromWithdrawal, bob_expected_PUSD_gain_fromWithdrawal, 10000000)
 
         assert.equal(bob_WETH_gain.toString(), SP_WETH.toString());
         assert.equal(bob_WAVAX_gain.toString(), SP_WAVAX.toString());
@@ -655,10 +655,10 @@ contract('StabilityPool', async accounts => {
 
     // --- provideToSP() ---
     /* Alice mints 1000 WAVAX and 1000 WETH, then deposits both into a trove
-     * while taking on 2000 of extraYUSD debt.
+     * while taking on 2000 of extraPUSD debt.
      * Then she mints another 1000 WETH and deposits that into the trove as well.
-     * Then Bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
-     * Bob deposits 200 e-18 YUSD into stability pool.
+     * Then Bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
+     * Bob deposits 200 e-18 PUSD into stability pool.
      * Then Alice gets liquidated. Checks that stability pool does not receive any assets.
      * Checks that Bob gets all of Alice's debt and all of Alice's collateral minus the liquidation reward
      * to the liquidator
@@ -668,7 +668,7 @@ contract('StabilityPool', async accounts => {
       const collsAlice = [contracts.weth, contracts.wavax];
       const amounts = [toBN(dec(1000, 18)), toBN(dec(1000, 18))]
       await th.openTroveWithColls(contracts, {
-          colls: collsAlice, amounts: amounts, extraYUSDAmount: toBN(dec(2000, 18)), from: alice })
+          colls: collsAlice, amounts: amounts, extraPUSDAmount: toBN(dec(2000, 18)), from: alice })
 
       const colls2Alice = toBN(dec(1000, 18));
       await th.addERC20(contracts.weth, alice, borrowerOperations.address, colls2Alice, { from: alice })
@@ -677,16 +677,16 @@ contract('StabilityPool', async accounts => {
       const collsBob = [contracts.weth, contracts.wavax];
       const amountsBob = [toBN(dec(500000, 18)), toBN(dec(5000, 18))];
       await th.openTroveWithColls(contracts, {
-        colls: collsBob, amounts: amountsBob, extraYUSDAmount: toBN(dec(2000, 18)), from: bob })
+        colls: collsBob, amounts: amountsBob, extraPUSDAmount: toBN(dec(2000, 18)), from: bob })
 
       // --- TEST ---
 
       // provideToSP()
       await stabilityPool.provideToSP(200, ZERO_ADDRESS, { from: bob })
 
-      // check YUSD balances after
-      const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-      assert.equal(stabilityPool_YUSD_After, 200)
+      // check PUSD balances after
+      const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+      assert.equal(stabilityPool_PUSD_After, 200)
 
       await priceFeedAVAX.setPrice('140000000000000000');
       await priceFeedETH.setPrice('1000000000000000000');
@@ -731,9 +731,9 @@ contract('StabilityPool', async accounts => {
     })
 
     /* Alice mints 1000 WETH and 1000 Risky tokens, then deposits both into a trove
-     * while taking on 2000 of extraYUSD debt.
+     * while taking on 2000 of extraPUSD debt.
      * Then she mints another 1000 WETH and deposits that into the trove as well.
-     * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 YUSD.
+     * Then bob mints 500k weth and deposits it into a trove while borrowing 2000 PUSD.
      * Then Alice gets liquidated
      */
     it("provideToSP(): Liquidation multicollateral full offset ratio = 1, 0.5", async () => {
@@ -742,22 +742,22 @@ contract('StabilityPool', async accounts => {
       const aliceWETH_InTrove = toBN(dec(2005, 16));
       const aliceRisky_InTrove = toBN(dec(4010, 16))
       const amounts = [aliceWETH_InTrove, aliceRisky_InTrove]
-      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraYUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedRisky] })
+      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraPUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedRisky] })
 
       const collsBob = [contracts.weth];
       const amountsBob = [toBN(dec(500000, 18))];
       const bob_SP_Deposit = toBN(dec(10000, 18))
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-        colls: collsBob, amounts: amountsBob, extraYUSDAmount: bob_SP_Deposit, from: bob, oracles: [priceFeedETH] })
+        colls: collsBob, amounts: amountsBob, extraPUSDAmount: bob_SP_Deposit, from: bob, oracles: [priceFeedETH] })
 
       // --- TEST ---
 
       // provideToSP()
       await stabilityPool.provideToSP(bob_SP_Deposit, ZERO_ADDRESS, { from: bob })
 
-      // check YUSD balances after
-      const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-      assert.equal(stabilityPool_YUSD_After.toString(), bob_SP_Deposit.toString())
+      // check PUSD balances after
+      const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+      assert.equal(stabilityPool_PUSD_After.toString(), bob_SP_Deposit.toString())
 
       await priceFeedRisky.setPrice('200000000000000000');
       await priceFeedETH.setPrice('180000000000000000000');
@@ -794,9 +794,9 @@ contract('StabilityPool', async accounts => {
     })
 
 
-    /* Alice mints 1000 WAVAX and 1000 WETH, then deposits both into a trove will taking at 1000 YUSD debt.
-     * Then bob mints 500k weth and deposits it into a trove while borrowing YUSD.
-     * Then bob deposits 5000 YUSD into stability pool. Then Alice gets liquidated.
+    /* Alice mints 1000 WAVAX and 1000 WETH, then deposits both into a trove will taking at 1000 PUSD debt.
+     * Then bob mints 500k weth and deposits it into a trove while borrowing PUSD.
+     * Then bob deposits 5000 PUSD into stability pool. Then Alice gets liquidated.
      * Checks that her collateral is transferred into the
      * stability pool and that bob can withdraw it successfully
      */
@@ -809,7 +809,7 @@ contract('StabilityPool', async accounts => {
       const amounts = [aliceTroveWETH, aliceTroveWAVAX];
 
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-        colls: colls, amounts: amounts, extraYUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedAVAX] })
+        colls: colls, amounts: amounts, extraPUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedAVAX] })
 
       // based on above have checked that after alice's trove has been opened with the correct collateral amounts
 
@@ -817,16 +817,16 @@ contract('StabilityPool', async accounts => {
       const amountsBob = [toBN(dec(500000, 18))];
       const SP_Deposit_Bob = toBN(dec(5000, 18));
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-        colls: collsBob, amounts: amountsBob, extraYUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
+        colls: collsBob, amounts: amountsBob, extraPUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
 
       // --- TEST ---
 
       // provideToSP()
       await stabilityPool.provideToSP(SP_Deposit_Bob, ZERO_ADDRESS, { from: bob })
 
-      // check YUSD balances after
-      const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-      assert.equal(stabilityPool_YUSD_After.toString(), SP_Deposit_Bob.toString())
+      // check PUSD balances after
+      const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+      assert.equal(stabilityPool_PUSD_After.toString(), SP_Deposit_Bob.toString())
 
       await priceFeedAVAX.setPrice(toBN(dec(109, 18)).toString());
       await priceFeedETH.setPrice(toBN(dec(109, 18)).toString());
@@ -836,7 +836,7 @@ contract('StabilityPool', async accounts => {
       const aliceTotalTroveDebt = aliceData[0];
 
       const aliceICR_1 = await troveManager.getCurrentICR(alice);
-      console.log('Alice yusd debt', (await getTroveEntireDebt(alice)).toString())
+      console.log('Alice pusd debt', (await getTroveEntireDebt(alice)).toString())
       console.log('Alice weth', (aliceData[2][0]).toString())
       console.log('Alice wavax', (aliceData[2][1]).toString())
       console.log('ALICE New ICR', aliceICR_1.toString())
@@ -866,7 +866,7 @@ contract('StabilityPool', async accounts => {
       // SP Depositor (bob) receives correct rewards upon withdrawal
       const bob_pre_WETH = await contracts.weth.balanceOf(bob);
       const bob_pre_WAVAX = await contracts.wavax.balanceOf(bob);
-      const bob_pre_YUSD = await contracts.yusdToken.balanceOf(bob);
+      const bob_pre_PUSD = await contracts.pusdToken.balanceOf(bob);
 
       await priceFeedAVAX.setPrice(toBN(dec(200, 18)).toString());
       await priceFeedETH.setPrice(toBN(dec(200, 18)).toString());
@@ -874,19 +874,19 @@ contract('StabilityPool', async accounts => {
 
       const bob_post_WETH = await contracts.weth.balanceOf(bob);
       const bob_post_WAVAX = await contracts.wavax.balanceOf(bob);
-      const bob_post_YUSD = await contracts.yusdToken.balanceOf(bob);
+      const bob_post_PUSD = await contracts.pusdToken.balanceOf(bob);
 
       const bob_WETH_gain = bob_post_WETH - bob_pre_WETH;
       const bob_WAVAX_gain = bob_post_WAVAX - bob_pre_WAVAX;
-      const bob_YUSD_gain_fromWithdrawal = bob_post_YUSD - bob_pre_YUSD;
-      const bob_expected_YUSD_gain_fromWithdrawal = SP_Deposit_Bob - aliceTotalTroveDebt;
-      const bob_YUSD_error = toBN(Math.abs(bob_YUSD_gain_fromWithdrawal - bob_expected_YUSD_gain_fromWithdrawal));
+      const bob_PUSD_gain_fromWithdrawal = bob_post_PUSD - bob_pre_PUSD;
+      const bob_expected_PUSD_gain_fromWithdrawal = SP_Deposit_Bob - aliceTotalTroveDebt;
+      const bob_PUSD_error = toBN(Math.abs(bob_PUSD_gain_fromWithdrawal - bob_expected_PUSD_gain_fromWithdrawal));
 
       assert.equal(bob_WETH_gain.toString(), SP_WETH.toString());
       assert.equal(bob_WAVAX_gain.toString(), SP_WAVAX.toString());
 
-      // TODO: the received YUSD amount is slightly less than expected. Confirm why
-      //assert.isTrue(bob_YUSD_error < toBN(400000));
+      // TODO: the received PUSD amount is slightly less than expected. Confirm why
+      //assert.isTrue(bob_PUSD_error < toBN(400000));
 
       // Liquidated Trove Owner (Alice) has no pending rewards in Coll Surplus Pool
       const aliceWETHPendingRewards = await contracts.collSurplusPool.getAmountClaimable(alice, contracts.weth.address);
@@ -897,8 +897,8 @@ contract('StabilityPool', async accounts => {
     })
 
     /* Alice mints 1000 riskyToken and 1000 WETH, then deposits both into a trove with extra debt of 2000
-     * Then bob mints 500k weth and deposits it into a trove while borrowing YUSD.
-     * Then bob deposits 5000 YUSD into stability pool. Then Alice gets liquidated.
+     * Then bob mints 500k weth and deposits it into a trove while borrowing PUSD.
+     * Then bob deposits 5000 PUSD into stability pool. Then Alice gets liquidated.
      * Checks that her collateral is transferred into the
      * stability pool and that bob can withdraw it successfully
      * TODO
@@ -911,23 +911,23 @@ contract('StabilityPool', async accounts => {
       const amounts = [aliceTroveWETH, aliceTroveSR];
       await priceFeedSuperRisky.setPrice(toBN(dec(200, 18)))
 
-      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraYUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
+      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraPUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
 
       // based on above have checked that after alice's trove has been opened with the correct collateral amounts
       const collsBob = [contracts.weth];
       const amountsBob = [toBN(dec(500000, 18))];
       const SP_Deposit_Bob = toBN(dec(5000, 18));
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-        colls: collsBob, amounts: amountsBob, extraYUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
+        colls: collsBob, amounts: amountsBob, extraPUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
 
       // --- TEST ---
 
       // provideToSP()
       await stabilityPool.provideToSP(SP_Deposit_Bob, ZERO_ADDRESS, { from: bob })
 
-      // check YUSD balances after
-      const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-      assert.equal(stabilityPool_YUSD_After.toString(), SP_Deposit_Bob.toString())
+      // check PUSD balances after
+      const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+      assert.equal(stabilityPool_PUSD_After.toString(), SP_Deposit_Bob.toString())
 
       const aliceBeforeICR = await troveManager.getCurrentICR(alice);
       console.log('alice before icr', aliceBeforeICR.toString());
@@ -990,7 +990,7 @@ contract('StabilityPool', async accounts => {
       const aliceExtraTroveDebt = toBN(dec(2000, 18));
       const amounts = [aliceTroveWETH, aliceTroveLD];
 
-      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraYUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedLowDecimal], includeOne: false })
+      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraPUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedLowDecimal], includeOne: false })
 
       // based on above have checked that after alice's trove has been opened with the correct collateral amounts
       const collsBob = [contracts.weth];
@@ -998,13 +998,13 @@ contract('StabilityPool', async accounts => {
       const SP_Deposit_Bob = toBN(dec(5000000, 18));
 
       await th.openTroveWithCollsOld(contracts, {
-        colls: collsBob, amounts: amountsBob, extraYUSDAmount: SP_Deposit_Bob, from: bob })
+        colls: collsBob, amounts: amountsBob, extraPUSDAmount: SP_Deposit_Bob, from: bob })
 
 
       // const amountsBob = [toBN(dec(500000, 18))];
       // const SP_Deposit_Bob = toBN(dec(5000, 18));
       // await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-      //   colls: collsBob, amounts: amountsBob, extraYUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH, priceFeedLowDecimal] })
+      //   colls: collsBob, amounts: amountsBob, extraPUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH, priceFeedLowDecimal] })
 
       // --- TEST ---
 
@@ -1018,9 +1018,9 @@ contract('StabilityPool', async accounts => {
       // provideToSP()
       await stabilityPool.provideToSP(SP_Deposit_Bob, ZERO_ADDRESS, { from: bob })
 
-      // check YUSD balances after
-      const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-      assert.equal(stabilityPool_YUSD_After.toString(), SP_Deposit_Bob.toString())
+      // check PUSD balances after
+      const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+      assert.equal(stabilityPool_PUSD_After.toString(), SP_Deposit_Bob.toString())
 
       const aliceBeforeICR = await troveManager.getCurrentICR(alice);
       console.log('alice before icr', aliceBeforeICR.toString());
@@ -1107,14 +1107,14 @@ contract('StabilityPool', async accounts => {
       const aliceExtraTroveDebt = toBN(dec(2000, 18));
       const amounts = [aliceTroveWETH, aliceTroveLD];
 
-      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraYUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedLowDecimal], includeOne: false })
+      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraPUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedLowDecimal], includeOne: false })
 
       // based on above have checked that after alice's trove has been opened with the correct collateral amounts
       const collsBob = [contracts.weth];
       const amountsBob = [toBN(dec(500000, 18))];
       const SP_Deposit_Bob = toBN(dec(2250, 18));
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(4, 18)),
-        colls: collsBob, amounts: amountsBob, extraYUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
+        colls: collsBob, amounts: amountsBob, extraPUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
 
       // --- TEST ---
 
@@ -1126,9 +1126,9 @@ contract('StabilityPool', async accounts => {
       // provideToSP()
       await stabilityPool.provideToSP(SP_Deposit_Bob, ZERO_ADDRESS, { from: bob })
 
-      // check YUSD balances after
-      const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-      assert.equal(stabilityPool_YUSD_After.toString(), SP_Deposit_Bob.toString())
+      // check PUSD balances after
+      const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+      assert.equal(stabilityPool_PUSD_After.toString(), SP_Deposit_Bob.toString())
 
       const aliceBeforeICR = await troveManager.getCurrentICR(alice);
       console.log('alice before icr', aliceBeforeICR.toString());
@@ -1164,13 +1164,13 @@ contract('StabilityPool', async accounts => {
       console.log('wethCollSurplusPool', wethCollSurplusPool.toString())
       console.log('lowDecimalCollSurplusPool', lowDecimalCollSurplusPool.toString())
       
-      // assert 2440.2375 YUSD entered stability pool: min(USD value of Coll not redistributed, 1.1 * debt offseted by stability pool) = 2440.2375
+      // assert 2440.2375 PUSD entered stability pool: min(USD value of Coll not redistributed, 1.1 * debt offseted by stability pool) = 2440.2375
       console.log((SP_WETH.mul(toBN(109)).add(SP_LD.mul(toBN(109)).mul(toBN(dec(1, 12))))).toString())
       console.log(toBN(dec(24402375, 14)).toString())
       
       th.assertIsApproximatelyEqual(toBN(dec(24402375, 14)), SP_WETH.mul(toBN(109)).add(SP_LD.mul(toBN(109)).mul(toBN(dec(1, 12)))), 10000)
 
-      // assert 0 YUSD entered coll surplus pool: offsetting collat - collat sent to stability pool = coll surplus --> 2440.2375 - 2440.2375 = 0
+      // assert 0 PUSD entered coll surplus pool: offsetting collat - collat sent to stability pool = coll surplus --> 2440.2375 - 2440.2375 = 0
       th.assertIsApproximatelyEqual(toBN(0), wethCollSurplusPool.mul(toBN(109)).add(lowDecimalCollSurplusPool.mul(toBN(109)).mul(toBN(dec(1, 12)))));
 
       // SP Depositor (bob) receives correct rewards upon withdrawal
@@ -1200,14 +1200,14 @@ contract('StabilityPool', async accounts => {
       const amounts = [aliceTroveWETH, aliceTroveSR];
       await priceFeedSuperRisky.setPrice(toBN(dec(200, 18)))
 
-      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraYUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
+      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraPUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
 
       // based on above have checked that after alice's trove has been opened with the correct collateral amounts
       const collsBob = [contracts.weth];
       const amountsBob = [toBN(dec(500000, 18))];
       const SP_Deposit_Bob = toBN(dec(2250, 18));
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(4, 18)),
-        colls: collsBob, amounts: amountsBob, extraYUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
+        colls: collsBob, amounts: amountsBob, extraPUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
 
       // --- TEST ---
 
@@ -1219,9 +1219,9 @@ contract('StabilityPool', async accounts => {
       // provideToSP()
       await stabilityPool.provideToSP(SP_Deposit_Bob, ZERO_ADDRESS, { from: bob })
 
-      // check YUSD balances after
-      const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-      assert.equal(stabilityPool_YUSD_After.toString(), SP_Deposit_Bob.toString())
+      // check PUSD balances after
+      const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+      assert.equal(stabilityPool_PUSD_After.toString(), SP_Deposit_Bob.toString())
 
       const aliceBeforeICR = await troveManager.getCurrentICR(alice);
       console.log('alice before icr', aliceBeforeICR.toString());
@@ -1258,10 +1258,10 @@ contract('StabilityPool', async accounts => {
       console.log('wethCollSurplusPool', wethCollSurplusPool.toString())
       console.log('riskyCollSurplusPool', riskyCollSurplusPool.toString())
       
-      // assert 2475 YUSD entered stability pool: min(USD value of Coll not redistributed, 1.1 * debt offseted by stability pool) = 2475
+      // assert 2475 PUSD entered stability pool: min(USD value of Coll not redistributed, 1.1 * debt offseted by stability pool) = 2475
       th.assertIsApproximatelyEqual(toBN(dec(2475, 18)), SP_WETH.mul(toBN(109)).add(SP_SR.mul(toBN(109))))
 
-      // assert 1185.35625 YUSD entered coll surplus pool: offsetting collat - collat sent to stability pool = coll surplus --> 3660.35625 - 2475 = 1185.35625
+      // assert 1185.35625 PUSD entered coll surplus pool: offsetting collat - collat sent to stability pool = coll surplus --> 3660.35625 - 2475 = 1185.35625
       th.assertIsApproximatelyEqual(toBN(dec(118535625, 13)), wethCollSurplusPool.mul(toBN(109)).add(riskyCollSurplusPool.mul(toBN(109))));
     })
 
@@ -1273,14 +1273,14 @@ contract('StabilityPool', async accounts => {
       const aliceExtraTroveDebt = toBN(dec(2000, 18));
       const amounts = [aliceTroveWETH, aliceTroveWAVAX];
 
-      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraYUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedAVAX] })
+      await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amounts, extraPUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedAVAX] })
 
       // based on above have checked that after alice's trove has been opened with the correct collateral amounts
       const collsBob = [contracts.weth];
       const amountsBob = [toBN(dec(500000, 18))];
       const SP_Deposit_Bob = toBN(dec(2250, 18));
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(4, 18)),
-        colls: collsBob, amounts: amountsBob, extraYUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
+        colls: collsBob, amounts: amountsBob, extraPUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
 
       // --- TEST ---
 
@@ -1292,9 +1292,9 @@ contract('StabilityPool', async accounts => {
       // provideToSP()
       await stabilityPool.provideToSP(SP_Deposit_Bob, ZERO_ADDRESS, { from: bob })
 
-      // check YUSD balances after
-      const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-      assert.equal(stabilityPool_YUSD_After.toString(), SP_Deposit_Bob.toString())
+      // check PUSD balances after
+      const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+      assert.equal(stabilityPool_PUSD_After.toString(), SP_Deposit_Bob.toString())
 
       const aliceBeforeICR = await troveManager.getCurrentICR(alice);
       console.log('alice before icr', aliceBeforeICR.toString());
@@ -1330,19 +1330,19 @@ contract('StabilityPool', async accounts => {
       console.log('wethCollSurplusPool', wethCollSurplusPool.toString())
       console.log('wavaxCollSurplusPool', wavaxCollSurplusPool.toString())
       
-      // assert 2440.2375 YUSD entered stability pool: min(USD value of Coll not redistributed, 1.1 * debt offseted by stability pool) = 2440.2375
+      // assert 2440.2375 PUSD entered stability pool: min(USD value of Coll not redistributed, 1.1 * debt offseted by stability pool) = 2440.2375
       th.assertIsApproximatelyEqual(toBN(dec(24402375, 14)), SP_WETH.mul(toBN(109)).add(SP_WAVAX.mul(toBN(109))), 10000)
 
-      // assert 0 YUSD entered coll surplus pool: offsetting collat - collat sent to stability pool = coll surplus --> 2440.2375 - 2440.2375 = 0
+      // assert 0 PUSD entered coll surplus pool: offsetting collat - collat sent to stability pool = coll surplus --> 2440.2375 - 2440.2375 = 0
       th.assertIsApproximatelyEqual(toBN(0), wethCollSurplusPool.mul(toBN(109)).add(wavaxCollSurplusPool.mul(toBN(109))));
     })
 
-    /* Alice mints 1000 WAVAX and 1000 WETH, then deposits both into a trove will taking YUSD debt.
+    /* Alice mints 1000 WAVAX and 1000 WETH, then deposits both into a trove will taking PUSD debt.
      * Then she mints another 1000 WETH and deposits that into the trove as well.
-     * Then bob mints 500k weth and deposits it into a trove while borrowing YUSD.
-     * Then bob deposits 5000 YUSD into stability pool.
-     * Then carol mints 500k weth and deposits it into a trove while borrowing YUSD.
-     * Then carol deposits 5000 YUSD into stability pool.
+     * Then bob mints 500k weth and deposits it into a trove while borrowing PUSD.
+     * Then bob deposits 5000 PUSD into stability pool.
+     * Then carol mints 500k weth and deposits it into a trove while borrowing PUSD.
+     * Then carol deposits 5000 PUSD into stability pool.
      * Then Alice gets liquidated.
      * Checks that her collateral is transferred into the
      * stability pool and that bob can withdraw it successfully
@@ -1357,19 +1357,19 @@ contract('StabilityPool', async accounts => {
       const amounts = [aliceTroveWETH, aliceTroveWAVAX];
 
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-        colls: colls, amounts: amounts, extraYUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedAVAX] })
+        colls: colls, amounts: amounts, extraPUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedAVAX] })
 
       const collsBob = [contracts.weth];
       const amountsBob = [toBN(dec(500000, 18))];
       const SP_Deposit_Bob = toBN(dec(5000, 18));
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-        colls: collsBob, amounts: amountsBob, extraYUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
+        colls: collsBob, amounts: amountsBob, extraPUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
 
       const collsCarol = [contracts.wavax];
       const amountsCarol = [toBN(dec(500000, 18))];
       const SP_Deposit_Carol = toBN(dec(5000, 18));
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-        colls: collsCarol, amounts: amountsCarol, extraYUSDAmount: SP_Deposit_Carol, from: carol, oracles: [priceFeedAVAX] })
+        colls: collsCarol, amounts: amountsCarol, extraPUSDAmount: SP_Deposit_Carol, from: carol, oracles: [priceFeedAVAX] })
 
       // --- TEST ---
 
@@ -1377,9 +1377,9 @@ contract('StabilityPool', async accounts => {
       await stabilityPool.provideToSP(SP_Deposit_Bob, ZERO_ADDRESS, { from: bob })
       await stabilityPool.provideToSP(SP_Deposit_Carol, ZERO_ADDRESS, { from: carol })
 
-      // check YUSD balances after
-      const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-      assert.equal(stabilityPool_YUSD_After.toString(), (SP_Deposit_Bob.add(SP_Deposit_Carol)).toString())
+      // check PUSD balances after
+      const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+      assert.equal(stabilityPool_PUSD_After.toString(), (SP_Deposit_Bob.add(SP_Deposit_Carol)).toString())
 
       await priceFeedAVAX.setPrice(toBN(dec(109, 18)).toString());
       await priceFeedETH.setPrice(toBN(dec(109, 18)).toString());
@@ -1408,7 +1408,7 @@ contract('StabilityPool', async accounts => {
       // SP Depositor (bob) receives correct rewards upon withdrawal
       const bob_pre_WETH = await contracts.weth.balanceOf(bob);
       const bob_pre_WAVAX = await contracts.wavax.balanceOf(bob);
-      const bob_pre_YUSD = await contracts.yusdToken.balanceOf(bob);
+      const bob_pre_PUSD = await contracts.pusdToken.balanceOf(bob);
 
       await priceFeedAVAX.setPrice(toBN(dec(200, 18)).toString());
       await priceFeedETH.setPrice(toBN(dec(200, 18)).toString());
@@ -1416,42 +1416,42 @@ contract('StabilityPool', async accounts => {
 
       const bob_post_WETH = await contracts.weth.balanceOf(bob);
       const bob_post_WAVAX = await contracts.wavax.balanceOf(bob);
-      const bob_post_YUSD = await contracts.yusdToken.balanceOf(bob);
+      const bob_post_PUSD = await contracts.pusdToken.balanceOf(bob);
 
       const bob_WETH_gain = bob_post_WETH - bob_pre_WETH;
       const bob_WAVAX_gain = bob_post_WAVAX - bob_pre_WAVAX;
-      const bob_YUSD_gain_fromWithdrawal = bob_post_YUSD - bob_pre_YUSD;
-      const bob_expected_YUSD_gain_fromWithdrawal = SP_Deposit_Bob - (aliceTotalTroveDebt / 2);
-      const bob_YUSD_error = toBN(Math.abs(bob_YUSD_gain_fromWithdrawal - bob_expected_YUSD_gain_fromWithdrawal));
+      const bob_PUSD_gain_fromWithdrawal = bob_post_PUSD - bob_pre_PUSD;
+      const bob_expected_PUSD_gain_fromWithdrawal = SP_Deposit_Bob - (aliceTotalTroveDebt / 2);
+      const bob_PUSD_error = toBN(Math.abs(bob_PUSD_gain_fromWithdrawal - bob_expected_PUSD_gain_fromWithdrawal));
 
       assert.equal(bob_WETH_gain.toString(), (SP_WETH / 2).toString());
       assert.equal(bob_WAVAX_gain.toString(), (SP_WAVAX / 2).toString());
 
-      // TODO: the received YUSD amount is slightly less than expected. Confirm why
-      //assert.isTrue(bob_YUSD_error < toBN(400000));
+      // TODO: the received PUSD amount is slightly less than expected. Confirm why
+      //assert.isTrue(bob_PUSD_error < toBN(400000));
 
       // SP Depositor (alice) receives correct rewards upon withdrawal
       const carol_pre_WETH = await contracts.weth.balanceOf(carol);
       const carol_pre_WAVAX = await contracts.wavax.balanceOf(carol);
-      const carol_pre_YUSD = await contracts.yusdToken.balanceOf(carol);
+      const carol_pre_PUSD = await contracts.pusdToken.balanceOf(carol);
 
       await contracts.stabilityPool.withdrawFromSP(SP_Deposit_Carol, {from: carol});
 
       const carol_post_WETH = await contracts.weth.balanceOf(carol);
       const carol_post_WAVAX = await contracts.wavax.balanceOf(carol);
-      const carol_post_YUSD = await contracts.yusdToken.balanceOf(carol);
+      const carol_post_PUSD = await contracts.pusdToken.balanceOf(carol);
 
       const carol_WETH_gain = carol_post_WETH - carol_pre_WETH;
       const carol_WAVAX_gain = carol_post_WAVAX - carol_pre_WAVAX;
-      const carol_YUSD_gain_fromWithdrawal = carol_post_YUSD - carol_pre_YUSD;
-      const carol_expected_YUSD_gain_fromWithdrawal = SP_Deposit_Carol - (aliceTotalTroveDebt / 2);
-      const carol_YUSD_error = toBN(Math.abs(carol_YUSD_gain_fromWithdrawal - carol_expected_YUSD_gain_fromWithdrawal));
+      const carol_PUSD_gain_fromWithdrawal = carol_post_PUSD - carol_pre_PUSD;
+      const carol_expected_PUSD_gain_fromWithdrawal = SP_Deposit_Carol - (aliceTotalTroveDebt / 2);
+      const carol_PUSD_error = toBN(Math.abs(carol_PUSD_gain_fromWithdrawal - carol_expected_PUSD_gain_fromWithdrawal));
 
       assert.equal(carol_WETH_gain.toString(), (SP_WETH / 2).toString());
       assert.equal(carol_WAVAX_gain.toString(), (SP_WAVAX / 2).toString());
 
-      // TODO: the received YUSD amount is slightly less than expected. Confirm why
-      //assert.isTrue(carol_YUSD_error < toBN(400000));
+      // TODO: the received PUSD amount is slightly less than expected. Confirm why
+      //assert.isTrue(carol_PUSD_error < toBN(400000));
 
       // Liquidated Trove Owner (Alice) has no pending rewards in Coll Surplus Pool
       const aliceWETHPendingRewards = await contracts.collSurplusPool.getAmountClaimable(alice, contracts.weth.address);
@@ -1461,12 +1461,12 @@ contract('StabilityPool', async accounts => {
       assert.equal(aliceWAVAXPendingRewards.toString(), "0");
     })
 
-    /* Alice mints 1000 WAVAX and 1000 WETH, then deposits both into a trove will taking YUSD debt.
+    /* Alice mints 1000 WAVAX and 1000 WETH, then deposits both into a trove will taking PUSD debt.
      * Then she mints another 1000 WETH and deposits that into the trove as well.
-     * Then bob mints 500k weth and deposits it into a trove while borrowing YUSD.
-     * Then bob deposits 5000 YUSD into stability pool.
-     * Then carol mints 500k weth and deposits it into a trove while borrowing YUSD.
-     * Then carol deposits 10,000 YUSD into stability pool.
+     * Then bob mints 500k weth and deposits it into a trove while borrowing PUSD.
+     * Then bob deposits 5000 PUSD into stability pool.
+     * Then carol mints 500k weth and deposits it into a trove while borrowing PUSD.
+     * Then carol deposits 10,000 PUSD into stability pool.
      * Then Alice gets liquidated.
      * Checks that her collateral is transferred into the
      * stability pool and that bob can withdraw it successfully
@@ -1482,19 +1482,19 @@ contract('StabilityPool', async accounts => {
       const amounts = [aliceTroveWETH, aliceTroveWAVAX];
 
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-        colls: colls, amounts: amounts, extraYUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedAVAX] })
+        colls: colls, amounts: amounts, extraPUSDAmount: aliceExtraTroveDebt, from: alice, oracles: [priceFeedETH, priceFeedAVAX] })
 
       const collsBob = [contracts.weth];
       const amountsBob = [toBN(dec(500000, 18))];
       const SP_Deposit_Bob = toBN(dec(5000, 18));
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-        colls: collsBob, amounts: amountsBob, extraYUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
+        colls: collsBob, amounts: amountsBob, extraPUSDAmount: SP_Deposit_Bob, from: bob, oracles: [priceFeedETH] })
 
       const collsCarol = [contracts.wavax];
       const amountsCarol = [toBN(dec(500000, 18))];
       const SP_Deposit_Carol = toBN(dec(10000, 18));
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-        colls: collsCarol, amounts: amountsCarol, extraYUSDAmount: SP_Deposit_Carol, from: carol, oracles: [priceFeedAVAX] })
+        colls: collsCarol, amounts: amountsCarol, extraPUSDAmount: SP_Deposit_Carol, from: carol, oracles: [priceFeedAVAX] })
 
       // --- TEST ---
 
@@ -1502,9 +1502,9 @@ contract('StabilityPool', async accounts => {
       await stabilityPool.provideToSP(SP_Deposit_Bob, ZERO_ADDRESS, { from: bob })
       await stabilityPool.provideToSP(SP_Deposit_Carol, ZERO_ADDRESS, { from: carol })
 
-      // check YUSD balances after
-      const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-      assert.equal(stabilityPool_YUSD_After.toString(), (SP_Deposit_Bob.add(SP_Deposit_Carol)).toString())
+      // check PUSD balances after
+      const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+      assert.equal(stabilityPool_PUSD_After.toString(), (SP_Deposit_Bob.add(SP_Deposit_Carol)).toString())
 
       await priceFeedAVAX.setPrice(toBN(dec(109, 18)).toString());
       await priceFeedETH.setPrice(toBN(dec(109, 18)).toString());
@@ -1520,12 +1520,12 @@ contract('StabilityPool', async accounts => {
       const amountsErin = [toBN(dec(500000, 18))];
       const SP_Deposit_Erin = toBN(dec(10000, 18));
       await th.openTroveWithColls(contracts, { ICR: toBN(dec(2, 18)),
-        colls: collsErin, amounts: amountsErin, extraYUSDAmount: SP_Deposit_Erin, from: erin, oracles: [priceFeedAVAX] })
+        colls: collsErin, amounts: amountsErin, extraPUSDAmount: SP_Deposit_Erin, from: erin, oracles: [priceFeedAVAX] })
       await stabilityPool.provideToSP(SP_Deposit_Erin, ZERO_ADDRESS, { from: erin })
 
       const erin_pre_WETH = await contracts.weth.balanceOf(erin);
       const erin_pre_WAVAX = await contracts.wavax.balanceOf(erin);
-      const erin_pre_YUSD = await contracts.yusdToken.balanceOf(erin);
+      const erin_pre_PUSD = await contracts.pusdToken.balanceOf(erin);
 
 
       const stabilityPoolAssets = await stabilityPool.getAllCollateral();
@@ -1545,7 +1545,7 @@ contract('StabilityPool', async accounts => {
       // SP Depositor (bob) receives correct rewards upon withdrawal
       const bob_pre_WETH = await contracts.weth.balanceOf(bob);
       const bob_pre_WAVAX = await contracts.wavax.balanceOf(bob);
-      const bob_pre_YUSD = await contracts.yusdToken.balanceOf(bob);
+      const bob_pre_PUSD = await contracts.pusdToken.balanceOf(bob);
 
       await priceFeedAVAX.setPrice(toBN(dec(200, 18)).toString());
       await priceFeedETH.setPrice(toBN(dec(200, 18)).toString());
@@ -1553,42 +1553,42 @@ contract('StabilityPool', async accounts => {
 
       const bob_post_WETH = await contracts.weth.balanceOf(bob);
       const bob_post_WAVAX = await contracts.wavax.balanceOf(bob);
-      const bob_post_YUSD = await contracts.yusdToken.balanceOf(bob);
+      const bob_post_PUSD = await contracts.pusdToken.balanceOf(bob);
 
       const bob_WETH_gain = bob_post_WETH - bob_pre_WETH;
       const bob_WAVAX_gain = bob_post_WAVAX - bob_pre_WAVAX;
-      const bob_YUSD_gain_fromWithdrawal = bob_post_YUSD - bob_pre_YUSD;
-      const bob_expected_YUSD_gain_fromWithdrawal = SP_Deposit_Bob - (aliceTotalTroveDebt / 3);
-      const bob_YUSD_error = toBN(Math.abs(bob_YUSD_gain_fromWithdrawal - bob_expected_YUSD_gain_fromWithdrawal));
+      const bob_PUSD_gain_fromWithdrawal = bob_post_PUSD - bob_pre_PUSD;
+      const bob_expected_PUSD_gain_fromWithdrawal = SP_Deposit_Bob - (aliceTotalTroveDebt / 3);
+      const bob_PUSD_error = toBN(Math.abs(bob_PUSD_gain_fromWithdrawal - bob_expected_PUSD_gain_fromWithdrawal));
 
       th.assertIsApproximatelyEqual(bob_WETH_gain, (SP_WETH / 3), 10000)
       th.assertIsApproximatelyEqual(bob_WAVAX_gain, (SP_WAVAX / 3), 10000)
 
-      // TODO: the received YUSD amount is slightly less than expected. Confirm why
-      //assert.isTrue(bob_YUSD_error < toBN(400000));
+      // TODO: the received PUSD amount is slightly less than expected. Confirm why
+      //assert.isTrue(bob_PUSD_error < toBN(400000));
 
       // SP Depositor (alice) receives correct rewards upon withdrawal
       const carol_pre_WETH = await contracts.weth.balanceOf(carol);
       const carol_pre_WAVAX = await contracts.wavax.balanceOf(carol);
-      const carol_pre_YUSD = await contracts.yusdToken.balanceOf(carol);
+      const carol_pre_PUSD = await contracts.pusdToken.balanceOf(carol);
 
       await contracts.stabilityPool.withdrawFromSP(SP_Deposit_Carol, {from: carol});
 
       const carol_post_WETH = await contracts.weth.balanceOf(carol);
       const carol_post_WAVAX = await contracts.wavax.balanceOf(carol);
-      const carol_post_YUSD = await contracts.yusdToken.balanceOf(carol);
+      const carol_post_PUSD = await contracts.pusdToken.balanceOf(carol);
 
       const carol_WETH_gain = carol_post_WETH - carol_pre_WETH;
       const carol_WAVAX_gain = carol_post_WAVAX - carol_pre_WAVAX;
-      const carol_YUSD_gain_fromWithdrawal = carol_post_YUSD - carol_pre_YUSD;
-      const carol_expected_YUSD_gain_fromWithdrawal = SP_Deposit_Carol - 2 * (aliceTotalTroveDebt / 3);
-      const carol_YUSD_error = toBN(Math.abs(carol_YUSD_gain_fromWithdrawal - carol_expected_YUSD_gain_fromWithdrawal));
+      const carol_PUSD_gain_fromWithdrawal = carol_post_PUSD - carol_pre_PUSD;
+      const carol_expected_PUSD_gain_fromWithdrawal = SP_Deposit_Carol - 2 * (aliceTotalTroveDebt / 3);
+      const carol_PUSD_error = toBN(Math.abs(carol_PUSD_gain_fromWithdrawal - carol_expected_PUSD_gain_fromWithdrawal));
 
       th.assertIsApproximatelyEqual(carol_WETH_gain, (2 * SP_WETH / 3), 10000)
       th.assertIsApproximatelyEqual(carol_WAVAX_gain, (2 * SP_WAVAX / 3), 10000)
 
-      // TODO: the received YUSD amount is slightly less than expected. Confirm why
-      //assert.isTrue(carol_YUSD_error < toBN(400000));
+      // TODO: the received PUSD amount is slightly less than expected. Confirm why
+      //assert.isTrue(carol_PUSD_error < toBN(400000));
 
       // Liquidated Trove Owner (Alice) has no pending rewards in Coll Surplus Pool
       const aliceWETHPendingRewards = await contracts.collSurplusPool.getAmountClaimable(alice, contracts.weth.address);
@@ -1597,19 +1597,19 @@ contract('StabilityPool', async accounts => {
       assert.equal(aliceWETHPendingRewards.toString(), "0");
       assert.equal(aliceWAVAXPendingRewards.toString(), "0");
 
-      // Erin Withdraws from Stability Pool and receives initial YUSD with no gains
+      // Erin Withdraws from Stability Pool and receives initial PUSD with no gains
       await contracts.stabilityPool.withdrawFromSP(SP_Deposit_Erin, {from: erin});
 
       const erin_post_WETH = await contracts.weth.balanceOf(erin);
       const erin_post_WAVAX = await contracts.wavax.balanceOf(erin);
-      const erin_post_YUSD = await contracts.yusdToken.balanceOf(erin);
+      const erin_post_PUSD = await contracts.pusdToken.balanceOf(erin);
 
       // no gains from liquidations
       assert.equal(erin_pre_WETH.toString(), erin_post_WETH.toString());
       assert.equal(erin_pre_WAVAX.toString(), erin_post_WAVAX.toString());
 
       // erin gets back full initial SP deposit
-      assert.equal((erin_post_YUSD.sub(erin_pre_YUSD)).toString(), SP_Deposit_Erin.toString());
+      assert.equal((erin_post_PUSD.sub(erin_pre_PUSD)).toString(), SP_Deposit_Erin.toString());
     })
 
     describe("Multi Collateral, Recovery Mode, one SP depositor liquidations, full offset", async () => {
@@ -1620,12 +1620,12 @@ contract('StabilityPool', async accounts => {
         const aliceWETH_InTrove = toBN(dec(2005, 16));
         const aliceRisky_InTrove = toBN(dec(4010, 16))
         const amountsAlice = [aliceWETH_InTrove, aliceRisky_InTrove]
-        await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amountsAlice, extraYUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
+        await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amountsAlice, extraPUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
 
         const bobWETH_InTrove = toBN(dec(4010, 16));
         const bobRisky_InTrove = toBN(dec(4010, 16));
         const amountsBob = [bobWETH_InTrove, bobRisky_InTrove]
-        await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amountsBob, extraYUSDAmount: toBN(dec(2000, 18)), from: bob, oracles: [priceFeedETH, priceFeedSuperRisky] })
+        await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amountsBob, extraPUSDAmount: toBN(dec(2000, 18)), from: bob, oracles: [priceFeedETH, priceFeedSuperRisky] })
         
         const TCR = (await th.getTCR(contracts)).toString()
         assert.equal(TCR, '2500000000000000000')
@@ -1639,7 +1639,7 @@ contract('StabilityPool', async accounts => {
         //assert.equal(totalStakes_Before.toString(), A_coll.add(B_coll))
     
         // --- TEST ---
-        // price drops to 1ETH:100YUSD, reducing TCR below 150%
+        // price drops to 1ETH:100PUSD, reducing TCR below 150%
         await priceFeedETH.setPrice(toBN(dec(100, 18)).toString());
         await priceFeedSuperRisky.setPrice(toBN(dec(100, 18)).toString());
     
@@ -1672,18 +1672,18 @@ contract('StabilityPool', async accounts => {
         assert.equal(risky_totalCollateralSnapshot, (bobRisky_InTrove.add(th.applyLiquidationFee(aliceRisky_InTrove))).toString())
       })
 
-      it("liquidate() recovery mode, 100% < ICR < MCR & SP YUSD > Trove debt, full offset ratio = 1, 0.5", async () => {
+      it("liquidate() recovery mode, 100% < ICR < MCR & SP PUSD > Trove debt, full offset ratio = 1, 0.5", async () => {
         const collsAlice = [contracts.weth, tokenSuperRisky]
         const aliceWETH_InTrove = toBN(dec(2005, 16))
         const aliceRisky_InTrove = toBN(dec(4010, 16))
         const amountsAlice = [aliceWETH_InTrove, aliceRisky_InTrove]
-        await th.openTroveWithCollsOld(contracts, { colls: collsAlice, amounts: amountsAlice, extraYUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
+        await th.openTroveWithCollsOld(contracts, { colls: collsAlice, amounts: amountsAlice, extraPUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
 
         const collsBob = [contracts.weth, contracts.wavax]
         const bobWETH_InTrove = toBN(dec(35125, 15))
         const bobWAVAX_InTrove = toBN(dec(35125, 15))
         const amountsBob = [bobWETH_InTrove, bobWAVAX_InTrove]
-        await th.openTroveWithCollsOld(contracts, { colls: collsBob, amounts: amountsBob, extraYUSDAmount: toBN(dec(5000, 18)), from: bob, oracles: [priceFeedETH, priceFeedSuperRisky] })
+        await th.openTroveWithCollsOld(contracts, { colls: collsBob, amounts: amountsBob, extraPUSDAmount: toBN(dec(5000, 18)), from: bob, oracles: [priceFeedETH, priceFeedSuperRisky] })
         console.log((await troveManager.getCurrentICR(bob)).toString())
         console.log((await troveManager.getTroveDebt(bob)).toString())
         const TCR = (await th.getTCR(contracts)).toString()
@@ -1692,9 +1692,9 @@ contract('StabilityPool', async accounts => {
         // provideToSP()
         await stabilityPool.provideToSP(toBN(dec(5000, 18)), ZERO_ADDRESS, { from: bob })
 
-        // check YUSD balances after
-        const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-        assert.equal(stabilityPool_YUSD_After.toString(), toBN(dec(5000, 18)).toString())
+        // check PUSD balances after
+        const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+        assert.equal(stabilityPool_PUSD_After.toString(), toBN(dec(5000, 18)).toString())
   
         await priceFeedETH.setPrice(toBN(dec(130, 18)).toString());
         await priceFeedSuperRisky.setPrice(toBN(dec(80, 18)).toString());
@@ -1727,7 +1727,7 @@ contract('StabilityPool', async accounts => {
 
         // Calculation Breakdown
         // Alice ICR: 1.05, TCR: 1.43, USD value of collateral with 0.5% fee: 5785.4275
-        // YUSD in stability pool > Alice debt --> 4010 x 1.1 = 4411 sent to stability pool. 
+        // PUSD in stability pool > Alice debt --> 4010 x 1.1 = 4411 sent to stability pool. 
         // 5814.5 - 4411 = 1374.4275 sent to collsurplus pool
 
         // assert correct amount of collateral entered stability pool
@@ -1742,18 +1742,18 @@ contract('StabilityPool', async accounts => {
         th.assertIsApproximatelyEqual(toBN(dec(13744275, 14)), wethCollSurplusPool.mul(toBN(130)).add(riskyCollSurplusPool.mul(toBN(80))).add(wavaxCollSurplusPool.mul(toBN(200))))
       })
 
-      it("liquidate() recovery mode, 100% < ICR < MCR & SP YUSD < Trove debt, partial offset ratio = 1, 0.5", async () => {
+      it("liquidate() recovery mode, 100% < ICR < MCR & SP PUSD < Trove debt, partial offset ratio = 1, 0.5", async () => {
         // --- SETUP ---
         const colls = [contracts.weth, tokenSuperRisky];
         const aliceWETH_InTrove = toBN(dec(2005, 16));
         const aliceRisky_InTrove = toBN(dec(4010, 16))
         const amountsAlice = [aliceWETH_InTrove, aliceRisky_InTrove]
-        await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amountsAlice, extraYUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
+        await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amountsAlice, extraPUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
 
         const bobWETH_InTrove = toBN(dec(4010, 16));
         const bobRisky_InTrove = toBN(dec(4010, 16));
         const amountsBob = [bobWETH_InTrove, bobRisky_InTrove]
-        await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amountsBob, extraYUSDAmount: toBN(dec(2000, 18)), from: bob, oracles: [priceFeedETH, priceFeedSuperRisky] })
+        await th.openTroveWithCollsOld(contracts, { colls: colls, amounts: amountsBob, extraPUSDAmount: toBN(dec(2000, 18)), from: bob, oracles: [priceFeedETH, priceFeedSuperRisky] })
         
         const TCR = (await th.getTCR(contracts)).toString()
         assert.equal(TCR, '2500000000000000000')
@@ -1763,9 +1763,9 @@ contract('StabilityPool', async accounts => {
         // provideToSP()
         await stabilityPool.provideToSP(toBN(dec(2000, 18)), ZERO_ADDRESS, { from: bob })
   
-        // check YUSD balances after
-        const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-        assert.equal(stabilityPool_YUSD_After.toString(), toBN(dec(2000, 18)).toString())
+        // check PUSD balances after
+        const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+        assert.equal(stabilityPool_PUSD_After.toString(), toBN(dec(2000, 18)).toString())
   
         await priceFeedETH.setPrice(toBN(dec(109, 18)).toString());
         await priceFeedSuperRisky.setPrice(toBN(dec(109, 18)).toString());
@@ -1804,18 +1804,18 @@ contract('StabilityPool', async accounts => {
         th.assertIsApproximatelyEqual(toBN(dec(105365, 16)), wethCollSurplusPool.mul(toBN(109)).add(riskyCollSurplusPool.mul(toBN(109))))
       })
       
-      it("liquidate() recovery mode, MCR <= ICR < 150% & SP YUSD >= Trove debt, full offset ratio = 1, 1, 0.5", async () => {
+      it("liquidate() recovery mode, MCR <= ICR < 150% & SP PUSD >= Trove debt, full offset ratio = 1, 1, 0.5", async () => {
         const collsAlice = [contracts.weth, tokenSuperRisky]
         const aliceWETH_InTrove = toBN(dec(2005, 16))
         const aliceRisky_InTrove = toBN(dec(4010, 16))
         const amountsAlice = [aliceWETH_InTrove, aliceRisky_InTrove]
-        await th.openTroveWithCollsOld(contracts, { colls: collsAlice, amounts: amountsAlice, extraYUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
+        await th.openTroveWithCollsOld(contracts, { colls: collsAlice, amounts: amountsAlice, extraPUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
 
         const collsBob = [contracts.weth, contracts.wavax]
         const bobWETH_InTrove = toBN(dec(35125, 15))
         const bobWAVAX_InTrove = toBN(dec(35125, 15))
         const amountsBob = [bobWETH_InTrove, bobWAVAX_InTrove]
-        await th.openTroveWithCollsOld(contracts, { colls: collsBob, amounts: amountsBob, extraYUSDAmount: toBN(dec(5000, 18)), from: bob, oracles: [priceFeedETH, priceFeedSuperRisky] })
+        await th.openTroveWithCollsOld(contracts, { colls: collsBob, amounts: amountsBob, extraPUSDAmount: toBN(dec(5000, 18)), from: bob, oracles: [priceFeedETH, priceFeedSuperRisky] })
         console.log((await troveManager.getCurrentICR(bob)).toString())
         console.log((await troveManager.getTroveDebt(bob)).toString())
         const TCR = (await th.getTCR(contracts)).toString()
@@ -1824,9 +1824,9 @@ contract('StabilityPool', async accounts => {
         // provideToSP()
         await stabilityPool.provideToSP(toBN(dec(5000, 18)), ZERO_ADDRESS, { from: bob })
 
-        // check YUSD balances after
-        const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-        assert.equal(stabilityPool_YUSD_After.toString(), toBN(dec(5000, 18)).toString())
+        // check PUSD balances after
+        const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+        assert.equal(stabilityPool_PUSD_After.toString(), toBN(dec(5000, 18)).toString())
   
         await priceFeedETH.setPrice(toBN(dec(130, 18)).toString());
         await priceFeedSuperRisky.setPrice(toBN(dec(100, 18)).toString());
@@ -1862,7 +1862,7 @@ contract('StabilityPool', async accounts => {
 
         // Calculation:
         // Alice ICR: 1.15, TCR: 1.46, USD value of collateral (no fee applied): 6616.5
-        // YUSD in stability pool > Alice debt --> 4010 x 1.1 x 0.995 = 4,388.95 sent to stability pool. 
+        // PUSD in stability pool > Alice debt --> 4010 x 1.1 x 0.995 = 4,388.95 sent to stability pool. 
         // 6616.5 - 4411 = 2205.5 sent to collsurplus pool
 
         // assert correct amount of collateral entered stability pool
@@ -1877,17 +1877,17 @@ contract('StabilityPool', async accounts => {
         th.assertIsApproximatelyEqual(toBN(dec(22055, 17)), wethCollSurplusPool.mul(toBN(130)).add(riskyCollSurplusPool.mul(toBN(100))).add(wavaxCollSurplusPool.mul(toBN(200))), 10000)
       })
 
-      it("liquidate() recovery mode, MCR <= ICR < 150% & SP YUSD < Trove debt, nothing happens, ratio = 1, 0.5", async () => {
+      it("liquidate() recovery mode, MCR <= ICR < 150% & SP PUSD < Trove debt, nothing happens, ratio = 1, 0.5", async () => {
         const collsAlice = [contracts.weth, tokenSuperRisky]
         const aliceWETH_InTrove = toBN(dec(2005, 16))
         const aliceRisky_InTrove = toBN(dec(4010, 16))
         const amountsAlice = [aliceWETH_InTrove, aliceRisky_InTrove]
-        await th.openTroveWithCollsOld(contracts, { colls: collsAlice, amounts: amountsAlice, extraYUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
+        await th.openTroveWithCollsOld(contracts, { colls: collsAlice, amounts: amountsAlice, extraPUSDAmount: toBN(dec(2000, 18)), from: alice, oracles: [priceFeedETH, priceFeedSuperRisky] })
 
         const collsBob = [contracts.wavax]
         const bobWAVAX_InTrove = toBN(dec(4010, 16))
         const amountsBob = [bobWAVAX_InTrove]
-        await th.openTroveWithCollsOld(contracts, { colls: collsBob, amounts: amountsBob, extraYUSDAmount: toBN(dec(2000, 18)), from: bob, oracles: [priceFeedAVAX] })
+        await th.openTroveWithCollsOld(contracts, { colls: collsBob, amounts: amountsBob, extraPUSDAmount: toBN(dec(2000, 18)), from: bob, oracles: [priceFeedAVAX] })
         console.log((await troveManager.getCurrentICR(bob)).toString())
         console.log((await troveManager.getTroveDebt(bob)).toString())
         const TCR = (await th.getTCR(contracts)).toString()
@@ -1896,9 +1896,9 @@ contract('StabilityPool', async accounts => {
         // provideToSP()
         await stabilityPool.provideToSP(toBN(dec(2000, 18)), ZERO_ADDRESS, { from: bob })
 
-        // check YUSD balances after
-        const stabilityPool_YUSD_After = await stabilityPool.getTotalYUSDDeposits()
-        assert.equal(stabilityPool_YUSD_After.toString(), toBN(dec(2000, 18)).toString())
+        // check PUSD balances after
+        const stabilityPool_PUSD_After = await stabilityPool.getTotalPUSDDeposits()
+        assert.equal(stabilityPool_PUSD_After.toString(), toBN(dec(2000, 18)).toString())
   
         await priceFeedETH.setPrice(toBN(dec(130, 18)).toString());
         await priceFeedSuperRisky.setPrice(toBN(dec(100, 18)).toString());

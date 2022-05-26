@@ -9,23 +9,23 @@ const timeValues = testHelpers.TimeValues
 const dec = th.dec
 
 
-const logYETIBalanceAndError = (YETIBalance_A, expectedYETIBalance_A) => {
+const logPREONBalanceAndError = (PREONBalance_A, expectedPREONBalance_A) => {
   console.log(
-    `Expected final balance: ${expectedYETIBalance_A}, \n
-    Actual final balance: ${YETIBalance_A}, \n
-    Abs. error: ${expectedYETIBalance_A.sub(YETIBalance_A)}`
+    `Expected final balance: ${expectedPREONBalance_A}, \n
+    Actual final balance: ${PREONBalance_A}, \n
+    Abs. error: ${expectedPREONBalance_A.sub(PREONBalance_A)}`
   )
 }
 
-const repeatedlyIssueYETI = async (stabilityPool, timeBetweenIssuances, duration) => {
+const repeatedlyIssuePREON = async (stabilityPool, timeBetweenIssuances, duration) => {
   const startTimestamp = th.toBN(await th.getLatestBlockTimestamp(web3))
   let timePassed = 0
 
-  // while current time < 1 month from deployment, issue YETI every minute
+  // while current time < 1 month from deployment, issue PREON every minute
   while (timePassed < duration) {
     // console.log(`timePassed: ${timePassed}`)
     await th.fastForwardTime(timeBetweenIssuances, web3.currentProvider)
-    await stabilityPool._unprotectedTriggerYETIIssuance()
+    await stabilityPool._unprotectedTriggerPREONIssuance()
 
     const currentTimestamp = th.toBN(await th.getLatestBlockTimestamp(web3))
     timePassed = currentTimestamp.sub(startTimestamp)
@@ -33,11 +33,11 @@ const repeatedlyIssueYETI = async (stabilityPool, timeBetweenIssuances, duration
 }
 
 
-contract('YETI community issuance arithmetic tests', async accounts => {
+contract('PREON community issuance arithmetic tests', async accounts => {
   let contracts
   let borrowerOperations
   let communityIssuanceTester
-  let yetiToken
+  let preonToken
   let stabilityPool
 
   const [owner, alice, frontEnd_1] = accounts;
@@ -50,19 +50,19 @@ contract('YETI community issuance arithmetic tests', async accounts => {
 
   beforeEach(async () => {
     contracts = await deploymentHelper.deployLiquityCore()
-    const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+    const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
     contracts.stabilityPool = await StabilityPool.new()
-    contracts = await deploymentHelper.deployYUSDToken(contracts)
+    contracts = await deploymentHelper.deployPUSDToken(contracts)
 
     stabilityPool = contracts.stabilityPool
     borrowerOperations = contracts.borrowerOperations
 
-    yetiToken = YETIContracts.yetiToken
-    communityIssuanceTester = YETIContracts.communityIssuance
+    preonToken = PREONContracts.preonToken
+    communityIssuanceTester = PREONContracts.communityIssuance
 
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
   })
 
   // Accuracy tests
@@ -70,7 +70,7 @@ contract('YETI community issuance arithmetic tests', async accounts => {
    // progress time 1 week 
     await th.fastForwardTime(timeValues.MINUTES_IN_ONE_WEEK, web3.currentProvider)
 
-    await communityIssuanceTester.unprotectedIssueYETI()
+    await communityIssuanceTester.unprotectedIssuePREON()
    
     const issuanceFractionBefore = await communityIssuanceTester.getCumulativeIssuanceFraction()
     assert.isTrue(issuanceFractionBefore.gt(th.toBN('0')))
@@ -109,7 +109,7 @@ contract('YETI community issuance arithmetic tests', async accounts => {
   }
 
   it("Cumulative issuance fraction is 0.0000013 after a minute", async () => {
-    // console.log(`supply cap: ${await communityIssuanceTester.YETISupplyCap()}`)
+    // console.log(`supply cap: ${await communityIssuanceTester.PREONSupplyCap()}`)
 
     const initialIssuanceFraction = await communityIssuanceTester.getCumulativeIssuanceFraction()
     assert.equal(initialIssuanceFraction, 0)
@@ -423,32 +423,32 @@ contract('YETI community issuance arithmetic tests', async accounts => {
 
    // Error tolerance: 1e-3, i.e. 1/1000th of a token
 
-  it("Total YETI tokens issued is 42.20 after a minute", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 42.20 after a minute", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_MINUTE)
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '42200713760820460000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '42200713760820460000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 2,531.94 after an hour", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 2,531.94 after an hour", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
 
@@ -456,24 +456,24 @@ contract('YETI community issuance arithmetic tests', async accounts => {
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '2531944322115010000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '2531944322115010000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 60,711.40 after a day", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 60,711.40 after a day", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
 
@@ -481,24 +481,24 @@ contract('YETI community issuance arithmetic tests', async accounts => {
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '60711403150133240000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '60711403150133240000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 422,568.60 after a week", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 422,568.60 after a week", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
 
@@ -506,24 +506,24 @@ contract('YETI community issuance arithmetic tests', async accounts => {
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '422568600980110200000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '422568600980110200000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 1,772,113.21 after a month", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 1,772,113.21 after a month", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
 
@@ -531,236 +531,236 @@ contract('YETI community issuance arithmetic tests', async accounts => {
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '1772113218814930000000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '1772113218814930000000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 5,027,363.22 after 3 months", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 5,027,363.22 after 3 months", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_MONTH * 3)
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '5027363224065180000000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '5027363224065180000000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 9,264,902.04 after 6 months", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 9,264,902.04 after 6 months", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_MONTH * 6)
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '9264902042296516000000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '9264902042296516000000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 16,000,000 after a year", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 16,000,000 after a year", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_YEAR)
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '16000000000000000000000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '16000000000000000000000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 24,000,000 after 2 years", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 24,000,000 after 2 years", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_YEAR * 2)
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '24000000000000000000000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '24000000000000000000000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 28,000,000 after 3 years", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 28,000,000 after 3 years", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_YEAR * 3)
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '28000000000000000000000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '28000000000000000000000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 30,000,000 after 4 years", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 30,000,000 after 4 years", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_YEAR * 4)
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '30000000000000000000000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '30000000000000000000000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 31,968,750 after 10 years", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 31,968,750 after 10 years", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_YEAR * 10)
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '31968750000000000000000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '31968750000000000000000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 31,999,969.48 after 20 years", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 31,999,969.48 after 20 years", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_YEAR * 20)
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '31999969482421880000000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '31999969482421880000000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
-  it("Total YETI tokens issued is 31,999,999.97 after 30 years", async () => {
-    const initialIssuance = await communityIssuanceTester.totalYETIIssued()
+  it("Total PREON tokens issued is 31,999,999.97 after 30 years", async () => {
+    const initialIssuance = await communityIssuanceTester.totalPREONIssued()
     assert.equal(initialIssuance, 0)
 
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_YEAR * 30)
     // Fast forward time
     await th.fastForwardTime(duration, web3.currentProvider)
 
-    // Issue YETI
-    await communityIssuanceTester.unprotectedIssueYETI()
-    const totalYETIIssued = await communityIssuanceTester.totalYETIIssued()
-    const expectedTotalYETIIssued = '31999999970197680000000000'
+    // Issue PREON
+    await communityIssuanceTester.unprotectedIssuePREON()
+    const totalPREONIssued = await communityIssuanceTester.totalPREONIssued()
+    const expectedTotalPREONIssued = '31999999970197680000000000'
 
-    const absError = th.toBN(expectedTotalYETIIssued).sub(totalYETIIssued)
+    const absError = th.toBN(expectedTotalPREONIssued).sub(totalPREONIssued)
     // console.log(
     //   `time since deployment: ${duration}, 
-    //    totalYETIIssued: ${totalYETIIssued},  
-    //    expectedTotalYETIIssued: ${expectedTotalYETIIssued},
+    //    totalPREONIssued: ${totalPREONIssued},  
+    //    expectedTotalPREONIssued: ${expectedTotalPREONIssued},
     //    abs. error: ${absError}`
     // )
 
-    assert.isAtMost(th.getDifference(totalYETIIssued, expectedTotalYETIIssued), 1000000000000000)
+    assert.isAtMost(th.getDifference(totalPREONIssued, expectedTotalPREONIssued), 1000000000000000)
   })
 
   /* ---  
@@ -778,21 +778,21 @@ contract('YETI community issuance arithmetic tests', async accounts => {
     await borrowerOperations.openTrove(th._100pct, dec(1, 18), alice, alice, { from: alice, value: dec(1, 'ether') })
     await stabilityPool.provideToSP(dec(1, 18), frontEnd_1, { from: alice })
 
-    assert.isTrue(await stabilityPool.isEligibleForYETI(alice))
+    assert.isTrue(await stabilityPool.isEligibleForPREON(alice))
 
     const timeBetweenIssuances = timeValues.SECONDS_IN_ONE_YEAR
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_YEAR * 30)
 
-    await repeatedlyIssueYETI(stabilityPool, timeBetweenIssuances, duration)
+    await repeatedlyIssuePREON(stabilityPool, timeBetweenIssuances, duration)
 
-    // Depositor withdraws their deposit and accumulated YETI
+    // Depositor withdraws their deposit and accumulated PREON
     await stabilityPool.withdrawFromSP(dec(1, 18), { from: alice })
 
-    const YETIBalance_A = await yetiToken.balanceOf(alice)
-    const expectedYETIBalance_A = th.toBN('33333333302289200000000000')
-    const diff = expectedYETIBalance_A.sub(YETIBalance_A)
+    const PREONBalance_A = await preonToken.balanceOf(alice)
+    const expectedPREONBalance_A = th.toBN('33333333302289200000000000')
+    const diff = expectedPREONBalance_A.sub(PREONBalance_A)
 
-    // logYETIBalanceAndError(YETIBalance_A, expectedYETIBalance_A)
+    // logPREONBalanceAndError(PREONBalance_A, expectedPREONBalance_A)
 
     // Check the actual balance differs by no more than 1e18 (i.e. 1 token) from the expected balance
     assert.isTrue(diff.lte(th.toBN(dec(1, 18))))
@@ -813,21 +813,21 @@ contract('YETI community issuance arithmetic tests', async accounts => {
     await borrowerOperations.openTrove(th._100pct, dec(1, 18), alice, alice, { from: alice, value: dec(1, 'ether') })
     await stabilityPool.provideToSP(dec(1, 18), frontEnd_1, { from: alice })
 
-    assert.isTrue(await stabilityPool.isEligibleForYETI(alice))
+    assert.isTrue(await stabilityPool.isEligibleForPREON(alice))
 
     const timeBetweenIssuances = timeValues.SECONDS_IN_ONE_DAY
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_YEAR * 30)
 
-    await repeatedlyIssueYETI(stabilityPool, timeBetweenIssuances, duration)
+    await repeatedlyIssuePREON(stabilityPool, timeBetweenIssuances, duration)
 
-    // Depositor withdraws their deposit and accumulated YETI
+    // Depositor withdraws their deposit and accumulated PREON
     await stabilityPool.withdrawFromSP(dec(1, 18), { from: alice })
 
-    const YETIBalance_A = await yetiToken.balanceOf(alice)
-    const expectedYETIBalance_A = th.toBN('33333333302289200000000000')
-    const diff = expectedYETIBalance_A.sub(YETIBalance_A)
+    const PREONBalance_A = await preonToken.balanceOf(alice)
+    const expectedPREONBalance_A = th.toBN('33333333302289200000000000')
+    const diff = expectedPREONBalance_A.sub(PREONBalance_A)
 
-    // logYETIBalanceAndError(YETIBalance_A, expectedYETIBalance_A)
+    // logPREONBalanceAndError(PREONBalance_A, expectedPREONBalance_A)
 
     // Check the actual balance differs by no more than 1e18 (i.e. 1 token) from the expected balance
     assert.isTrue(diff.lte(th.toBN(dec(1, 18))))
@@ -847,21 +847,21 @@ contract('YETI community issuance arithmetic tests', async accounts => {
     await borrowerOperations.openTrove(th._100pct, dec(1, 18), alice, alice, { from: alice, value: dec(1, 'ether') })
     await stabilityPool.provideToSP(dec(1, 18), frontEnd_1, { from: alice })
 
-    assert.isTrue(await stabilityPool.isEligibleForYETI(alice))
+    assert.isTrue(await stabilityPool.isEligibleForPREON(alice))
 
     const timeBetweenIssuances = timeValues.SECONDS_IN_ONE_MINUTE
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_MONTH)
 
-    await repeatedlyIssueYETI(stabilityPool, timeBetweenIssuances, duration)
+    await repeatedlyIssuePREON(stabilityPool, timeBetweenIssuances, duration)
 
-    // Depositor withdraws their deposit and accumulated YETI
+    // Depositor withdraws their deposit and accumulated PREON
     await stabilityPool.withdrawFromSP(dec(1, 18), { from: alice })
 
-    const YETIBalance_A = await yetiToken.balanceOf(alice)
-    const expectedYETIBalance_A = th.toBN('1845951269598880000000000')
-    const diff = expectedYETIBalance_A.sub(YETIBalance_A)
+    const PREONBalance_A = await preonToken.balanceOf(alice)
+    const expectedPREONBalance_A = th.toBN('1845951269598880000000000')
+    const diff = expectedPREONBalance_A.sub(PREONBalance_A)
 
-    // logYETIBalanceAndError(YETIBalance_A, expectedYETIBalance_A)
+    // logPREONBalanceAndError(PREONBalance_A, expectedPREONBalance_A)
 
     // Check the actual balance differs by no more than 1e18 (i.e. 1 token) from the expected balance
     assert.isTrue(diff.lte(th.toBN(dec(1, 18))))
@@ -882,21 +882,21 @@ contract('YETI community issuance arithmetic tests', async accounts => {
     await borrowerOperations.openTrove(th._100pct, dec(1, 18), alice, alice, { from: alice, value: dec(1, 'ether') })
     await stabilityPool.provideToSP(dec(1, 18), frontEnd_1, { from: alice })
 
-    assert.isTrue(await stabilityPool.isEligibleForYETI(alice))
+    assert.isTrue(await stabilityPool.isEligibleForPREON(alice))
 
     const timeBetweenIssuances = timeValues.SECONDS_IN_ONE_MINUTE
     const duration = await getDuration(timeValues.SECONDS_IN_ONE_YEAR)
 
-    await repeatedlyIssueYETI(stabilityPool, timeBetweenIssuances, duration)
+    await repeatedlyIssuePREON(stabilityPool, timeBetweenIssuances, duration)
 
-    // Depositor withdraws their deposit and accumulated YETI
+    // Depositor withdraws their deposit and accumulated PREON
     await stabilityPool.withdrawFromSP(dec(1, 18), { from: alice })
 
-    const YETIBalance_A = await yetiToken.balanceOf(alice)
-    const expectedYETIBalance_A = th.toBN('1845951269598880000000000')
-    const diff = expectedYETIBalance_A.sub(YETIBalance_A)
+    const PREONBalance_A = await preonToken.balanceOf(alice)
+    const expectedPREONBalance_A = th.toBN('1845951269598880000000000')
+    const diff = expectedPREONBalance_A.sub(PREONBalance_A)
 
-    // logYETIBalanceAndError(YETIBalance_A, expectedYETIBalance_A)
+    // logPREONBalanceAndError(PREONBalance_A, expectedPREONBalance_A)
 
     // Check the actual balance differs by no more than 1e18 (i.e. 1 token) from the expected balance
     assert.isTrue(diff.lte(th.toBN(dec(1, 18))))

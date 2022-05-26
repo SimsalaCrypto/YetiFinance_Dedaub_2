@@ -2,14 +2,14 @@
 
 pragma solidity 0.6.11;
 
-import "../YETI/YETIToken.sol";
+import "../PREON/PREONToken.sol";
 
-contract YETITokenTester is YETIToken {
+contract PREONTokenTester is PREONToken {
   constructor(
-    address _sYETIAddress,
+    address _sPREONAddress,
     address _treasuryAddress,
     address _teamAddress
-  ) public YETIToken(_sYETIAddress, _treasuryAddress, _teamAddress) {}
+  ) public PREONToken(_sPREONAddress, _treasuryAddress, _teamAddress) {}
 
   function unprotectedMint(address account, uint256 amount) external {
     // No check for the caller here
@@ -17,8 +17,8 @@ contract YETITokenTester is YETIToken {
     _mint(account, amount);
   }
 
-  function unprotectedSendToSYETI(address _sender, uint256 _amount) external {
-    _transfer(_sender, sYETIAddress, _amount);
+  function unprotectedSendToSPREON(address _sender, uint256 _amount) external {
+    _transfer(_sender, sPREONAddress, _amount);
   }
 
   function callInternalApprove(

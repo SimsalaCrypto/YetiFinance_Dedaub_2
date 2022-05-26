@@ -2,26 +2,26 @@
 
 pragma solidity 0.6.11;
 
-import "../YETI/CommunityIssuance.sol";
+import "../PREON/CommunityIssuance.sol";
 
 contract CommunityIssuanceTester is CommunityIssuance {
-  function obtainYETI(uint256 _amount) external {
-    yetiToken.transfer(msg.sender, _amount);
+  function obtainPREON(uint256 _amount) external {
+    preonToken.transfer(msg.sender, _amount);
   }
 
   function getCumulativeIssuanceFraction() external view returns (uint256) {
     return _getCumulativeIssuanceFraction();
   }
 
-  function unprotectedIssueYETI() external returns (uint256) {
+  function unprotectedIssuePREON() external returns (uint256) {
     // No checks on caller address
 
-    uint256 latestTotalYETIIssued = YETISupplyCap
+    uint256 latestTotalPREONIssued = PREONSupplyCap
       .mul(_getCumulativeIssuanceFraction())
       .div(DECIMAL_PRECISION);
-    uint256 issuance = latestTotalYETIIssued.sub(totalYETIIssued);
+    uint256 issuance = latestTotalPREONIssued.sub(totalPREONIssued);
 
-    totalYETIIssued = latestTotalYETIIssued;
+    totalPREONIssued = latestTotalPREONIssued;
     return issuance;
   }
 }

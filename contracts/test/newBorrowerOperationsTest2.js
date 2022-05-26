@@ -4,7 +4,7 @@ const testHelpers = require("../utils/testHelpers.js")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
 const NonPayable = artifacts.require('NonPayable.sol')
 const TroveManagerTester = artifacts.require("TroveManagerTester")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester")
 
 const th = testHelpers.TestHelper
 
@@ -17,10 +17,10 @@ const ZERO_ADDRESS = th.ZERO_ADDRESS
 const assertRevert = th.assertRevert
 const WAVAX_ADDRESS = ZERO_ADDRESS;
 
-/* NOTE: Some of the borrowing tests do not test for specific YUSD fee values. They only test that the
+/* NOTE: Some of the borrowing tests do not test for specific PUSD fee values. They only test that the
  * fees are non-zero when they should occur, and that they decay over time.
  *
- * Specific YUSD fee values will depend on the final fee schedule used, and the final choice for
+ * Specific PUSD fee values will depend on the final fee schedule used, and the final choice for
  *  the parameter MINUTE_DECAY_FACTOR in the TroveManager, which is still TBD based on economic
  * modelling.
  * 
@@ -39,19 +39,19 @@ contract('BorrowerOperations', async accounts => {
   // const frontEnds = [frontEnd_1, frontEnd_2, frontEnd_3]
 
   let priceFeed
-  let yusdToken
+  let pusdToken
   let sortedTroves
   let troveManager
   let activePool
   let stabilityPool
   let defaultPool
   let borrowerOperations
-  let sYETI
-  let yetiToken
+  let sPREON
+  let preonToken
 
   let contracts
 
-  const getOpenTroveYUSDAmount = async (totalDebt) => th.getOpenTroveYUSDAmount(contracts, totalDebt)
+  const getOpenTrovePUSDAmount = async (totalDebt) => th.getOpenTrovePUSDAmount(contracts, totalDebt)
   const getNetBorrowingAmount = async (debtWithFee) => th.getNetBorrowingAmount(contracts, debtWithFee)
   const getActualDebtFromComposite = async (compositeDebt) => th.getActualDebtFromComposite(compositeDebt, contracts)
 //   const openTrove = async (params) => th.openTrove(contracts, params)
@@ -59,7 +59,7 @@ contract('BorrowerOperations', async accounts => {
   const getTroveEntireDebt = async (trove) => th.getTroveEntireDebt(contracts, trove)
   const getTroveStake = async (trove) => th.getTroveStake(contracts, trove)
 
-  let YUSD_GAS_COMPENSATION
+  let PUSD_GAS_COMPENSATION
   let MIN_NET_DEBT
   let BORROWING_FEE_FLOOR
 
@@ -72,22 +72,22 @@ contract('BorrowerOperations', async accounts => {
       contracts = await deploymentHelper.deployLiquityCore()
       contracts.borrowerOperations = await BorrowerOperationsTester.new()
       contracts.troveManager = await TroveManagerTester.new()
-      contracts = await deploymentHelper.deployYUSDTokenTester(contracts)
-      const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+      contracts = await deploymentHelper.deployPUSDTokenTester(contracts)
+      const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
-      await deploymentHelper.connectYETIContracts(YETIContracts)
-      await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-      await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+      await deploymentHelper.connectPREONContracts(PREONContracts)
+      await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+      await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
       if (withProxy) {
         const users = [alice, bob, carol, dennis, whale, A, B, C, D, E]
-        await deploymentHelper.deployProxyScripts(contracts, YETIContracts, owner, users)
+        await deploymentHelper.deployProxyScripts(contracts, PREONContracts, owner, users)
       }
 
       // priceFeed = contracts.priceFeedTestnet
       priceFeedAVAX = contracts.priceFeedAVAX
       priceFeed = contracts.priceFeedETH
-      yusdToken = contracts.yusdToken
+      pusdToken = contracts.pusdToken
       sortedTroves = contracts.sortedTroves
       troveManager = contracts.troveManager
       activePool = contracts.activePool
@@ -97,12 +97,12 @@ contract('BorrowerOperations', async accounts => {
       hintHelpers = contracts.hintHelpers
       whitelist = contracts.whitelist
 
-      sYETI = YETIContracts.sYETI
-      yetiToken = YETIContracts.yetiToken
-      communityIssuance = YETIContracts.communityIssuance
-      lockupContractFactory = YETIContracts.lockupContractFactory
+      sPREON = PREONContracts.sPREON
+      preonToken = PREONContracts.preonToken
+      communityIssuance = PREONContracts.communityIssuance
+      lockupContractFactory = PREONContracts.lockupContractFactory
 
-      YUSD_GAS_COMPENSATION = await borrowerOperations.YUSD_GAS_COMPENSATION()
+      PUSD_GAS_COMPENSATION = await borrowerOperations.PUSD_GAS_COMPENSATION()
       MIN_NET_DEBT = await borrowerOperations.MIN_NET_DEBT()
       BORROWING_FEE_FLOOR = await borrowerOperations.BORROWING_FEE_FLOOR()
     })

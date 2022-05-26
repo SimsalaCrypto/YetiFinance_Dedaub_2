@@ -5,9 +5,9 @@ pragma solidity 0.6.11;
 import "../Interfaces/ITroveManager.sol";
 import "../Interfaces/IStabilityPool.sol";
 import "../Interfaces/ICollSurplusPool.sol";
-import "../Interfaces/IYUSDToken.sol";
+import "../Interfaces/IPUSDToken.sol";
 import "../Interfaces/ISortedTroves.sol";
-import "../Interfaces/IYETIToken.sol";
+import "../Interfaces/IPREONToken.sol";
 import "../Interfaces/IActivePool.sol";
 import "../Interfaces/ITroveManagerLiquidations.sol";
 import "../Interfaces/ITroveManagerRedemptions.sol";
@@ -26,11 +26,11 @@ contract TroveManagerBase is LiquityBase {
   struct ContractsCache {
     IActivePool activePool;
     IDefaultPool defaultPool;
-    IYUSDToken yusdToken;
+    IPUSDToken pusdToken;
     ISortedTroves sortedTroves;
     ICollSurplusPool collSurplusPool;
     address gasPoolAddress;
-    IYetiController controller;
+    IPreonController controller;
   }
 
   enum Status {

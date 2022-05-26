@@ -11,7 +11,7 @@ contract('All Liquity functions with onlyOwner modifier', async accounts => {
   const [bountyAddress, lpRewardsAddress, multisig] = accounts.slice(997, 1000)
   
   let contracts
-  let yusdToken
+  let pusdToken
   let sortedTroves
   let troveManager
   let activePool
@@ -19,18 +19,18 @@ contract('All Liquity functions with onlyOwner modifier', async accounts => {
   let defaultPool
   let borrowerOperations
 
-  let sYETI
+  let sPREON
   let communityIssuance
-  let yetiToken 
+  let preonToken 
   let lockupContractFactory
 
   before(async () => {
     contracts = await deploymentHelper.deployLiquityCore()
     contracts.borrowerOperations = await BorrowerOperationsTester.new()
-    contracts = await deploymentHelper.deployYUSDToken(contracts)
-    const YETIContracts = await deploymentHelper.deployYETIContracts(bountyAddress, lpRewardsAddress, multisig)
+    contracts = await deploymentHelper.deployPUSDToken(contracts)
+    const PREONContracts = await deploymentHelper.deployPREONContracts(bountyAddress, lpRewardsAddress, multisig)
 
-    yusdToken = contracts.yusdToken
+    pusdToken = contracts.pusdToken
     sortedTroves = contracts.sortedTroves
     troveManager = contracts.troveManager
     activePool = contracts.activePool
@@ -38,10 +38,10 @@ contract('All Liquity functions with onlyOwner modifier', async accounts => {
     defaultPool = contracts.defaultPool
     borrowerOperations = contracts.borrowerOperations
 
-    sYETI = YETIContracts.sYETI
-    communityIssuance = YETIContracts.communityIssuance
-    yetiToken = YETIContracts.yetiToken
-    lockupContractFactory = YETIContracts.lockupContractFactory
+    sPREON = PREONContracts.sPREON
+    communityIssuance = PREONContracts.communityIssuance
+    preonToken = PREONContracts.preonToken
+    lockupContractFactory = PREONContracts.lockupContractFactory
   })
 
   const testZeroAddress = async (contract, params, method = 'setAddresses', skip = 0) => {
@@ -133,7 +133,7 @@ contract('All Liquity functions with onlyOwner modifier', async accounts => {
 
   describe('CommunityIssuance', async accounts => {
     it("setAddresses(): reverts when called by non-owner, with wrong addresses, or twice", async () => {
-      const params = [yetiToken.address, stabilityPool.address]
+      const params = [preonToken.address, stabilityPool.address]
       await th.assertRevert(communityIssuance.setAddresses(...params, { from: alice }))
 
       // Attempt to use zero address
@@ -150,29 +150,29 @@ contract('All Liquity functions with onlyOwner modifier', async accounts => {
     })
   })
 
-  describe('SYETI', async accounts => {
+  describe('SPREON', async accounts => {
     it("setAddresses(): reverts when called by non-owner, with wrong addresses, or twice", async () => {
-      await testSetAddresses(sYETI, 5)
+      await testSetAddresses(sPREON, 5)
     })
   })
 
   describe('LockupContractFactory', async accounts => {
-    it("setYETIAddress(): reverts when called by non-owner, with wrong address, or twice", async () => {
-      await th.assertRevert(lockupContractFactory.setYETITokenAddress(yetiToken.address, { from: alice }))
+    it("setPREONAddress(): reverts when called by non-owner, with wrong address, or twice", async () => {
+      await th.assertRevert(lockupContractFactory.setPREONTokenAddress(preonToken.address, { from: alice }))
 
-      const params = [yetiToken.address]
+      const params = [preonToken.address]
 
       // Attempt to use zero address
-      await testZeroAddress(lockupContractFactory, params, 'setYETITokenAddress')
+      await testZeroAddress(lockupContractFactory, params, 'setPREONTokenAddress')
       // Attempt to use non contract
-      await testNonContractAddress(lockupContractFactory, params, 'setYETITokenAddress')
+      await testNonContractAddress(lockupContractFactory, params, 'setPREONTokenAddress')
 
       // Owner can successfully set any address
-      const txOwner = await lockupContractFactory.setYETITokenAddress(yetiToken.address, { from: owner })
+      const txOwner = await lockupContractFactory.setPREONTokenAddress(preonToken.address, { from: owner })
 
       assert.isTrue(txOwner.receipt.status)
       // fails if called twice
-      await th.assertRevert(lockupContractFactory.setYETITokenAddress(yetiToken.address, { from: owner }))
+      await th.assertRevert(lockupContractFactory.setPREONTokenAddress(preonToken.address, { from: owner }))
     })
   })
 })

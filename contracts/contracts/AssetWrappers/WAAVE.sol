@@ -66,7 +66,7 @@ contract WAAVE is ERC20_8, IWAsset {
   address internal TMR;
   address internal defaultPool;
   address internal stabilityPool;
-  address internal YetiFinanceTreasury;
+  address internal PreonFinanceTreasury;
   address internal borrowerOperations;
   address internal collSurplusPool;
   uint256 public SHAREOFFSET = 1e12;
@@ -80,7 +80,7 @@ contract WAAVE is ERC20_8, IWAsset {
     // To calculate a user's reward share we need to know how much of the rewards has been provided when they wrap their aToken.
     // We can calculate the initial rewardAmount per share as rewardAmount / outstandingShares.
     // Upon unwrapping we can calculate the rewards they are entitled to as amount * ((newRewardAmout / newOutstandingShares)-(initialRewardAmount/initialOutstandingShares)).
-    uint256 amountInYeti;
+    uint256 amountInPreon;
   }
 
   // Info of each user that stakes LP tokens.
@@ -114,7 +114,7 @@ contract WAAVE is ERC20_8, IWAsset {
     address _TMR,
     address _defaultPool,
     address _stabilityPool,
-    address _YetiFinanceTreasury,
+    address _PreonFinanceTreasury,
     address _borrowerOperations,
     address _collSurplusPool
   ) external {
@@ -124,7 +124,7 @@ contract WAAVE is ERC20_8, IWAsset {
     checkContract(_TMR);
     checkContract(_defaultPool);
     checkContract(_stabilityPool);
-    checkContract(_YetiFinanceTreasury);
+    checkContract(_PreonFinanceTreasury);
     checkContract(_borrowerOperations);
     checkContract(_collSurplusPool);
     activePool = _activePool;
@@ -132,7 +132,7 @@ contract WAAVE is ERC20_8, IWAsset {
     TMR = _TMR;
     defaultPool = _defaultPool;
     stabilityPool = _stabilityPool;
-    YetiFinanceTreasury = _YetiFinanceTreasury;
+    PreonFinanceTreasury = _PreonFinanceTreasury;
     borrowerOperations = _borrowerOperations;
     collSurplusPool = _collSurplusPool;
     addressesSet = true;
@@ -169,7 +169,7 @@ contract WAAVE is ERC20_8, IWAsset {
     _userUpdate(_rewardRecipient, _amount, true);
 
     if (_to == activePool) {
-      userInfo[_rewardRecipient].amountInYeti += _amount;
+      userInfo[_rewardRecipient].amountInPreon += _amount;
     }
   }
 
@@ -206,21 +206,21 @@ contract WAAVE is ERC20_8, IWAsset {
     // Update reward balances and claim reward.
     // TODO
     _userUpdate(_from, _amount, false);
-    userInfo[_from].amountInYeti -= _amount;
+    userInfo[_from].amountInPreon -= _amount;
 
     _burn(msg.sender, _amount);
     aToken.transfer(_to, (_amount * aavePerShare()) / 1e18);
   }
 
   // When funds are transferred into the stabilityPool on liquidation,
-  // the rewards these funds are earning are allocated Yeti Finance Treasury.
+  // the rewards these funds are earning are allocated Preon Finance Treasury.
   // But when an stabilityPool depositor wants to withdraw their collateral,
-  // the wAsset is unwrapped and the rewards are no longer accruing to the Yeti Finance Treasury
+  // the wAsset is unwrapped and the rewards are no longer accruing to the Preon Finance Treasury
   function endTreasuryReward(address _to, uint256 _amount) external override {
     _requireCallerIsSPorDP();
     // Update reward balances and claim reward
     // TODO
-    _updateReward(YetiFinanceTreasury, _to, _amount);
+    _updateReward(PreonFinanceTreasury, _to, _amount);
   }
 
   // Decreases _from's amount of LP tokens earning yield by _amount
@@ -245,9 +245,9 @@ contract WAAVE is ERC20_8, IWAsset {
   ) internal {
     // Claim any outstanding reward first
     _userUpdate(_from, _amount, false);
-    userInfo[_from].amountInYeti -= _amount;
+    userInfo[_from].amountInPreon -= _amount;
     _userUpdate(_to, _amount, true);
-    userInfo[_to].amountInYeti += _amount;
+    userInfo[_to].amountInPreon += _amount;
   }
 
   // // checks total pending JOE rewards for _for

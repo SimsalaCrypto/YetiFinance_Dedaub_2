@@ -4,17 +4,17 @@ pragma solidity 0.6.11;
 
 import "./SafeMath.sol";
 import "../Interfaces/IERC20.sol";
-import "../Interfaces/IYetiController.sol";
+import "../Interfaces/IPreonController.sol";
 
 /**
  * Contains shared functionality for many of the system files
- * YetiCustomBase is inherited by PoolBase2 and LiquityBase
+ * PreonCustomBase is inherited by PoolBase2 and LiquityBase
  */
 
-contract YetiCustomBase {
+contract PreonCustomBase {
   using SafeMath for uint256;
 
-  IYetiController internal controller;
+  IPreonController internal controller;
 
   struct newColls {
     // tokens and amounts should be the same length
@@ -33,11 +33,11 @@ contract YetiCustomBase {
 
   /**
    * @notice Returns _coll1.amounts plus _coll2.amounts
-   * @dev Invariant that _coll1.tokens and _coll2.tokens are sorted by whitelist order of token indices from the YetiController.
+   * @dev Invariant that _coll1.tokens and _coll2.tokens are sorted by whitelist order of token indices from the PreonController.
    *    So, if WAVAX is whitelisted first, then WETH, then USDC, then [WAVAX, USDC] is a valid input order but [USDC, WAVAX] is not.
    *    This is done for gas efficiency. We use a sliding window approach to increment the indices of the tokens we are adding together
    *    from _coll1 and from _coll2. We will start at tokenIndex1 and tokenIndex2. To keep the invariant of ordered collateral in
-   *    each trove, we need to merge coll1 and coll2 in order based on the YetiController whitelist order. If the token indices
+   *    each trove, we need to merge coll1 and coll2 in order based on the PreonController whitelist order. If the token indices
    *    line up, then they are the same and we add the sum. Otherwise we add the smaller index to keep them in order and move on.
    *    Once we reach the end of either tokens1 or tokens2, we add the remaining ones to the sum individually without summing.
    *    n is the number of tokens in the coll1, and m is the number of tokens in the coll2. k is defined as the number of tokens

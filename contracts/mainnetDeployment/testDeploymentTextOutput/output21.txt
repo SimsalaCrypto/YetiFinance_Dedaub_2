@@ -16,11 +16,11 @@ Using previously deployed collSurplusPool contract at address 0x4428EF2Edc5f091e
 Using previously deployed borrowerOperations contract at address 0x4E4E2eC25B1F591bb591d42A944eCc1CB9C79d8A
 Using previously deployed hintHelpers contract at address 0xAB1b14AfAE47054ca29A23858A7850E859aE6E31
 Using previously deployed tellorCaller contract at address 0x093FA46A3FC715B65E9A6d37ACD92d99F48B81F6
-Using previously deployed yusdToken contract at address 0xaa052d8b915c9311e5EA234dd24105d6208087A5
+Using previously deployed pusdToken contract at address 0xaa052d8b915c9311e5EA234dd24105d6208087A5
 No Etherscan Url defined, skipping verification
 Contract objects addresses:
 priceFeed: 0x891d882fDACd2cB8DAeA5289f6019676E797EE5F
-yusdToken: 0xaa052d8b915c9311e5EA234dd24105d6208087A5
+pusdToken: 0xaa052d8b915c9311e5EA234dd24105d6208087A5
 sortedTroves: 0xb8493cD0E7135462502DF048deeFc9b650fa789F
 troveManager: 0x111Bf64dA957C55601C6D0f9DB2Eb1aef4dDEE23
 activePool: 0x741d21A9dd5dcc14cc5cd84cD91fd74638AFA313
@@ -33,18 +33,18 @@ hintHelpers: 0xAB1b14AfAE47054ca29A23858A7850E859aE6E31
 tellorCaller: 0x093FA46A3FC715B65E9A6d37ACD92d99F48B81F6
 Using previously deployed unipool contract at address 0xBAeE57B5e130fC602F0859e6f85029Ec47340298
 No Etherscan Url defined, skipping verification
-Using previously deployed sYETI contract at address 0x3d130ccbabe9b3561bb1f45f9605EDF2944C9Ee5
+Using previously deployed sPREON contract at address 0x3d130ccbabe9b3561bb1f45f9605EDF2944C9Ee5
 Using previously deployed lockupContractFactory contract at address 0xe6dEcadA1d49466F09c5bfb69F6C14f376B2Eece
 Using previously deployed communityIssuance contract at address 0x89c5eaD36eCA8d7c0840ddD461d406Ad637CD35D
-Using previously deployed yetiToken contract at address 0x05F1b3d2C7C90A61DA377942A35DF94B80537790
+Using previously deployed preonToken contract at address 0x05F1b3d2C7C90A61DA377942A35DF94B80537790
 No Etherscan Url defined, skipping verification
 Using previously deployed multiTroveGetter contract at address 0x1AfE186670C7DAF5E085ae6269Da9762621F2b71
 No Etherscan Url defined, skipping verification
 Contract objects addresses:
-sYETI: 0x3d130ccbabe9b3561bb1f45f9605EDF2944C9Ee5
+sPREON: 0x3d130ccbabe9b3561bb1f45f9605EDF2944C9Ee5
 lockupContractFactory: 0xe6dEcadA1d49466F09c5bfb69F6C14f376B2Eece
 communityIssuance: 0x89c5eaD36eCA8d7c0840ddD461d406Ad637CD35D
-yetiToken: 0x05F1b3d2C7C90A61DA377942A35DF94B80537790
+preonToken: 0x05F1b3d2C7C90A61DA377942A35DF94B80537790
 Unipool address: 0xBAeE57B5e130fC602F0859e6f85029Ec47340298
 time now: 1617566356
 time oneYearFromNow: 1649102356
@@ -66,15 +66,15 @@ lockupContract addr: 0xC4aC...FfEC,
             on-chain beneficiary addr: 0x7AdD...FD6F
             unlockTime: 1649064337
             
-INITIAL YETI BALANCES
-Unipool YETI balance       : 1332511.757789535567313421
-YETI Safe balance     : 64666666.666666666666666667
+INITIAL PREON BALANCES
+Unipool PREON balance       : 1332511.757789535567313421
+PREON Safe balance     : 64666666.666666666666666667
 General Safe balance       : 2000000.000000000000000000
 Community Issuance balance: 31951399.568444579028830645
 PRICEFEED CHECKS
 PriceFeed first stored price: 2064.083968470000000000
 PriceFeed initial status: 0
-Unipool's stored YUSD-ETH Uniswap Pair address: 0x01365a50da15e38e9Fcc5Ee193E67D4845ff118E
+Unipool's stored PUSD-ETH Uniswap Pair address: 0x01365a50da15e38e9Fcc5Ee193E67D4845ff118E
 SYSTEM GLOBAL VARS CHECKS
 system liquidation reserve: 200.000000000000000000
 system min net debt      : 1800.000000000000000000
@@ -84,76 +84,76 @@ deployer debt: 3215.000000000000000000
 deployer coll: 3.000000000000000000
 deployer stake: 3.000000000000000000
 deployer's trove status: 1
-deployer's YUSD balance: 2311.224204161781052791
-YUSD-ETH Pair token 0: 0xaa05...87A5,
-        YUSDToken contract addr: 0xaa05...87A5
-YUSD-ETH Pair token 1: 0xC02a...6Cc2,
+deployer's PUSD balance: 2311.224204161781052791
+PUSD-ETH Pair token 0: 0xaa05...87A5,
+        PUSDToken contract addr: 0xaa05...87A5
+PUSD-ETH Pair token 1: 0xC02a...6Cc2,
         WETH ERC20 contract addr: 0xc02a...6cc2
-YUSD-ETH Pair's YUSD reserves before provision: 40.036378355965833891
-YUSD-ETH Pair's ETH reserves before provision: .188993756164807541
+PUSD-ETH Pair's PUSD reserves before provision: 40.036378355965833891
+PUSD-ETH Pair's ETH reserves before provision: .188993756164807541
 Liquidity already provided to Uniswap
-YUSD-ETH Pair's YUSD reserves after provision: 40.036378355965833891
-YUSD-ETH Pair's ETH reserves after provision: .188993756164807541
-CHECK LP STAKING EARNS YETI
+PUSD-ETH Pair's PUSD reserves after provision: 40.036378355965833891
+PUSD-ETH Pair's ETH reserves after provision: .188993756164807541
+CHECK LP STAKING EARNS PREON
 deployer's LP token balance: 2.194601866876996844
-YUSDETHPair addr: 0x01365a50da15e38e9Fcc5Ee193E67D4845ff118E
+PUSDETHPair addr: 0x01365a50da15e38e9Fcc5Ee193E67D4845ff118E
 Pair addr stored in Unipool: 0x01365a50da15e38e9Fcc5Ee193E67D4845ff118E
-deployer's farmed YETI before staking LP tokens: .000000000000048944
+deployer's farmed PREON before staking LP tokens: .000000000000048944
 Already staked in Unipool
 wait 90 seconds before checking earnings... 
-deployer's farmed YETI from Unipool after waiting ~1.5mins: .000000000000049005
-deployer YETI Balance Before SP deposit: 1395.789802366656842257
-CHECK DEPLOYER MAKING DEPOSIT AND EARNING YETI
+deployer's farmed PREON from Unipool after waiting ~1.5mins: .000000000000049005
+deployer PREON Balance Before SP deposit: 1395.789802366656842257
+CHECK DEPLOYER MAKING DEPOSIT AND EARNING PREON
 deployer SP deposit before making deposit: .000000000000000000
-deployer SP deposit after depositing 15 YUSD: 15.000000000000000000
+deployer SP deposit after depositing 15 PUSD: 15.000000000000000000
 wait 90 seconds before withdrawing...
 deployer SP deposit after full withdrawal: .000000000000000000
-deployer YETI Balance after SP deposit withdrawal: 1421.375771175734140867
+deployer PREON Balance after SP deposit withdrawal: 1421.375771175734140867
 CHECK BENEFICIARY ATTEMPTING WITHDRAWAL FROM LC
-account2 YETI bal before withdrawal attempt: .000000000000000000
-account2's LC YETI bal before withdrawal attempt: 40.000000000000000000
-account2's YETI bal after LC withdrawal attempt: .000000000000000000
-account2's LC YETI bal LC withdrawal attempt: 40.000000000000000000
-CHECK DEPLOYER STAKING YETI
-deployer YETI bal before staking: 1411.375771175734140867
+account2 PREON bal before withdrawal attempt: .000000000000000000
+account2's LC PREON bal before withdrawal attempt: 40.000000000000000000
+account2's PREON bal after LC withdrawal attempt: .000000000000000000
+account2's LC PREON bal LC withdrawal attempt: 40.000000000000000000
+CHECK DEPLOYER STAKING PREON
+deployer PREON bal before staking: 1411.375771175734140867
 deployer stake before staking: 52.000000000000000000
-deployer YETI bal after staking: 1398.375771175734140867
+deployer PREON bal after staking: 1398.375771175734140867
 deployer stake after staking: 65.000000000000000000
-deployer pending YUSD revenue share: .000000000000000000
+deployer pending PUSD revenue share: .000000000000000000
 Acct 2 already has an active trove
 acct2 debt: 2210.000000000000000000
 acct2 coll: 1.500000000000000000
 acct2 stake: 1.500000000000000000
 acct2 trove status: 1
-deployer pending YUSD revenue share from staking, after acct 2 opened trove: .000000000000000000
+deployer pending PUSD revenue share from staking, after acct 2 opened trove: .000000000000000000
 CHECK DEPLOYER WITHDRAWING STAKING GAINS
-deployer YUSD bal before withdrawing staking gains: 2311.224204161781052791
-deployer YUSD bal after withdrawing staking gains: 2311.224204161781052791
-YUSD-ETH Pair's current YUSD reserves: 40.036378355965833891
-YUSD-ETH Pair's current ETH reserves: .188993756164807541
+deployer PUSD bal before withdrawing staking gains: 2311.224204161781052791
+deployer PUSD bal after withdrawing staking gains: 2311.224204161781052791
+PUSD-ETH Pair's current PUSD reserves: 40.036378355965833891
+PUSD-ETH Pair's current ETH reserves: .188993756164807541
 number of troves: 3 
 Trove list size: 3 
 Entire system debt: 7425.000000000000000000
 Entire system coll: 6.000000000000000000
 Base rate: .000000000000000000
 Current borrowing rate: .005000000000000000
-Total YUSD SP deposits: 34.160000000000000000
-Total YETI staked: 65.000000000000000000
-Total LP (YUSD-ETH) tokens staked in unipool: .552691887045032822
+Total PUSD SP deposits: 34.160000000000000000
+Total PREON staked: 65.000000000000000000
+Total LP (PUSD-ETH) tokens staked in unipool: .552691887045032822
 TroveManager state variables:
 Total trove stakes: 6.000000000000000000
 Snapshot of total trove stakes before last liq. : .000000000000000000
 Snapshot of total trove collateral before last liq. : .000000000000000000
 L_ETH: .000000000000000000
-L_YUSDDebt: .000000000000000000
+L_PUSDDebt: .000000000000000000
 StabilityPool state variables:
 Product P: 1.000000000000000000
 Current epoch: .000000000000000000
 Current scale: .000000000000000000
 Sum S, at current epoch and scale: .000000000000000000
 Sum G, at current epoch and scale: 3970851179672782442853.000000000000000000
-SYETI state variables:
-F_YUSD: .867298124760811327
+SPREON state variables:
+F_PUSD: .867298124760811327
 F_ETH: .000000000000000000
 CommunityIssuance state variables:
-Total YETI issued to depositors / front ends: 207710.212876695936000000
+Total PREON issued to depositors / front ends: 207710.212876695936000000

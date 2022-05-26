@@ -6,7 +6,7 @@ const PriceFeedTestnet = artifacts.require("./PriceFeedTestnet.sol")
 // const PriceFeedTestnetAVAX = artifacts.require("./PriceFeedTestnet.sol")
 // const PriceFeedTestnetETH = artifacts.require("./PriceFeedTestnet.sol")
 
-const YUSDToken = artifacts.require("./YUSDToken.sol")
+const PUSDToken = artifacts.require("./PUSDToken.sol")
 const ActivePool = artifacts.require("./ActivePool.sol");
 const DefaultPool = artifacts.require("./DefaultPool.sol");
 const StabilityPool = artifacts.require("./StabilityPool.sol")
@@ -29,12 +29,12 @@ const ERC20Token = artifacts.require("./TestContracts/TestAssets/ERC20Token.sol"
 const LinearPriceCurve = artifacts.require("./PriceCurves/ThreePieceWiseLinearPriceCurve.sol");
 const ERC20Router = artifacts.require("./Routers/ERC20Router.sol")
 
-const SYETI = artifacts.require("./sYETIToken.sol")
-const SYETITester = artifacts.require("./sYETITokenTester.sol")
-const YETIToken = artifacts.require("./YETIToken.sol"); // @KingYeti: changed to Yeti token
+const SPREON = artifacts.require("./sPREONToken.sol")
+const SPREONTester = artifacts.require("./sPREONTokenTester.sol")
+const PREONToken = artifacts.require("./PREONToken.sol"); // @Simsala: changed to Preon token
 const LockupContractFactory = artifacts.require("./LockupContractFactory.sol")
 const CommunityIssuance = artifacts.require("./CommunityIssuance.sol")
-const YetiFinanceTreasury = artifacts.require("./YetiFinanceTreasury.sol")
+const PreonFinanceTreasury = artifacts.require("./PreonFinanceTreasury.sol")
 
 const Unipool =  artifacts.require("./Unipool.sol")
 
@@ -43,7 +43,7 @@ const WBQI = artifacts.require("./AssetWrappers/WBQI.sol");
 const WAAVE = artifacts.require("./AssetWrappers/WAAVE.sol");
 const WCRV = artifacts.require("./AssetWrappers/WCRV.sol");
 
-const YETITokenTester = artifacts.require("./YETITokenTester.sol")
+const PREONTokenTester = artifacts.require("./PREONTokenTester.sol")
 const CommunityIssuanceTester = artifacts.require("./CommunityIssuanceTester.sol")
 const StabilityPoolTester = artifacts.require("./StabilityPoolTester.sol")
 const ActivePoolTester = artifacts.require("./ActivePoolTester.sol")
@@ -51,7 +51,7 @@ const DefaultPoolTester = artifacts.require("./DefaultPoolTester.sol")
 const LiquityMathTester = artifacts.require("./LiquityMathTester.sol")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
 const TroveManagerTester = artifacts.require("./TroveManagerTester.sol")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester.sol")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester.sol")
 
 // Proxy scripts
 const BorrowerOperationsScript = artifacts.require('BorrowerOperationsScript')
@@ -59,7 +59,7 @@ const BorrowerWrappersScript = artifacts.require('BorrowerWrappersScript')
 const TroveManagerScript = artifacts.require('TroveManagerScript')
 const StabilityPoolScript = artifacts.require('StabilityPoolScript')
 const TokenScript = artifacts.require('TokenScript')
-const SYETIScript = artifacts.require('SYETIScript')
+const SPREONScript = artifacts.require('SPREONScript')
 
 // const { artifacts } = require('hardhat')
 const { contractSizer } = require('../hardhat.config.js')
@@ -71,16 +71,16 @@ const {
   StabilityPoolProxy,
   SortedTrovesProxy,
   TokenProxy,
-  SYETIProxy
+  SPREONProxy
 } = require('../utils/proxyHelpers.js')
 
 /* "Liquity core" consists of all contracts in the core Liquity system.
 
-YETI contracts consist of only those contracts related to the YETI Token:
+PREON contracts consist of only those contracts related to the PREON Token:
 
--the YETI token
+-the PREON token
 -the Lockup factory and lockup contracts
--the sYETI contract
+-the sPREON contract
 -the CommunityIssuance contract 
 */
 
@@ -164,35 +164,35 @@ class DeploymentHelper {
     }
   }
 
-  static async deployYETIContracts(bountyAddress, lpRewardsAddress, multisigAddress) {
+  static async deployPREONContracts(bountyAddress, lpRewardsAddress, multisigAddress) {
     const cmdLineArgs = process.argv
     const frameworkPath = cmdLineArgs[1]
     // console.log(`Framework used:  ${frameworkPath}`)
 
     if (frameworkPath.includes("hardhat")) {
-      return this.deployYETIContractsHardhat(
+      return this.deployPREONContractsHardhat(
         bountyAddress,
         lpRewardsAddress,
         multisigAddress
       )
     } else if (frameworkPath.includes("truffle")) {
-      return this.deployYETIContractsTruffle(bountyAddress, lpRewardsAddress, multisigAddress)
+      return this.deployPREONContractsTruffle(bountyAddress, lpRewardsAddress, multisigAddress)
     }
   }
 
-  static async deployYETIRightNow(sYETIAddress) {
-    const yetiFinanceTreasury = await YetiFinanceTreasury.new()
+  static async deployPREONRightNow(sPREONAddress) {
+    const preonFinanceTreasury = await PreonFinanceTreasury.new()
     const teamAllocation = await TeamAllocation.new();
-    const yetiToken = await YETIToken.new(
-      sYETIAddress,
-      yetiFinanceTreasury.address,
+    const preonToken = await PREONToken.new(
+      sPREONAddress,
+      preonFinanceTreasury.address,
       teamAllocation.address
     );
 
     return {
-      yetiFinanceTreasury,
+      preonFinanceTreasury,
       teamAllocation,
-      yetiToken
+      preonToken
     }
   }
 
@@ -210,7 +210,7 @@ class DeploymentHelper {
     const functionCaller = await FunctionCaller.new()
     const borrowerOperations = await BorrowerOperations.new()
     const hintHelpers = await HintHelpers.new()
-    const yusdToken = await YUSDToken.new(
+    const pusdToken = await PUSDToken.new(
       troveManager.address,
       troveManagerLiquidations.address,
       troveManagerRedemptions.address,
@@ -267,7 +267,7 @@ class DeploymentHelper {
     // PriceCurveLiquidETH.setAsDeployed(PriceCurveETH);
     WJLP.setAsDeployed(wJLP)
     Whitelist.setAsDeployed(whitelist)
-    YUSDToken.setAsDeployed(yusdToken)
+    PUSDToken.setAsDeployed(pusdToken)
     DefaultPool.setAsDeployed(defaultPool)
     // PriceFeedTestnet.setAsDeployed(priceFeedTestnet)
     SortedTroves.setAsDeployed(sortedTroves)
@@ -287,7 +287,7 @@ class DeploymentHelper {
       priceFeedETH,
       priceFeedDEC8,
       priceFeedJLP,
-      yusdToken,
+      pusdToken,
       sortedTroves,
       troveManager,
       activePool,
@@ -336,7 +336,7 @@ class DeploymentHelper {
     testerContracts.hintHelpers = await HintHelpers.new()
     testerContracts.troveManagerLiquidations = await TroveManagerLiquidations.new()
     testerContracts.troveManagerRedemptions = await TroveManagerRedemptions.new()
-    testerContracts.yusdToken =  await YUSDTokenTester.new(
+    testerContracts.pusdToken =  await PUSDTokenTester.new(
       testerContracts.troveManager.address,
       testerContracts.troveManagerLiquidations.address,
       testerContracts.troveManagerRedemptions.address,
@@ -368,63 +368,63 @@ class DeploymentHelper {
     return testerContracts
   }
 
-  static async deployYETIContractsHardhat() {
-    const sYETI = await SYETI.new()
+  static async deployPREONContractsHardhat() {
+    const sPREON = await SPREON.new()
     const lockupContractFactory = await LockupContractFactory.new()
     const communityIssuance = await CommunityIssuance.new()
-    const yetiFinanceTreasury =  await YetiFinanceTreasury.new();
+    const preonFinanceTreasury =  await PreonFinanceTreasury.new();
     
-    SYETI.setAsDeployed(sYETI)
+    SPREON.setAsDeployed(sPREON)
     LockupContractFactory.setAsDeployed(lockupContractFactory)
     CommunityIssuance.setAsDeployed(communityIssuance)
-    YetiFinanceTreasury.setAsDeployed(yetiFinanceTreasury)
+    PreonFinanceTreasury.setAsDeployed(preonFinanceTreasury)
 
-    // Deploy YETI Token, passing Community Issuance and Factory addresses to the constructor
-    const yetiToken = await YETIToken.new(
-      sYETI.address,
+    // Deploy PREON Token, passing Community Issuance and Factory addresses to the constructor
+    const preonToken = await PREONToken.new(
+      sPREON.address,
       communityIssuance.address,
       communityIssuance.address
     )
 
-    YETIToken.setAsDeployed(yetiToken)
+    PREONToken.setAsDeployed(preonToken)
 
-    const YETIContracts = {
-      sYETI,
+    const PREONContracts = {
+      sPREON,
       lockupContractFactory,
       communityIssuance,
-      yetiToken,
-      yetiFinanceTreasury
+      preonToken,
+      preonFinanceTreasury
     }
-    return YETIContracts
+    return PREONContracts
   }
 
-  static async deployYETITesterContractsHardhat() {
-    const sYETI = await SYETITester.new()
+  static async deployPREONTesterContractsHardhat() {
+    const sPREON = await SPREONTester.new()
     const lockupContractFactory = await LockupContractFactory.new()
     const communityIssuance = await CommunityIssuanceTester.new()
-    const yetiFinanceTreasury =  await YetiFinanceTreasury.new();
+    const preonFinanceTreasury =  await PreonFinanceTreasury.new();
 
-    SYETITester.setAsDeployed(sYETI)
+    SPREONTester.setAsDeployed(sPREON)
     LockupContractFactory.setAsDeployed(lockupContractFactory)
     CommunityIssuanceTester.setAsDeployed(communityIssuance)
-    YetiFinanceTreasury.setAsDeployed(yetiFinanceTreasury)
+    PreonFinanceTreasury.setAsDeployed(preonFinanceTreasury)
 
-    // Deploy YETI Token, passing Community Issuance and Factory addresses to the constructor
-    const yetiToken = await YETITokenTester.new(
-      sYETI.address,
-      yetiFinanceTreasury.address,
+    // Deploy PREON Token, passing Community Issuance and Factory addresses to the constructor
+    const preonToken = await PREONTokenTester.new(
+      sPREON.address,
+      preonFinanceTreasury.address,
       communityIssuance.address
     )
-    YETITokenTester.setAsDeployed(yetiToken)
+    PREONTokenTester.setAsDeployed(preonToken)
 
-    const YETIContracts = {
-      sYETI,
+    const PREONContracts = {
+      sPREON,
       lockupContractFactory,
       communityIssuance,
-      yetiToken,
-      yetiFinanceTreasury
+      preonToken,
+      preonFinanceTreasury
     }
-    return YETIContracts
+    return PREONContracts
   }
 
   static async deployLiquityCoreTruffle() {
@@ -439,14 +439,14 @@ class DeploymentHelper {
     const functionCaller = await FunctionCaller.new()
     const borrowerOperations = await BorrowerOperations.new()
     const hintHelpers = await HintHelpers.new()
-    const yusdToken = await YUSDToken.new(
+    const pusdToken = await PUSDToken.new(
       troveManager.address,
       stabilityPool.address,
       borrowerOperations.address
     )
     const coreContracts = {
       priceFeedTestnet,
-      yusdToken,
+      pusdToken,
       sortedTroves,
       troveManager,
       activePool,
@@ -461,30 +461,30 @@ class DeploymentHelper {
     return coreContracts
   }
 
-  static async deployYETIContractsTruffle(bountyAddress, lpRewardsAddress, multisigAddress, yetiTokenAddress, yusdTokenAddress) {
-    const sYETI = await sYETI.new(yetiTokenAddress, yusdTokenAddress)
+  static async deployPREONContractsTruffle(bountyAddress, lpRewardsAddress, multisigAddress, preonTokenAddress, pusdTokenAddress) {
+    const sPREON = await sPREON.new(preonTokenAddress, pusdTokenAddress)
     const lockupContractFactory = await LockupContractFactory.new()
     const communityIssuance = await CommunityIssuance.new()
 
-    /* Deploy YETI Token, passing Community Issuance,  sYETI, and Factory addresses
+    /* Deploy PREON Token, passing Community Issuance,  sPREON, and Factory addresses
     to the constructor  */
-    const yetiToken = await YETIToken.new(
-      sYETI.address,
+    const preonToken = await PREONToken.new(
+      sPREON.address,
       communityIssuance.address,
       communityIssuance.address
     )
 
-    const YETIContracts = {
-      sYETI,
+    const PREONContracts = {
+      sPREON,
       lockupContractFactory,
       communityIssuance,
-      yetiToken
+      preonToken
     }
-    return YETIContracts
+    return PREONContracts
   }
 
-  static async deployYUSDToken(contracts) {
-    contracts.yusdToken = await YUSDToken.new(
+  static async deployPUSDToken(contracts) {
+    contracts.pusdToken = await PUSDToken.new(
         contracts.troveManager.address,
         contracts.troveManagerLiquidations.address,
         contracts.troveManagerRedemptions.address,
@@ -494,8 +494,8 @@ class DeploymentHelper {
     return contracts
   }
 
-  static async deployYUSDTokenTester(contracts) {
-    contracts.yusdToken = await YUSDTokenTester.new(
+  static async deployPUSDTokenTester(contracts) {
+    contracts.pusdToken = await PUSDTokenTester.new(
       contracts.troveManager.address,
       contracts.troveManagerLiquidations.address,
       contracts.troveManagerRedemptions.address,
@@ -505,13 +505,13 @@ class DeploymentHelper {
     return contracts
   }
 
-  static async deployProxyScripts(contracts, YETIContracts, owner, users) {
+  static async deployProxyScripts(contracts, PREONContracts, owner, users) {
     const proxies = await buildUserProxies(users)
 
     const borrowerWrappersScript = await BorrowerWrappersScript.new(
       contracts.borrowerOperations.address,
       contracts.troveManager.address,
-      YETIContracts.sYETI.address
+      PREONContracts.sPREON.address
     )
     contracts.borrowerWrappers = new BorrowerWrappersProxy(owner, proxies, borrowerWrappersScript.address)
 
@@ -526,18 +526,18 @@ class DeploymentHelper {
 
     contracts.sortedTroves = new SortedTrovesProxy(owner, proxies, contracts.sortedTroves)
 
-    const yusdTokenScript = await TokenScript.new(contracts.yusdToken.address)
-    contracts.yusdToken = new TokenProxy(owner, proxies, yusdTokenScript.address, contracts.yusdToken)
+    const pusdTokenScript = await TokenScript.new(contracts.pusdToken.address)
+    contracts.pusdToken = new TokenProxy(owner, proxies, pusdTokenScript.address, contracts.pusdToken)
 
-    const yetiTokenScript = await TokenScript.new(YETIContracts.yetiToken.address)
-    YETIContracts.yetiToken = new TokenProxy(owner, proxies, yetiTokenScript.address, YETIContracts.yetiToken)
+    const preonTokenScript = await TokenScript.new(PREONContracts.preonToken.address)
+    PREONContracts.preonToken = new TokenProxy(owner, proxies, preonTokenScript.address, PREONContracts.preonToken)
 
-    const sYETIScript = await SYETIScript.new(YETIContracts.sYETI.address)
-    YETIContracts.sYETI = new SYETIProxy(owner, proxies, sYETIScript.address, YETIContracts.sYETI)
+    const sPREONScript = await SPREONScript.new(PREONContracts.sPREON.address)
+    PREONContracts.sPREON = new SPREONProxy(owner, proxies, sPREONScript.address, PREONContracts.sPREON)
   }
 
   // Connect contracts to their dependencies
-  static async connectCoreContracts(contracts, YETIContracts) {
+  static async connectCoreContracts(contracts, PREONContracts) {
     // set TroveManager addr in SortedTroves
     await contracts.sortedTroves.setParams(
       maxBytes32,
@@ -558,10 +558,10 @@ class DeploymentHelper {
       contracts.stabilityPool.address,
       contracts.gasPool.address,
       contracts.collSurplusPool.address,
-      contracts.yusdToken.address,
+      contracts.pusdToken.address,
       contracts.sortedTroves.address,
-      YETIContracts.yetiToken.address,
-      YETIContracts.sYETI.address,
+      PREONContracts.preonToken.address,
+      PREONContracts.sPREON.address,
       contracts.whitelist.address,
       contracts.troveManagerRedemptions.address,
       contracts.troveManagerLiquidations.address,
@@ -574,10 +574,10 @@ class DeploymentHelper {
       contracts.stabilityPool.address,
       contracts.gasPool.address,
       contracts.collSurplusPool.address,
-      contracts.yusdToken.address,
+      contracts.pusdToken.address,
       contracts.sortedTroves.address,
-      YETIContracts.yetiToken.address,
-      YETIContracts.sYETI.address,
+      PREONContracts.preonToken.address,
+      PREONContracts.sPREON.address,
       contracts.whitelist.address,
       contracts.troveManager.address
     )
@@ -589,13 +589,13 @@ class DeploymentHelper {
       contracts.stabilityPool.address,
       contracts.gasPool.address,
       contracts.collSurplusPool.address,
-      contracts.yusdToken.address,
+      contracts.pusdToken.address,
       contracts.sortedTroves.address,
-      YETIContracts.yetiToken.address,
-      YETIContracts.sYETI.address,
+      PREONContracts.preonToken.address,
+      PREONContracts.sPREON.address,
       contracts.whitelist.address,
       contracts.troveManager.address,
-      YETIContracts.yetiFinanceTreasury.address
+      PREONContracts.preonFinanceTreasury.address
     )
 
     // set contracts in BorrowerOperations 
@@ -607,8 +607,8 @@ class DeploymentHelper {
       contracts.gasPool.address,
       contracts.collSurplusPool.address,
       contracts.sortedTroves.address,
-      contracts.yusdToken.address,
-      YETIContracts.sYETI.address,
+      contracts.pusdToken.address,
+      PREONContracts.sPREON.address,
       contracts.whitelist.address
     )
 
@@ -617,9 +617,9 @@ class DeploymentHelper {
       contracts.borrowerOperations.address,
       contracts.troveManager.address,
       contracts.activePool.address,
-      contracts.yusdToken.address,
+      contracts.pusdToken.address,
       contracts.sortedTroves.address,
-      YETIContracts.communityIssuance.address,
+      PREONContracts.communityIssuance.address,
       contracts.whitelist.address,
       contracts.troveManagerLiquidations.address
     )
@@ -639,7 +639,7 @@ class DeploymentHelper {
       contracts.troveManager.address,
       contracts.activePool.address,
       contracts.whitelist.address,
-      YETIContracts.yetiFinanceTreasury.address,
+      PREONContracts.preonFinanceTreasury.address,
     )
 
     await contracts.collSurplusPool.setAddresses(
@@ -672,7 +672,7 @@ class DeploymentHelper {
       contracts.troveManagerRedemptions.address,
       contracts.defaultPool.address,
       contracts.stabilityPool.address,
-      YETIContracts.yetiFinanceTreasury.address,
+      PREONContracts.preonFinanceTreasury.address,
       contracts.borrowerOperations.address,
       contracts.collSurplusPool.address
     )
@@ -684,7 +684,7 @@ class DeploymentHelper {
     await contracts.PriceCurveJLP.setAddresses(contracts.whitelist.address)
     await contracts.PriceCurveJLP.adjustParams("JLP", "0", "0", "0", "0", "0", "0", "0");
 
-    const newERC20Router = await ERC20Router.new("tester", contracts.activePool.address, ZERO_ADDRESS, contracts.yusdToken.address)
+    const newERC20Router = await ERC20Router.new("tester", contracts.activePool.address, ZERO_ADDRESS, contracts.pusdToken.address)
 
     await contracts.whitelist.addCollateral(contracts.weth.address, "1000000000000000000", contracts.priceFeedETH.address, 18, contracts.PriceCurveETH.address, false, newERC20Router.address);
     await contracts.whitelist.addCollateral(contracts.wavax.address, "1000000000000000000", contracts.priceFeedAVAX.address, 18, contracts.PriceCurveAVAX.address, false, newERC20Router.address);
@@ -699,7 +699,7 @@ class DeploymentHelper {
     //
     //   await this.deployExtraCollateral(contracts, params)
     // }
-    // @RoboYeti: added 150 collaterals in the system.
+    // @RoboPreon: added 150 collaterals in the system.
     // Can run everything all tests and see if any gas issues pop up
   }
 
@@ -724,7 +724,7 @@ class DeploymentHelper {
     await newPriceCurve.setAddresses(contracts.whitelist.address)
     await newPriceCurve.adjustParams(name, "0", "0", "0", "0", "0", "0", "0");
 
-    const newERC20Router = await ERC20Router.new("tester", contracts.activePool.address, ZERO_ADDRESS, contracts.yusdToken.address)
+    const newERC20Router = await ERC20Router.new("tester", contracts.activePool.address, ZERO_ADDRESS, contracts.pusdToken.address)
 
     await contracts.whitelist.addCollateral(newToken.address, ratio, newPriceFeed.address, decimals, newPriceCurve.address, false, newERC20Router.address);
 
@@ -742,7 +742,7 @@ class DeploymentHelper {
       whitelistCollateral
     } = params
 
-    const newERC20Router = await ERC20Router.new(name, contracts.activePool.address, joeRouter.address, contracts.yusdToken.address)
+    const newERC20Router = await ERC20Router.new(name, contracts.activePool.address, joeRouter.address, contracts.pusdToken.address)
 
     await contracts.whitelist.setDefaultRouter(whitelistCollateral.address, newERC20Router.address)
 
@@ -751,25 +751,25 @@ class DeploymentHelper {
     }
   }
 
-  static async connectYETIContracts(YETIContracts) {
-    // Set YETIToken address in LCF
-    await YETIContracts.lockupContractFactory.setYETITokenAddress(YETIContracts.yetiToken.address)
+  static async connectPREONContracts(PREONContracts) {
+    // Set PREONToken address in LCF
+    await PREONContracts.lockupContractFactory.setPREONTokenAddress(PREONContracts.preonToken.address)
   }
 
-  static async connectYETIContractsToCore(YETIContracts, coreContracts) {
-    await YETIContracts.sYETI.setAddresses(
-      YETIContracts.yetiToken.address,
-      coreContracts.yusdToken.address,
+  static async connectPREONContractsToCore(PREONContracts, coreContracts) {
+    await PREONContracts.sPREON.setAddresses(
+      PREONContracts.preonToken.address,
+      coreContracts.pusdToken.address,
     )
   
-    await YETIContracts.communityIssuance.setAddresses(
-      YETIContracts.yetiToken.address,
+    await PREONContracts.communityIssuance.setAddresses(
+      PREONContracts.preonToken.address,
       coreContracts.stabilityPool.address
     )
   }
 
-  static async connectUnipool(uniPool, YETIContracts, uniswapPairAddr, duration) {
-    await uniPool.setParams(YETIContracts.yetiToken.address, uniswapPairAddr, duration)
+  static async connectUnipool(uniPool, PREONContracts, uniswapPairAddr, duration) {
+    await uniPool.setParams(PREONContracts.preonToken.address, uniswapPairAddr, duration)
   }
 }
 module.exports = DeploymentHelper

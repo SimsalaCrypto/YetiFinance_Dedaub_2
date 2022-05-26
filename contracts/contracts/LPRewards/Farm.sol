@@ -64,7 +64,7 @@ contract LPTokenWrapper {
  *
  */
 contract Farm is Ownable, LPTokenWrapper {
-  IERC20 public yetiToken;
+  IERC20 public preonToken;
 
   uint256 public periodFinish = 0;
   uint256 public rewardRate = 0;
@@ -95,9 +95,9 @@ contract Farm is Ownable, LPTokenWrapper {
     _;
   }
 
-  constructor(IERC20 _LP, IERC20 _YETI) public {
+  constructor(IERC20 _LP, IERC20 _PREON) public {
     lpToken = _LP;
-    yetiToken = _YETI;
+    preonToken = _PREON;
   }
 
   // ========== EXTERNAL FUNCTIONS ==========
@@ -123,27 +123,27 @@ contract Farm is Ownable, LPTokenWrapper {
     uint256 reward = earned(msg.sender);
     if (reward > 0) {
       rewards[msg.sender] = 0;
-      yetiToken.safeTransfer(msg.sender, reward);
+      preonToken.safeTransfer(msg.sender, reward);
       emit RewardPaid(msg.sender, reward);
     }
   }
 
   /* Used to update reward rate by the owner
    * Owner can only update reward to a reward such that
-   * there is enough Yeti in the contract to emit
-   * _reward Yeti tokens across _duration
+   * there is enough Preon in the contract to emit
+   * _reward Preon tokens across _duration
    */
   function notifyRewardAmount(uint256 _reward, uint256 _duration)
     external
     onlyOwner
     updateReward(address(0))
   {
-    console.log(yetiToken.balanceOf(address(this)));
+    console.log(preonToken.balanceOf(address(this)));
     console.log(_reward);
 
     require(
-      (yetiToken.balanceOf(address(this)) >= _reward),
-      "Insufficient YETI in contract"
+      (preonToken.balanceOf(address(this)) >= _reward),
+      "Insufficient PREON in contract"
     );
 
     rewardRate = _reward.div(_duration);

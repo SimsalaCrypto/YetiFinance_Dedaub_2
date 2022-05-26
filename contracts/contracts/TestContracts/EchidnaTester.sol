@@ -10,7 +10,7 @@ import "../DefaultPool.sol";
 import "../StabilityPool.sol";
 import "../GasPool.sol";
 import "../CollSurplusPool.sol";
-import "../YUSDToken.sol";
+import "../PUSDToken.sol";
 import "./PriceFeedTestnet.sol";
 import "../SortedTroves.sol";
 import "../TroveManagerLiquidations.sol";
@@ -29,7 +29,7 @@ contract EchidnaTester {
   uint256 private constant INITIAL_BALANCE = 1e24;
   uint256 private MCR;
   uint256 private CCR;
-  uint256 private YUSD_GAS_COMPENSATION;
+  uint256 private PUSD_GAS_COMPENSATION;
 
   TroveManager public troveManager;
   TroveManagerLiquidations public troveManagerLiquidations;
@@ -40,7 +40,7 @@ contract EchidnaTester {
   StabilityPool public stabilityPool;
   GasPool public gasPool;
   CollSurplusPool public collSurplusPool;
-  YUSDToken public yusdToken;
+  PUSDToken public pusdToken;
   PriceFeedTestnet priceFeedTestnet;
   SortedTroves sortedTroves;
   Whitelist whitelist;
@@ -64,7 +64,7 @@ contract EchidnaTester {
       2592000,
       604800
     );
-    yusdToken = new YUSDToken(
+    pusdToken = new PUSDToken(
       address(troveManager),
       address(troveManagerLiquidations),
       address(troveManagerRedemptions),
@@ -87,7 +87,7 @@ contract EchidnaTester {
       address(gasPool),
       address(collSurplusPool),
       address(priceFeedTestnet),
-      address(yusdToken),
+      address(pusdToken),
       address(sortedTroves),
       address(0),
       address(0),
@@ -104,7 +104,7 @@ contract EchidnaTester {
       address(collSurplusPool),
       address(priceFeedTestnet),
       address(sortedTroves),
-      address(yusdToken),
+      address(pusdToken),
       address(0)
     );
 
@@ -130,7 +130,7 @@ contract EchidnaTester {
       address(borrowerOperations),
       address(troveManager),
       address(activePool),
-      address(yusdToken),
+      address(pusdToken),
       address(sortedTroves),
       address(0),
       address(0),
@@ -157,7 +157,7 @@ contract EchidnaTester {
         troveManager,
         borrowerOperations,
         stabilityPool,
-        yusdToken
+        pusdToken
       );
       (bool success, ) = address(echidnaProxies[i]).call{
         value: INITIAL_BALANCE
@@ -167,14 +167,14 @@ contract EchidnaTester {
 
     MCR = borrowerOperations.MCR();
     CCR = borrowerOperations.CCR();
-    YUSD_GAS_COMPENSATION = borrowerOperations.YUSD_GAS_COMPENSATION();
+    PUSD_GAS_COMPENSATION = borrowerOperations.PUSD_GAS_COMPENSATION();
     require(MCR != 0, "MCR <= 0");
     require(CCR != 0, "CCR <= 0");
 
     priceFeedTestnet.setPrice(1e22);
   }
 
-  // @KingYeti: added this helper function
+  // @KingPreon: added this helper function
   function _getVC(address[] memory _tokens, uint256[] memory _amounts)
     internal
     view
@@ -198,7 +198,7 @@ contract EchidnaTester {
   //
   //    function liquidateTrovesExt(uint _i, uint _n) external {
   //        // pass
-  //        // @KingYeti: we no longer have this function
+  //        // @KingPreon: we no longer have this function
   ////        uint actor = _i % NUMBER_OF_ACTORS;
   ////        echidnaProxies[actor].liquidateTrovesPrx(_n);
   //    }
@@ -210,14 +210,14 @@ contract EchidnaTester {
   //
   //    function redeemCollateralExt(
   //        uint _i,
-  //        uint _YUSDAmount,
+  //        uint _PUSDAmount,
   //        address _firstRedemptionHint,
   //        address _upperPartialRedemptionHint,
   //        address _lowerPartialRedemptionHint,
   //        uint _partialRedemptionHintNICR
   //    ) external {
   //        uint actor = _i % NUMBER_OF_ACTORS;
-  //        echidnaProxies[actor].redeemCollateralPrx(_YUSDAmount, _firstRedemptionHint, _upperPartialRedemptionHint, _lowerPartialRedemptionHint, _partialRedemptionHintNICR, 0, 0);
+  //        echidnaProxies[actor].redeemCollateralPrx(_PUSDAmount, _firstRedemptionHint, _upperPartialRedemptionHint, _lowerPartialRedemptionHint, _partialRedemptionHintNICR, 0, 0);
   //    }
   //
   //    // Borrower Operations
@@ -225,39 +225,39 @@ contract EchidnaTester {
   //    function getAdjustedETH(uint actorBalance, uint _ETH, uint ratio) internal view returns (uint) {
   //        uint price = priceFeedTestnet.getPrice();
   //        require(price != 0);
-  //        uint minETH = ratio.mul(YUSD_GAS_COMPENSATION).div(price);
+  //        uint minETH = ratio.mul(PUSD_GAS_COMPENSATION).div(price);
   //        require(actorBalance > minETH);
   //        uint ETH = minETH + _ETH % (actorBalance - minETH);
   //        return ETH;
   //    }
   //
-  //    // @KingYeti: changed parameters
-  //    function getAdjustedYUSD(address[] memory _tokens, uint[] memory _amounts, uint _YUSDAmount, uint ratio) internal view returns (uint) {
+  //    // @KingPreon: changed parameters
+  //    function getAdjustedPUSD(address[] memory _tokens, uint[] memory _amounts, uint _PUSDAmount, uint ratio) internal view returns (uint) {
   //        uint VC = _getVC(_tokens, _amounts);
-  //        uint YUSDAmount = _YUSDAmount;
-  //        uint compositeDebt = YUSDAmount.add(YUSD_GAS_COMPENSATION);
+  //        uint PUSDAmount = _PUSDAmount;
+  //        uint compositeDebt = PUSDAmount.add(PUSD_GAS_COMPENSATION);
   //        uint ICR = LiquityMath._computeCR(VC, compositeDebt);
   //        if (ICR < ratio) {
   //            compositeDebt = VC.div(ratio);
-  //            YUSDAmount = compositeDebt.sub(YUSD_GAS_COMPENSATION);
+  //            PUSDAmount = compositeDebt.sub(PUSD_GAS_COMPENSATION);
   //        }
-  //        return YUSDAmount;
+  //        return PUSDAmount;
   //    }
   //
-  //    // @KingYeti: changed parameters
-  //    function openTroveExt(uint _i, address[] memory _tokens, uint[] memory _amounts, uint _YUSDAmount) public payable {
+  //    // @KingPreon: changed parameters
+  //    function openTroveExt(uint _i, address[] memory _tokens, uint[] memory _amounts, uint _PUSDAmount) public payable {
   //        uint actor = _i % NUMBER_OF_ACTORS;
   //        EchidnaProxy echidnaProxy = echidnaProxies[actor];
   //        uint actorBalance = address(echidnaProxy).balance;
   //
   //        // we pass in CCR instead of MCR in case it’s the first one
   //        uint ETH = getAdjustedETH(actorBalance, _ETH, CCR);
-  //        uint YUSDAmount = getAdjustedYUSD(_tokens, _amounts, _YUSDAmount, CCR);
+  //        uint PUSDAmount = getAdjustedPUSD(_tokens, _amounts, _PUSDAmount, CCR);
   //
   //        //console.log('ETH', ETH);
-  //        //console.log('YUSDAmount', YUSDAmount);
+  //        //console.log('PUSDAmount', PUSDAmount);
   //
-  //        echidnaProxy.openTrovePrx(_tokens, _amounts, YUSDAmount, address(0), address(0), 0);
+  //        echidnaProxy.openTrovePrx(_tokens, _amounts, PUSDAmount, address(0), address(0), 0);
   //
   //        numberOfTroves = troveManager.getTroveOwnersCount();
   //        assert(numberOfTroves != 0);
@@ -265,9 +265,9 @@ contract EchidnaTester {
   //        //assert(numberOfTroves == 0);
   //    }
   //
-  //    function openTroveRawExt(uint _i, uint _ETH, uint _YUSDAmount, address _upperHint, address _lowerHint, uint _maxFee) public payable {
+  //    function openTroveRawExt(uint _i, uint _ETH, uint _PUSDAmount, address _upperHint, address _lowerHint, uint _maxFee) public payable {
   //        uint actor = _i % NUMBER_OF_ACTORS;
-  //        echidnaProxies[actor].openTrovePrx(_ETH, _YUSDAmount, _upperHint, _lowerHint, _maxFee);
+  //        echidnaProxies[actor].openTrovePrx(_ETH, _PUSDAmount, _upperHint, _lowerHint, _maxFee);
   //    }
   //
   //    function addCollExt(uint _i, uint _ETH) external payable {
@@ -290,14 +290,14 @@ contract EchidnaTester {
   //        echidnaProxies[actor].withdrawCollPrx(_amount, _upperHint, _lowerHint);
   //    }
   //
-  //    function withdrawYUSDExt(uint _i, uint _amount, address _upperHint, address _lowerHint, uint _maxFee) external {
+  //    function withdrawPUSDExt(uint _i, uint _amount, address _upperHint, address _lowerHint, uint _maxFee) external {
   //        uint actor = _i % NUMBER_OF_ACTORS;
-  //        echidnaProxies[actor].withdrawYUSDPrx(_amount, _upperHint, _lowerHint, _maxFee);
+  //        echidnaProxies[actor].withdrawPUSDPrx(_amount, _upperHint, _lowerHint, _maxFee);
   //    }
   //
-  //    function repayYUSDExt(uint _i, uint _amount, address _upperHint, address _lowerHint) external {
+  //    function repayPUSDExt(uint _i, uint _amount, address _upperHint, address _lowerHint) external {
   //        uint actor = _i % NUMBER_OF_ACTORS;
-  //        echidnaProxies[actor].repayYUSDPrx(_amount, _upperHint, _lowerHint);
+  //        echidnaProxies[actor].repayPUSDPrx(_amount, _upperHint, _lowerHint);
   //    }
   //
   //    function closeTroveExt(uint _i) external {
@@ -313,7 +313,7 @@ contract EchidnaTester {
   //        uint ETH = getAdjustedETH(actorBalance, _ETH, MCR);
   //        uint debtChange = _debtChange;
   //        if (_isDebtIncrease) {
-  //            debtChange = getAdjustedYUSD(ETH, uint(_debtChange), MCR);
+  //            debtChange = getAdjustedPUSD(ETH, uint(_debtChange), MCR);
   //        }
   //        echidnaProxy.adjustTrovePrx(ETH, _collWithdrawal, debtChange, _isDebtIncrease, address(0), address(0), 0);
   //    }
@@ -335,7 +335,7 @@ contract EchidnaTester {
   //        echidnaProxies[actor].withdrawFromSPPrx(_amount);
   //    }
   //
-  //    // YUSD Token
+  //    // PUSD Token
   //
   //    function transferExt(uint _i, address recipient, uint256 amount) external returns (bool) {
   //        uint actor = _i % NUMBER_OF_ACTORS;
@@ -422,7 +422,7 @@ contract EchidnaTester {
   //            //else return false;
   //
   //            // Minimum debt (gas compensation)
-  //            if (troveManager.getTroveDebt(currentTrove) < YUSD_GAS_COMPENSATION) {
+  //            if (troveManager.getTroveDebt(currentTrove) < PUSD_GAS_COMPENSATION) {
   //                return false;
   //            }
   //            // Uncomment to check that the condition is meaningful
@@ -461,7 +461,7 @@ contract EchidnaTester {
   //            return false;
   //        }
   //
-  //        if (address(yusdToken).balance != 0) {
+  //        if (address(pusdToken).balance != 0) {
   //            return false;
   //        }
   //
@@ -488,22 +488,22 @@ contract EchidnaTester {
   //        return true;
   //    }
   //
-  //    // Total YUSD matches
-  //    function echidna_YUSD_global_balances() public view returns(bool) {
-  //        uint totalSupply = yusdToken.totalSupply();
-  //        uint gasPoolBalance = yusdToken.balanceOf(address(gasPool));
+  //    // Total PUSD matches
+  //    function echidna_PUSD_global_balances() public view returns(bool) {
+  //        uint totalSupply = pusdToken.totalSupply();
+  //        uint gasPoolBalance = pusdToken.balanceOf(address(gasPool));
   //
-  //        uint activePoolBalance = activePool.getYUSDDebt();
-  //        uint defaultPoolBalance = defaultPool.getYUSDDebt();
+  //        uint activePoolBalance = activePool.getPUSDDebt();
+  //        uint defaultPoolBalance = defaultPool.getPUSDDebt();
   //        if (totalSupply != activePoolBalance + defaultPoolBalance) {
   //            return false;
   //        }
   //
-  //        uint stabilityPoolBalance = stabilityPool.getTotalYUSDDeposits();
+  //        uint stabilityPoolBalance = stabilityPool.getTotalPUSDDeposits();
   //        address currentTrove = sortedTroves.getFirst();
   //        uint trovesBalance;
   //        while (currentTrove != address(0)) {
-  //            trovesBalance += yusdToken.balanceOf(address(currentTrove));
+  //            trovesBalance += pusdToken.balanceOf(address(currentTrove));
   //            currentTrove = sortedTroves.getNext(currentTrove);
   //        }
   //        // we cannot state equality because tranfers are made to external addresses too

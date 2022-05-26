@@ -9,7 +9,7 @@ const { assertRevert } = TestHelper;
 
 const th = testHelpers.TestHelper
 const StakedToken = artifacts.require('ERC20Mock');
-const YetiToken = artifacts.require("./YETITokenTester.sol")
+const PreonToken = artifacts.require("./PREONTokenTester.sol")
 const Farm = artifacts.require('Farm');
 const NonPayable = artifacts.require('NonPayable');
 
@@ -49,11 +49,11 @@ contract('Farm', function ([_, wallet1, wallet2, wallet3, wallet4, bountyAddress
   const deploy = async (that) => {
     that.stakedToken = await StakedToken.new('Staked Token', 'LPT', owner, 0);
 
-    const sYETI = await NonPayable.new();
+    const sPREON = await NonPayable.new();
     const treasury = await NonPayable.new();
     const team = await NonPayable.new();
-    that.yeti = await YetiToken.new(
-      sYETI.address,
+    that.preon = await PreonToken.new(
+      sPREON.address,
       treasury.address,
       team.address
     );
@@ -62,7 +62,7 @@ contract('Farm', function ([_, wallet1, wallet2, wallet3, wallet4, bountyAddress
     that.DURATION = new BN(6 * 7 * 24 * 60 * 60); // 6 weeks
     that.rewardRate = that.lpRewardsEntitlement.div(that.DURATION);
 
-    that.pool = await Farm.new(that.stakedToken.address, that.yeti.address);
+    that.pool = await Farm.new(that.stakedToken.address, that.preon.address);
 
     await that.stakedToken.mint(wallet1, web3.utils.toWei('1000'));
     await that.stakedToken.mint(wallet2, web3.utils.toWei('1000'));
@@ -78,7 +78,7 @@ contract('Farm', function ([_, wallet1, wallet2, wallet3, wallet4, bountyAddress
   describe('Farm', async function () {
     beforeEach(async function () {
       await deploy(this);
-      await this.yeti.unprotectedMint(this.pool.address, this.lpRewardsEntitlement)
+      await this.preon.unprotectedMint(this.pool.address, this.lpRewardsEntitlement)
       await this.pool.notifyRewardAmount(this.lpRewardsEntitlement, this.DURATION);
 
     });
@@ -214,7 +214,7 @@ contract('Farm', function ([_, wallet1, wallet2, wallet3, wallet4, bountyAddress
       expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(rewardPerToken1.add(rewardPerToken2).add(rewardPerToken3));
       expect(await this.pool.earned(wallet1)).to.be.bignumber.almostEqualDiv1e18(rewardPerToken1.add(rewardPerToken2).add(rewardPerToken3).mul(stake1).div(_1e18));
       expect(await this.pool.earned(wallet2)).to.be.bignumber.equal('0');
-      expect(await this.yeti.balanceOf(wallet2)).to.be.bignumber.almostEqualDiv1e18(rewardPerToken2.add(rewardPerToken3).mul(stake2).div(_1e18));
+      expect(await this.preon.balanceOf(wallet2)).to.be.bignumber.almostEqualDiv1e18(rewardPerToken2.add(rewardPerToken3).mul(stake2).div(_1e18));
       expect(await this.pool.earned(wallet3)).to.be.bignumber.almostEqualDiv1e18(rewardPerToken3.mul(stake3).div(_1e18));
 
       await time.increaseTo(stakeTime1.add(this.DURATION));
@@ -261,7 +261,7 @@ contract('Farm', function ([_, wallet1, wallet2, wallet3, wallet4, bountyAddress
       const rewardPerToken2 = this.rewardRate.mul(timeDiff2).mul(_1e18).div(stake1.add(stake2));
       expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(rewardPerToken1.add(rewardPerToken2));
       expect(await this.pool.earned(wallet1)).to.be.bignumber.equal('0');
-      expect(await this.yeti.balanceOf(wallet1)).to.be.bignumber.almostEqualDiv1e18(rewardPerToken1.add(rewardPerToken2).mul(stake1).div(_1e18));
+      expect(await this.preon.balanceOf(wallet1)).to.be.bignumber.almostEqualDiv1e18(rewardPerToken1.add(rewardPerToken2).mul(stake1).div(_1e18));
       expect(await this.pool.earned(wallet2)).to.be.bignumber.almostEqualDiv1e18(rewardPerToken2.mul(stake2).div(_1e18));
 
       await time.increase(this.DURATION.div(new BN(6)));
@@ -276,7 +276,7 @@ contract('Farm', function ([_, wallet1, wallet2, wallet3, wallet4, bountyAddress
       expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18(rewardPerToken1.add(rewardPerToken2).add(rewardPerToken3));
       expect(await this.pool.earned(wallet1)).to.be.bignumber.equal('0');
       expect(await this.pool.earned(wallet2)).to.be.bignumber.equal('0');
-      expect(await this.yeti.balanceOf(wallet2)).to.be.bignumber.almostEqualDiv1e18(rewardPerToken2.add(rewardPerToken3).mul(stake2).div(_1e18));
+      expect(await this.preon.balanceOf(wallet2)).to.be.bignumber.almostEqualDiv1e18(rewardPerToken2.add(rewardPerToken3).mul(stake2).div(_1e18));
 
       await time.increase(this.DURATION.div(new BN(6)));
 
@@ -306,7 +306,7 @@ contract('Farm', function ([_, wallet1, wallet2, wallet3, wallet4, bountyAddress
       expect(await this.pool.earned(wallet1)).to.be.bignumber.equal('0');
       expect(await this.pool.earned(wallet2)).to.be.bignumber.equal('0');
       expect(await this.pool.earned(wallet3)).to.be.bignumber.equal('0');
-      expect(await this.yeti.balanceOf(wallet3)).to.be.bignumber.almostEqualDiv1e18(rewardPerToken4.mul(stake3).div(_1e18));
+      expect(await this.preon.balanceOf(wallet3)).to.be.bignumber.almostEqualDiv1e18(rewardPerToken4.mul(stake3).div(_1e18));
 
       await time.increase(this.DURATION.div(new BN(2)));
 
@@ -446,9 +446,9 @@ contract('Farm', function ([_, wallet1, wallet2, wallet3, wallet4, bountyAddress
       await assertRevert(this.pool.notifyRewardAmount(0, this.DURATION, { from: wallet1 }));
     });
 
-    it('Updating reward amount from owner but with insufficent YETI reverts', async function () {
+    it('Updating reward amount from owner but with insufficent PREON reverts', async function () {
       const owner = await this.pool.owner();
-      expect(await this.yeti.balanceOf(this.pool.address)).to.be.bignumber.equal('0');
+      expect(await this.preon.balanceOf(this.pool.address)).to.be.bignumber.equal('0');
       await assertRevert(this.pool.notifyRewardAmount(th.dec(10, 30), this.DURATION, { from: owner }));
     });
 

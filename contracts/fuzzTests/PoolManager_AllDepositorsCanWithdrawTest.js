@@ -23,7 +23,7 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
   const lpRewardsAddress = accounts[999]
 
   let priceFeed
-  let yusdToken
+  let pusdToken
   let troveManager
   let stabilityPool
   let sortedTroves
@@ -42,16 +42,16 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
     const randomDefaulterIndex = Math.floor(Math.random() * (remainingDefaulters.length))
     const randomDefaulter = remainingDefaulters[randomDefaulterIndex]
 
-    const liquidatedYUSD = (await troveManager.Troves(randomDefaulter))[0]
+    const liquidatedPUSD = (await troveManager.Troves(randomDefaulter))[0]
     const liquidatedETH = (await troveManager.Troves(randomDefaulter))[1]
 
     const price = await priceFeed.getPrice()
     const ICR = (await troveManager.getCurrentICR(randomDefaulter, price)).toString()
     const ICRPercent = ICR.slice(0, ICR.length - 16)
 
-    const YUSDinPoolBefore = await stabilityPool.getTotalYUSDDeposits()
+    const PUSDinPoolBefore = await stabilityPool.getTotalPUSDDeposits()
     const liquidatedTx = await troveManager.liquidate(randomDefaulter, { from: accounts[0] })
-    const YUSDinPoolAfter = await stabilityPool.getTotalYUSDDeposits()
+    const PUSDinPoolAfter = await stabilityPool.getTotalPUSDDeposits()
 
     assert.isTrue(liquidatedTx.receipt.status)
 
@@ -61,19 +61,19 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
     }
     if (await troveManager.checkRecoveryMode(price)) { console.log("recovery mode: TRUE") }
 
-    console.log(`Liquidation. addr: ${th.squeezeAddr(randomDefaulter)} ICR: ${ICRPercent}% coll: ${liquidatedETH} debt: ${liquidatedYUSD} SP YUSD before: ${YUSDinPoolBefore} SP YUSD after: ${YUSDinPoolAfter} tx success: ${liquidatedTx.receipt.status}`)
+    console.log(`Liquidation. addr: ${th.squeezeAddr(randomDefaulter)} ICR: ${ICRPercent}% coll: ${liquidatedETH} debt: ${liquidatedPUSD} SP PUSD before: ${PUSDinPoolBefore} SP PUSD after: ${PUSDinPoolAfter} tx success: ${liquidatedTx.receipt.status}`)
   }
 
   const performSPDeposit = async (depositorAccounts, currentDepositors, currentDepositorsDict) => {
     const randomIndex = Math.floor(Math.random() * (depositorAccounts.length))
     const randomDepositor = depositorAccounts[randomIndex]
 
-    const userBalance = (await yusdToken.balanceOf(randomDepositor))
-    const maxYUSDDeposit = userBalance.div(toBN(dec(1, 18)))
+    const userBalance = (await pusdToken.balanceOf(randomDepositor))
+    const maxPUSDDeposit = userBalance.div(toBN(dec(1, 18)))
 
-    const randomYUSDAmount = th.randAmountInWei(1, maxYUSDDeposit)
+    const randomPUSDAmount = th.randAmountInWei(1, maxPUSDDeposit)
 
-    const depositTx = await stabilityPool.provideToSP(randomYUSDAmount, ZERO_ADDRESS, { from: randomDepositor })
+    const depositTx = await stabilityPool.provideToSP(randomPUSDAmount, ZERO_ADDRESS, { from: randomDepositor })
 
     assert.isTrue(depositTx.receipt.status)
 
@@ -82,7 +82,7 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
       currentDepositors.push(randomDepositor)
     }
 
-    console.log(`SP deposit. addr: ${th.squeezeAddr(randomDepositor)} amount: ${randomYUSDAmount} tx success: ${depositTx.receipt.status} `)
+    console.log(`SP deposit. addr: ${th.squeezeAddr(randomDepositor)} amount: ${randomPUSDAmount} tx success: ${depositTx.receipt.status} `)
   }
 
   const randomOperation = async (depositorAccounts,
@@ -147,7 +147,7 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
       const lowestTrove = await sortedTroves.getLast()
       const lastTroveDebt = (await troveManager.getEntireDebtAndColl(trove))[0]
       await borrowerOperations.adjustTrove(0, 0 , lastTroveDebt, true, whale, {from: whale})
-      await yusdToken.transfer(lowestTrove, lowestTroveDebt, {from: whale})
+      await pusdToken.transfer(lowestTrove, lowestTroveDebt, {from: whale})
       await borrowerOperations.closeTrove({from: lowestTrove})
     }
 
@@ -172,18 +172,18 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
 
     for (depositor of currentDepositors) {
       const initialDeposit = (await stabilityPool.deposits(depositor))[0]
-      const finalDeposit = await stabilityPool.getCompoundedYUSDDeposit(depositor)
+      const finalDeposit = await stabilityPool.getCompoundedPUSDDeposit(depositor)
       const ETHGain = await stabilityPool.getDepositorETHGain(depositor)
       const ETHinSP = (await stabilityPool.getETH()).toString()
-      const YUSDinSP = (await stabilityPool.getTotalYUSDDeposits()).toString()
+      const PUSDinSP = (await stabilityPool.getTotalPUSDDeposits()).toString()
 
       // Attempt to withdraw
       const withdrawalTx = await stabilityPool.withdrawFromSP(dec(1, 36), { from: depositor })
 
       const ETHinSPAfter = (await stabilityPool.getETH()).toString()
-      const YUSDinSPAfter = (await stabilityPool.getTotalYUSDDeposits()).toString()
-      const YUSDBalanceSPAfter = (await yusdToken.balanceOf(stabilityPool.address))
-      const depositAfter = await stabilityPool.getCompoundedYUSDDeposit(depositor)
+      const PUSDinSPAfter = (await stabilityPool.getTotalPUSDDeposits()).toString()
+      const PUSDBalanceSPAfter = (await pusdToken.balanceOf(stabilityPool.address))
+      const depositAfter = await stabilityPool.getCompoundedPUSDDeposit(depositor)
 
       console.log(`--Before withdrawal--
                     withdrawer addr: ${th.squeezeAddr(depositor)}
@@ -191,14 +191,14 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
                      ETH gain: ${ETHGain}
                      ETH in SP: ${ETHinSP}
                      compounded deposit: ${finalDeposit} 
-                     YUSD in SP: ${YUSDinSP}
+                     PUSD in SP: ${PUSDinSP}
                     
                     --After withdrawal--
                      Withdrawal tx success: ${withdrawalTx.receipt.status} 
                      Deposit after: ${depositAfter}
                      ETH remaining in SP: ${ETHinSPAfter}
-                     SP YUSD deposits tracker after: ${YUSDinSPAfter}
-                     SP YUSD balance after: ${YUSDBalanceSPAfter}
+                     SP PUSD deposits tracker after: ${PUSDinSPAfter}
+                     SP PUSD balance after: ${PUSDBalanceSPAfter}
                      `)
       // Check each deposit can be withdrawn
       assert.isTrue(withdrawalTx.receipt.status)
@@ -214,19 +214,19 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
 
     beforeEach(async () => {
       contracts = await deploymentHelper.deployLiquityCore()
-      const YETIContracts = await deploymentHelper.deployYETIContracts(bountyAddress, lpRewardsAddress)
+      const PREONContracts = await deploymentHelper.deployPREONContracts(bountyAddress, lpRewardsAddress)
 
       stabilityPool = contracts.stabilityPool
       priceFeed = contracts.priceFeedTestnet
-      yusdToken = contracts.yusdToken
+      pusdToken = contracts.pusdToken
       stabilityPool = contracts.stabilityPool
       troveManager = contracts.troveManager
       borrowerOperations = contracts.borrowerOperations
       sortedTroves = contracts.sortedTroves
 
-      await deploymentHelper.connectYETIContracts(YETIContracts)
-      await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-      await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+      await deploymentHelper.connectPREONContracts(PREONContracts)
+      await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+      await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
     })
 
     // mixed deposits/liquidations
@@ -247,13 +247,13 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
 
       const defaulterCollMin = 1
       const defaulterCollMax = 100000000
-      const defaulterYUSDProportionMin = 91
-      const defaulterYUSDProportionMax = 180
+      const defaulterPUSDProportionMin = 91
+      const defaulterPUSDProportionMax = 180
 
       const depositorCollMin = 1
       const depositorCollMax = 100000000
-      const depositorYUSDProportionMin = 100
-      const depositorYUSDProportionMax = 100
+      const depositorPUSDProportionMin = 100
+      const depositorPUSDProportionMax = 100
 
       const remainingDefaulters = [...defaulterAccounts]
       const currentDepositors = []
@@ -261,22 +261,22 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
       const currentDepositorsDict = {}
 
       // setup:
-      // account set L all add coll and withdraw YUSD
-      await th.openTrove_allAccounts_randomETH_randomYUSD(defaulterCollMin,
+      // account set L all add coll and withdraw PUSD
+      await th.openTrove_allAccounts_randomETH_randomPUSD(defaulterCollMin,
         defaulterCollMax,
         defaulterAccounts,
         contracts,
-        defaulterYUSDProportionMin,
-        defaulterYUSDProportionMax,
+        defaulterPUSDProportionMin,
+        defaulterPUSDProportionMax,
         true)
 
-      // account set S all add coll and withdraw YUSD
-      await th.openTrove_allAccounts_randomETH_randomYUSD(depositorCollMin,
+      // account set S all add coll and withdraw PUSD
+      await th.openTrove_allAccounts_randomETH_randomPUSD(depositorCollMin,
         depositorCollMax,
         depositorAccounts,
         contracts,
-        depositorYUSDProportionMin,
-        depositorYUSDProportionMax,
+        depositorPUSDProportionMin,
+        depositorPUSDProportionMax,
         true)
 
       // price drops, all L liquidateable
@@ -293,18 +293,18 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
 
       await skyrocketPriceAndCheckAllTrovesSafe()
 
-      const totalYUSDDepositsBeforeWithdrawals = await stabilityPool.getTotalYUSDDeposits()
+      const totalPUSDDepositsBeforeWithdrawals = await stabilityPool.getTotalPUSDDeposits()
       const totalETHRewardsBeforeWithdrawals = await stabilityPool.getETH()
 
       await attemptWithdrawAllDeposits(currentDepositors)
 
-      const totalYUSDDepositsAfterWithdrawals = await stabilityPool.getTotalYUSDDeposits()
+      const totalPUSDDepositsAfterWithdrawals = await stabilityPool.getTotalPUSDDeposits()
       const totalETHRewardsAfterWithdrawals = await stabilityPool.getETH()
 
-      console.log(`Total YUSD deposits before any withdrawals: ${totalYUSDDepositsBeforeWithdrawals}`)
+      console.log(`Total PUSD deposits before any withdrawals: ${totalPUSDDepositsBeforeWithdrawals}`)
       console.log(`Total ETH rewards before any withdrawals: ${totalETHRewardsBeforeWithdrawals}`)
 
-      console.log(`Remaining YUSD deposits after withdrawals: ${totalYUSDDepositsAfterWithdrawals}`)
+      console.log(`Remaining PUSD deposits after withdrawals: ${totalPUSDDepositsAfterWithdrawals}`)
       console.log(`Remaining ETH rewards after withdrawals: ${totalETHRewardsAfterWithdrawals}`)
 
       console.log(`current depositors length: ${currentDepositors.length}`)
@@ -321,13 +321,13 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
 
       const defaulterCollMin = 1
       const defaulterCollMax = 10
-      const defaulterYUSDProportionMin = 91
-      const defaulterYUSDProportionMax = 180
+      const defaulterPUSDProportionMin = 91
+      const defaulterPUSDProportionMax = 180
 
       const depositorCollMin = 1000000
       const depositorCollMax = 100000000
-      const depositorYUSDProportionMin = 100
-      const depositorYUSDProportionMax = 100
+      const depositorPUSDProportionMin = 100
+      const depositorPUSDProportionMax = 100
 
       const remainingDefaulters = [...defaulterAccounts]
       const currentDepositors = []
@@ -335,21 +335,21 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
       const currentDepositorsDict = {}
 
       // setup:
-      // account set L all add coll and withdraw YUSD
-      await th.openTrove_allAccounts_randomETH_randomYUSD(defaulterCollMin,
+      // account set L all add coll and withdraw PUSD
+      await th.openTrove_allAccounts_randomETH_randomPUSD(defaulterCollMin,
         defaulterCollMax,
         defaulterAccounts,
         contracts,
-        defaulterYUSDProportionMin,
-        defaulterYUSDProportionMax)
+        defaulterPUSDProportionMin,
+        defaulterPUSDProportionMax)
 
-      // account set S all add coll and withdraw YUSD
-      await th.openTrove_allAccounts_randomETH_randomYUSD(depositorCollMin,
+      // account set S all add coll and withdraw PUSD
+      await th.openTrove_allAccounts_randomETH_randomPUSD(depositorCollMin,
         depositorCollMax,
         depositorAccounts,
         contracts,
-        depositorYUSDProportionMin,
-        depositorYUSDProportionMax)
+        depositorPUSDProportionMin,
+        depositorPUSDProportionMax)
 
       // price drops, all L liquidateable
       await priceFeed.setPrice(dec(100, 18));
@@ -365,18 +365,18 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
 
       await skyrocketPriceAndCheckAllTrovesSafe()
 
-      const totalYUSDDepositsBeforeWithdrawals = await stabilityPool.getTotalYUSDDeposits()
+      const totalPUSDDepositsBeforeWithdrawals = await stabilityPool.getTotalPUSDDeposits()
       const totalETHRewardsBeforeWithdrawals = await stabilityPool.getETH()
 
       await attemptWithdrawAllDeposits(currentDepositors)
 
-      const totalYUSDDepositsAfterWithdrawals = await stabilityPool.getTotalYUSDDeposits()
+      const totalPUSDDepositsAfterWithdrawals = await stabilityPool.getTotalPUSDDeposits()
       const totalETHRewardsAfterWithdrawals = await stabilityPool.getETH()
 
-      console.log(`Total YUSD deposits before any withdrawals: ${totalYUSDDepositsBeforeWithdrawals}`)
+      console.log(`Total PUSD deposits before any withdrawals: ${totalPUSDDepositsBeforeWithdrawals}`)
       console.log(`Total ETH rewards before any withdrawals: ${totalETHRewardsBeforeWithdrawals}`)
 
-      console.log(`Remaining YUSD deposits after withdrawals: ${totalYUSDDepositsAfterWithdrawals}`)
+      console.log(`Remaining PUSD deposits after withdrawals: ${totalPUSDDepositsAfterWithdrawals}`)
       console.log(`Remaining ETH rewards after withdrawals: ${totalETHRewardsAfterWithdrawals}`)
 
       console.log(`current depositors length: ${currentDepositors.length}`)
@@ -393,13 +393,13 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
 
       const defaulterCollMin = 1000000
       const defaulterCollMax = 100000000
-      const defaulterYUSDProportionMin = 91
-      const defaulterYUSDProportionMax = 180
+      const defaulterPUSDProportionMin = 91
+      const defaulterPUSDProportionMax = 180
 
       const depositorCollMin = 1
       const depositorCollMax = 10
-      const depositorYUSDProportionMin = 100
-      const depositorYUSDProportionMax = 100
+      const depositorPUSDProportionMin = 100
+      const depositorPUSDProportionMax = 100
 
       const remainingDefaulters = [...defaulterAccounts]
       const currentDepositors = []
@@ -407,21 +407,21 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
       const currentDepositorsDict = {}
 
       // setup:
-      // account set L all add coll and withdraw YUSD
-      await th.openTrove_allAccounts_randomETH_randomYUSD(defaulterCollMin,
+      // account set L all add coll and withdraw PUSD
+      await th.openTrove_allAccounts_randomETH_randomPUSD(defaulterCollMin,
         defaulterCollMax,
         defaulterAccounts,
         contracts,
-        defaulterYUSDProportionMin,
-        defaulterYUSDProportionMax)
+        defaulterPUSDProportionMin,
+        defaulterPUSDProportionMax)
 
-      // account set S all add coll and withdraw YUSD
-      await th.openTrove_allAccounts_randomETH_randomYUSD(depositorCollMin,
+      // account set S all add coll and withdraw PUSD
+      await th.openTrove_allAccounts_randomETH_randomPUSD(depositorCollMin,
         depositorCollMax,
         depositorAccounts,
         contracts,
-        depositorYUSDProportionMin,
-        depositorYUSDProportionMax)
+        depositorPUSDProportionMin,
+        depositorPUSDProportionMax)
 
       // price drops, all L liquidateable
       await priceFeed.setPrice(dec(100, 18));
@@ -437,18 +437,18 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
 
       await skyrocketPriceAndCheckAllTrovesSafe()
 
-      const totalYUSDDepositsBeforeWithdrawals = await stabilityPool.getTotalYUSDDeposits()
+      const totalPUSDDepositsBeforeWithdrawals = await stabilityPool.getTotalPUSDDeposits()
       const totalETHRewardsBeforeWithdrawals = await stabilityPool.getETH()
 
       await attemptWithdrawAllDeposits(currentDepositors)
 
-      const totalYUSDDepositsAfterWithdrawals = await stabilityPool.getTotalYUSDDeposits()
+      const totalPUSDDepositsAfterWithdrawals = await stabilityPool.getTotalPUSDDeposits()
       const totalETHRewardsAfterWithdrawals = await stabilityPool.getETH()
 
-      console.log(`Total YUSD deposits before any withdrawals: ${totalYUSDDepositsBeforeWithdrawals}`)
+      console.log(`Total PUSD deposits before any withdrawals: ${totalPUSDDepositsBeforeWithdrawals}`)
       console.log(`Total ETH rewards before any withdrawals: ${totalETHRewardsBeforeWithdrawals}`)
 
-      console.log(`Remaining YUSD deposits after withdrawals: ${totalYUSDDepositsAfterWithdrawals}`)
+      console.log(`Remaining PUSD deposits after withdrawals: ${totalPUSDDepositsAfterWithdrawals}`)
       console.log(`Remaining ETH rewards after withdrawals: ${totalETHRewardsAfterWithdrawals}`)
 
       console.log(`current depositors length: ${currentDepositors.length}`)
@@ -466,13 +466,13 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
 
       const defaulterCollMin = 1000000
       const defaulterCollMax = 100000000
-      const defaulterYUSDProportionMin = 91
-      const defaulterYUSDProportionMax = 180
+      const defaulterPUSDProportionMin = 91
+      const defaulterPUSDProportionMax = 180
 
       const depositorCollMin = 1000000
       const depositorCollMax = 100000000
-      const depositorYUSDProportionMin = 100
-      const depositorYUSDProportionMax = 100
+      const depositorPUSDProportionMin = 100
+      const depositorPUSDProportionMax = 100
 
       const remainingDefaulters = [...defaulterAccounts]
       const currentDepositors = []
@@ -480,21 +480,21 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
       const currentDepositorsDict = {}
 
       // setup:
-      // account set L all add coll and withdraw YUSD
-      await th.openTrove_allAccounts_randomETH_randomYUSD(defaulterCollMin,
+      // account set L all add coll and withdraw PUSD
+      await th.openTrove_allAccounts_randomETH_randomPUSD(defaulterCollMin,
         defaulterCollMax,
         defaulterAccounts,
         contracts,
-        defaulterYUSDProportionMin,
-        defaulterYUSDProportionMax)
+        defaulterPUSDProportionMin,
+        defaulterPUSDProportionMax)
 
-      // account set S all add coll and withdraw YUSD
-      await th.openTrove_allAccounts_randomETH_randomYUSD(depositorCollMin,
+      // account set S all add coll and withdraw PUSD
+      await th.openTrove_allAccounts_randomETH_randomPUSD(depositorCollMin,
         depositorCollMax,
         depositorAccounts,
         contracts,
-        depositorYUSDProportionMin,
-        depositorYUSDProportionMax)
+        depositorPUSDProportionMin,
+        depositorPUSDProportionMax)
 
       // price drops, all L liquidateable
       await priceFeed.setPrice(dec(100, 18));
@@ -510,18 +510,18 @@ contract("PoolManager - random liquidations/deposits, then check all depositors 
 
       await skyrocketPriceAndCheckAllTrovesSafe()
 
-      const totalYUSDDepositsBeforeWithdrawals = await stabilityPool.getTotalYUSDDeposits()
+      const totalPUSDDepositsBeforeWithdrawals = await stabilityPool.getTotalPUSDDeposits()
       const totalETHRewardsBeforeWithdrawals = await stabilityPool.getETH()
 
       await attemptWithdrawAllDeposits(currentDepositors)
 
-      const totalYUSDDepositsAfterWithdrawals = await stabilityPool.getTotalYUSDDeposits()
+      const totalPUSDDepositsAfterWithdrawals = await stabilityPool.getTotalPUSDDeposits()
       const totalETHRewardsAfterWithdrawals = await stabilityPool.getETH()
 
-      console.log(`Total YUSD deposits before any withdrawals: ${totalYUSDDepositsBeforeWithdrawals}`)
+      console.log(`Total PUSD deposits before any withdrawals: ${totalPUSDDepositsBeforeWithdrawals}`)
       console.log(`Total ETH rewards before any withdrawals: ${totalETHRewardsBeforeWithdrawals}`)
 
-      console.log(`Remaining YUSD deposits after withdrawals: ${totalYUSDDepositsAfterWithdrawals}`)
+      console.log(`Remaining PUSD deposits after withdrawals: ${totalPUSDDepositsAfterWithdrawals}`)
       console.log(`Remaining ETH rewards after withdrawals: ${totalETHRewardsAfterWithdrawals}`)
 
       console.log(`current depositors length: ${currentDepositors.length}`)

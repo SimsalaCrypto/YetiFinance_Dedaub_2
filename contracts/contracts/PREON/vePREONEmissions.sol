@@ -1,22 +1,22 @@
 pragma solidity 0.6.11;
 
-import "../Dependencies/YetiMath.sol";
+import "../Dependencies/PreonMath.sol";
 import "../Dependencies/SafeMath.sol";
 import "../Dependencies/OwnableUpgradeable.sol";
 import "../Dependencies/SafeERC20.sol";
 
-interface IveYETI {
-  function totalYeti() external view returns (uint256);
+interface IvePREON {
+  function totalPreon() external view returns (uint256);
 
-  function getTotalYeti(address _user) external view returns (uint256);
+  function getTotalPreon(address _user) external view returns (uint256);
 }
 
-contract veYETIEmissions is OwnableUpgradeable {
+contract vePREONEmissions is OwnableUpgradeable {
   using SafeMath for uint256;
   using SafeERC20 for IERC20;
 
-  IERC20 public yetiToken;
-  IveYETI public veYETI;
+  IERC20 public preonToken;
+  IvePREON public vePREON;
 
   uint256 public periodFinish;
   uint256 public rewardRate;
@@ -28,8 +28,8 @@ contract veYETIEmissions is OwnableUpgradeable {
   event RewardAdded(uint256 reward, uint256 duration, uint256 periodFinish);
   event RewardPaid(address indexed user, uint256 reward);
 
-  modifier onlyVeYeti() {
-    require(msg.sender == address(veYETI));
+  modifier onlyVePreon() {
+    require(msg.sender == address(vePREON));
     _;
   }
 
@@ -37,17 +37,17 @@ contract veYETIEmissions is OwnableUpgradeable {
 
   bool private addressSet;
 
-  function initialize(IERC20 _YETI, IveYETI _VEYETI) external {
+  function initialize(IERC20 _PREON, IvePREON _VEPREON) external {
     require(!addressSet, "Addresses already set");
 
     addressSet = true;
     _transferOwnership(msg.sender);
-    yetiToken = _YETI;
-    veYETI = _VEYETI;
+    preonToken = _PREON;
+    vePREON = _VEPREON;
   }
 
   // update user rewards at the time of staking or unstakeing
-  function updateUserRewards(address _user) external onlyVeYeti {
+  function updateUserRewards(address _user) external onlyVePreon {
     _updateReward(_user);
   }
 
@@ -57,15 +57,15 @@ contract veYETIEmissions is OwnableUpgradeable {
     uint256 reward = earned(msg.sender);
     if (reward > 0) {
       rewards[msg.sender] = 0;
-      yetiToken.safeTransfer(msg.sender, reward);
+      preonToken.safeTransfer(msg.sender, reward);
       emit RewardPaid(msg.sender, reward);
     }
   }
 
   /* Used to update reward rate by the owner
    * Owner can only update reward to a reward such that
-   * there is enough Yeti in the contract to emit
-   * _reward Yeti tokens across _duration
+   * there is enough Preon in the contract to emit
+   * _reward Preon tokens across _duration
    */
   function notifyRewardAmount(uint256 _reward, uint256 _duration)
     external
@@ -94,12 +94,12 @@ contract veYETIEmissions is OwnableUpgradeable {
   //  ========== PUBLIC VIEW FUNCTIONS ==========
 
   function lastTimeRewardApplicable() public view returns (uint256) {
-    return YetiMath._min(block.timestamp, periodFinish);
+    return PreonMath._min(block.timestamp, periodFinish);
   }
 
   function rewardPerToken() public view returns (uint256) {
-    uint256 totalYetiStaked = veYETI.totalYeti();
-    if (totalYetiStaked == 0) {
+    uint256 totalPreonStaked = vePREON.totalPreon();
+    if (totalPreonStaked == 0) {
       return rewardPerTokenStored;
     }
 
@@ -109,30 +109,30 @@ contract veYETIEmissions is OwnableUpgradeable {
           .sub(lastUpdateTime)
           .mul(rewardRate)
           .mul(1e18)
-          .div(totalYetiStaked)
+          .div(totalPreonStaked)
       );
   }
 
-  // earned Yeti Emissions
+  // earned Preon Emissions
   function earned(address account) public view returns (uint256) {
     return
-      veYETI
-        .getTotalYeti(account)
+      vePREON
+        .getTotalPreon(account)
         .mul(rewardPerToken().sub(userRewardPerTokenPaid[account]))
         .div(1e18)
         .add(rewards[account]);
   }
 
-  // returns how much Yeti you would earn depositing _amount for _time
+  // returns how much Preon you would earn depositing _amount for _time
   function rewardToEarn(uint256 _amount, uint256 _time)
     public
     view
     returns (uint256)
   {
-    if (veYETI.totalYeti() == 0) {
+    if (vePREON.totalPreon() == 0) {
       return rewardRate.mul(_time);
     }
     return
-      rewardRate.mul(_time).mul(_amount).div(veYETI.totalYeti().add(_amount));
+      rewardRate.mul(_time).mul(_amount).div(vePREON.totalPreon().add(_amount));
   }
 }

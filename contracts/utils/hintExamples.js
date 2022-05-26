@@ -10,7 +10,7 @@ async function main() {
 
   const coreContracts = await dh.deployLiquityCoreHardhat()
   const ARBITRARY_ADDRESS = "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419" 
-  const YETIContracts = await dh.deployYETIContractsHardhat(
+  const PREONContracts = await dh.deployPREONContractsHardhat(
       ARBITRARY_ADDRESS, 
       ARBITRARY_ADDRESS,
       ARBITRARY_ADDRESS
@@ -18,9 +18,9 @@ async function main() {
 
  const { troveManager, borrowerOperations, hintHelpers, sortedTroves, priceFeedTestnet } = coreContracts
 
-  await dh.connectCoreContracts(coreContracts, YETIContracts)
-  await dh.connectYETIContracts(YETIContracts)
-  await dh.connectYETIContractsToCore(YETIContracts, coreContracts)
+  await dh.connectCoreContracts(coreContracts, PREONContracts)
+  await dh.connectPREONContracts(PREONContracts)
+  await dh.connectPREONContractsToCore(PREONContracts, coreContracts)
 
   // Examples of off-chain hint calculation for Open Trove
 
@@ -30,15 +30,15 @@ async function main() {
   const price = toBN(toWei('2500'))
   await priceFeedTestnet.setPrice(toBN(toWei('2500')))
 
-  const YUSDAmount = toBN(toWei('2500')) // borrower wants to withdraw 2500 YUSD
+  const PUSDAmount = toBN(toWei('2500')) // borrower wants to withdraw 2500 PUSD
   const ETHColl = toBN(toWei('5')) // borrower wants to lock 5 ETH collateral
 
   // Call deployed TroveManager contract to read the liquidation reserve and latest borrowing fee
-  const liquidationReserve = await troveManager.YUSD_GAS_COMPENSATION()
-  const expectedFee = await troveManager.getBorrowingFeeWithDecay(YUSDAmount)
+  const liquidationReserve = await troveManager.PUSD_GAS_COMPENSATION()
+  const expectedFee = await troveManager.getBorrowingFeeWithDecay(PUSDAmount)
   
-  // Total debt of the new trove = YUSD amount drawn, plus fee, plus the liquidation reserve
-  const expectedDebt = YUSDAmount.add(expectedFee).add(liquidationReserve)
+  // Total debt of the new trove = PUSD amount drawn, plus fee, plus the liquidation reserve
+  const expectedDebt = PUSDAmount.add(expectedFee).add(liquidationReserve)
 
   // Get the nominal NICR of the new trove
   const _1e20 = toBN(toWei('100'))
@@ -55,17 +55,17 @@ async function main() {
 
   // Finally, call openTrove with the exact upperHint and lowerHint
   const maxFee = '5'.concat('0'.repeat(16)) // Slippage protection: 5%
-  await borrowerOperations.openTrove(maxFee, YUSDAmount, upperHint, lowerHint, { value: ETHColl })
+  await borrowerOperations.openTrove(maxFee, PUSDAmount, upperHint, lowerHint, { value: ETHColl })
 
   // --- adjust trove --- 
 
   const collIncrease = toBN(toWei('1'))  // borrower wants to add 1 ETH
-  const YUSDRepayment = toBN(toWei('230')) // borrower wants to repay 230 YUSD
+  const PUSDRepayment = toBN(toWei('230')) // borrower wants to repay 230 PUSD
 
   // Get trove's current debt and coll
   const {0: debt, 1: coll} = await troveManager.getEntireDebtAndColl(borrower)
   
-  const newDebt = debt.sub(YUSDRepayment)
+  const newDebt = debt.sub(PUSDRepayment)
   const newColl = coll.add(collIncrease)
 
   NICR = newColl.mul(_1e20).div(newDebt)
@@ -80,15 +80,15 @@ async function main() {
   ({ 0: upperHint, 1: lowerHint } = await sortedTroves.findInsertPosition(NICR, approxHint, approxHint))
 
   // Call adjustTrove with the exact upperHint and lowerHint
-  await borrowerOperations.adjustTrove(maxFee, 0, YUSDRepayment, false, upperHint, lowerHint, {value: collIncrease})
+  await borrowerOperations.adjustTrove(maxFee, 0, PUSDRepayment, false, upperHint, lowerHint, {value: collIncrease})
 
 
   // --- RedeemCollateral ---
 
   // Get the redemptions hints from the deployed HintHelpers contract
-  const redemptionhint = await hintHelpers.getRedemptionHints(YUSDAmount, 50)
+  const redemptionhint = await hintHelpers.getRedemptionHints(PUSDAmount, 50)
 
-  const {0: firstRedemptionHint, 1: partialRedemptionNewICR, 2: truncatedYUSDAmount} = redemptionhint
+  const {0: firstRedemptionHint, 1: partialRedemptionNewICR, 2: truncatedPUSDAmount} = redemptionhint
 
   // Get the approximate partial redemption hint
   const {
@@ -103,10 +103,10 @@ async function main() {
     approxPartialRedemptionHint,
     approxPartialRedemptionHint))
 
-  /* Finally, perform the on-chain redemption, passing the truncated YUSD amount, the correct hints, and the expected
+  /* Finally, perform the on-chain redemption, passing the truncated PUSD amount, the correct hints, and the expected
   * ICR of the final partially redeemed trove in the sequence. 
   */
-  await troveManager.redeemCollateral(truncatedYUSDAmount,
+  await troveManager.redeemCollateral(truncatedPUSDAmount,
     firstRedemptionHint,
     exactPartialRedemptionHint[0],
     exactPartialRedemptionHint[1],

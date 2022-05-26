@@ -6,7 +6,7 @@ import "../Dependencies/LiquityMath.sol";
 import "../Dependencies/SafeMath.sol";
 import "../Dependencies/Ownable.sol";
 import "../Dependencies/CheckContract.sol";
-import "../Interfaces/IYETIToken.sol";
+import "../Interfaces/IPREONToken.sol";
 import "./Dependencies/SafeERC20.sol";
 import "./Interfaces/ILPTokenWrapper.sol";
 import "./Interfaces/IUnipool.sol";
@@ -49,7 +49,7 @@ contract LPTokenWrapper is ILPTokenWrapper {
 }
 
 /*
- * On deployment a new Uniswap pool will be created for the pair YUSD/ETH and its token will be set here.
+ * On deployment a new Uniswap pool will be created for the pair PUSD/ETH and its token will be set here.
 
  * Essentially the way it works is:
 
@@ -59,22 +59,22 @@ contract LPTokenWrapper is ILPTokenWrapper {
  * - Liquidity providers can claim their rewards when they want
  * - Liquidity providers can unstake UNIv2 LP tokens to exit the program (i.e., stop earning rewards) when they want
 
- * Funds for rewards will only be added once, on deployment of YETI token,
+ * Funds for rewards will only be added once, on deployment of PREON token,
  * which will happen after this contract is deployed and before this `setParams` in this contract is called.
 
  * If at some point the total amount of staked tokens is zero, the clock will be “stopped”,
  * so the period will be extended by the time during which the staking pool is empty,
- * in order to avoid getting YETI tokens locked.
+ * in order to avoid getting PREON tokens locked.
  * That also means that the start time for the program will be the event that occurs first:
- * either YETI token contract is deployed, and therefore YETI tokens are minted to Unipool contract,
+ * either PREON token contract is deployed, and therefore PREON tokens are minted to Unipool contract,
  * or first liquidity provider stakes UNIv2 LP tokens into it.
  */
 contract Unipool is LPTokenWrapper, Ownable, CheckContract, IUnipool {
-  using SafeERC20 for IYETIToken;
+  using SafeERC20 for IPREONToken;
   bytes32 public constant NAME = "Unipool";
 
   uint256 public duration;
-  IYETIToken public yetiToken;
+  IPREONToken public preonToken;
 
   uint256 public periodFinish = 0;
   uint256 public rewardRate = 0;
@@ -83,7 +83,7 @@ contract Unipool is LPTokenWrapper, Ownable, CheckContract, IUnipool {
   mapping(address => uint256) public userRewardPerTokenPaid;
   mapping(address => uint256) public rewards;
 
-  event YETITokenAddressChanged(address _yetiTokenAddress);
+  event PREONTokenAddressChanged(address _preonTokenAddress);
   event UniTokenAddressChanged(address _uniTokenAddress);
   event RewardAdded(uint256 reward);
   event Staked(address indexed user, uint256 amount);
@@ -92,20 +92,20 @@ contract Unipool is LPTokenWrapper, Ownable, CheckContract, IUnipool {
 
   // initialization function
   function setParams(
-    address _yetiTokenAddress,
+    address _preonTokenAddress,
     address _uniTokenAddress,
     uint256 _duration
   ) external override onlyOwner {
-    checkContract(_yetiTokenAddress);
+    checkContract(_preonTokenAddress);
     checkContract(_uniTokenAddress);
 
     uniToken = IERC20(_uniTokenAddress);
-    yetiToken = IYETIToken(_yetiTokenAddress);
+    preonToken = IPREONToken(_preonTokenAddress);
     duration = _duration;
 
-    _notifyRewardAmount(yetiToken.balanceOf(address(this)), _duration);
+    _notifyRewardAmount(preonToken.balanceOf(address(this)), _duration);
 
-    emit YETITokenAddressChanged(_yetiTokenAddress);
+    emit PREONTokenAddressChanged(_preonTokenAddress);
     emit UniTokenAddressChanged(_uniTokenAddress);
 
     _renounceOwnership();
@@ -190,7 +190,7 @@ contract Unipool is LPTokenWrapper, Ownable, CheckContract, IUnipool {
     require(reward != 0, "Nothing to claim");
 
     rewards[msg.sender] = 0;
-    yetiToken.safeTransfer(msg.sender, reward);
+    preonToken.safeTransfer(msg.sender, reward);
     emit RewardPaid(msg.sender, reward);
   }
 
@@ -198,7 +198,7 @@ contract Unipool is LPTokenWrapper, Ownable, CheckContract, IUnipool {
   function _notifyRewardAmount(uint256 _reward, uint256 _duration) internal {
     require(_reward != 0, "_notifyRewardAmount: reward is 0");
     require(
-      _reward == yetiToken.balanceOf(address(this)),
+      _reward == preonToken.balanceOf(address(this)),
       "_notifyRewardAmount: reward not equal to balance"
     );
     require(periodFinish == 0, "_notifyRewardAmount: periodFinish != 0");

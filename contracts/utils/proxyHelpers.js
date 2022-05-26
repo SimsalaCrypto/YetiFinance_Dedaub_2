@@ -103,12 +103,12 @@ class BorrowerOperationsProxy extends Proxy {
     return this.forwardFunction(params, 'withdrawColl(uint256,address,address)')
   }
 
-  async withdrawYUSD(...params) {
-    return this.forwardFunction(params, 'withdrawYUSD(uint256,uint256,address,address)')
+  async withdrawPUSD(...params) {
+    return this.forwardFunction(params, 'withdrawPUSD(uint256,uint256,address,address)')
   }
 
-  async repayYUSD(...params) {
-    return this.forwardFunction(params, 'repayYUSD(uint256,address,address)')
+  async repayPUSD(...params) {
+    return this.forwardFunction(params, 'repayPUSD(uint256,address,address)')
   }
 
   async closeTrove(...params) {
@@ -135,8 +135,8 @@ class BorrowerOperationsProxy extends Proxy {
     return this.proxyFunction('getCompositeDebt', params)
   }
 
-  async YUSD_GAS_COMPENSATION(...params) {
-    return this.proxyFunction('YUSD_GAS_COMPENSATION', params)
+  async PUSD_GAS_COMPENSATION(...params) {
+    return this.proxyFunction('PUSD_GAS_COMPENSATION', params)
   }
 
   async MIN_NET_DEBT(...params) {
@@ -199,8 +199,8 @@ class TroveManagerProxy extends Proxy {
     return this.proxyFunction('getPendingETHReward', params)
   }
 
-  async getPendingYUSDDebtReward(...params) {
-    return this.proxyFunction('getPendingYUSDDebtReward', params)
+  async getPendingPUSDDebtReward(...params) {
+    return this.proxyFunction('getPendingPUSDDebtReward', params)
   }
 
   async liquidate(user) {
@@ -231,8 +231,8 @@ class TroveManagerProxy extends Proxy {
     return this.proxyFunction('L_ETH', [])
   }
 
-  async L_YUSDDebt() {
-    return this.proxyFunction('L_YUSDDebt', [])
+  async L_PUSDDebt() {
+    return this.proxyFunction('L_PUSDDebt', [])
   }
 
   async rewardSnapshots(user) {
@@ -285,8 +285,8 @@ class StabilityPoolProxy extends Proxy {
     return this.forwardFunction(params, 'provideToSP(uint256,address)')
   }
 
-  async getCompoundedYUSDDeposit(user) {
-    return this.proxyFunctionWithUser('getCompoundedYUSDDeposit', user)
+  async getCompoundedPUSDDeposit(user) {
+    return this.proxyFunctionWithUser('getCompoundedPUSDDeposit', user)
   }
 
   async deposits(user) {
@@ -381,7 +381,7 @@ class TokenProxy extends Proxy {
   }
 }
 
-class SYETIProxy extends Proxy {
+class SPREONProxy extends Proxy {
   constructor(owner, proxies, tokenScriptAddress, token) {
     super(owner, proxies, tokenScriptAddress, token)
   }
@@ -394,8 +394,8 @@ class SYETIProxy extends Proxy {
     return this.proxyFunctionWithUser('stakes', user)
   }
 
-  async F_YUSD(user) {
-    return this.proxyFunctionWithUser('F_YUSD', user)
+  async F_PUSD(user) {
+    return this.proxyFunctionWithUser('F_PUSD', user)
   }
 }
 
@@ -407,5 +407,5 @@ module.exports = {
   StabilityPoolProxy,
   SortedTrovesProxy,
   TokenProxy,
-  SYETIProxy
+  SPREONProxy
 }

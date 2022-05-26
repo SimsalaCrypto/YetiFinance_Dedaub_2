@@ -1,8 +1,8 @@
 const { artifacts, ethers, assert } = require("hardhat")
 const deploymentHelper = require("../utils/deploymentHelpers.js")
 const testHelpers = require("../utils/testHelpers.js")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester.sol")
-const YetiTokenTester = artifacts.require("./YETITokenTester.sol")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester.sol")
+const PreonTokenTester = artifacts.require("./PREONTokenTester.sol")
 let joeRouter
 let joeZap
 let joeMasterChef
@@ -30,10 +30,10 @@ const assertRevert = th.assertRevert
 const mv = testHelpers.MoneyValues
 const MAXINT= dec(10,36)
 
-const YUSDToken = artifacts.require("YUSDToken")
-const YetiToken = artifacts.require("YETIToken")
-const sYETIToken = artifacts.require("./sYETIToken.sol")
-const sYETITokenTester = artifacts.require("./sYETITokenTester.sol")
+const PUSDToken = artifacts.require("PUSDToken")
+const PreonToken = artifacts.require("PREONToken")
+const sPREONToken = artifacts.require("./sPREONToken.sol")
+const sPREONTokenTester = artifacts.require("./sPREONTokenTester.sol")
 
 console.log("")
 console.log("All tests will fail if mainnet not forked in hardhat.config.js")
@@ -51,22 +51,22 @@ contract('wCRV Test', async accounts => {
   const [bountyAddress, lpRewardsAddress, multisig] = [defaulter_1, defaulter_2, defaulter_3]
 
 
-  let yusdToken
-  let yetiToken
-  let sYetiToken
+  let pusdToken
+  let preonToken
+  let sPreonToken
 
   let contracts
 
   beforeEach(async () => {
     contracts = await deploymentHelper.deployLiquityCore()
-    contracts.yusdToken = await YUSDTokenTester.new(
+    contracts.pusdToken = await PUSDTokenTester.new(
       contracts.troveManager.address,
       contracts.troveManagerLiquidations.address,
       contracts.troveManagerRedemptions.address,
       contracts.stabilityPool.address,
       contracts.borrowerOperations.address
     )
-    const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+    const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
     WAVAX=new ethers.Contract("0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7", abi = WAVAXABI, signer = await hre.ethers.getSigner(harry));
     WETH=new ethers.Contract("0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB", abi = ERC20ABI, signer = await hre.ethers.getSigner(harry));
     CRV=new ethers.Contract("0x47536f17f4ff30e64a96a7555826b8f9e66ec468", abi = ERC20ABI, signer = await hre.ethers.getSigner(harry));
@@ -76,9 +76,9 @@ contract('wCRV Test', async accounts => {
     gauge=new ethers.Contract("0x5B5CFE992AdAC0C9D48E05854B2d91C73a003858", abi=gaugeABI, signer = await hre.ethers.getSigner(harry));
     crvPool=new ethers.Contract("0x7f90122BF0700F9E7e1F688fe926940E8839F353", abi=crvPoolABI, signer = await hre.ethers.getSigner(harry));
     TOWRAP=new ethers.Contract("0x1337BedC9D22ecbe766dF105c9623922A27963EC", abi=crvlpTokenABI, signer = await hre.ethers.getSigner(harry));
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
     const WRAPPERS = await deploymentHelper.deployAssetWrappers()
     WASSET=WRAPPERS.wCRV_3crv
     rewardTokens=["0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7", "0x47536f17f4ff30e64a96a7555826b8f9e66ec468"]
@@ -89,7 +89,7 @@ contract('wCRV Test', async accounts => {
       contracts.troveManagerRedemptions.address,
       contracts.defaultPool.address,
       contracts.stabilityPool.address,
-      YETIContracts.yetiFinanceTreasury.address,
+      PREONContracts.preonFinanceTreasury.address,
     )
     SP=contracts.stabilityPool.address
     LRD=contracts.troveManagerLiquidations.address

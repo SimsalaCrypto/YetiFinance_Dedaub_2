@@ -4,7 +4,7 @@ const testHelpers = require("../utils/testHelpers.js")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
 const NonPayable = artifacts.require('NonPayable.sol')
 const TroveManagerTester = artifacts.require("TroveManagerTester")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester")
 
 const th = testHelpers.TestHelper
 
@@ -17,10 +17,10 @@ const ZERO_ADDRESS = th.ZERO_ADDRESS
 const assertRevert = th.assertRevert
 const WAVAX_ADDRESS = ZERO_ADDRESS;
 
-/* NOTE: Some of the borrowing tests do not test for specific YUSD fee values. They only test that the
+/* NOTE: Some of the borrowing tests do not test for specific PUSD fee values. They only test that the
  * fees are non-zero when they should occur, and that they decay over time.
  *
- * Specific YUSD fee values will depend on the final fee schedule used, and the final choice for
+ * Specific PUSD fee values will depend on the final fee schedule used, and the final choice for
  *  the parameter MINUTE_DECAY_FACTOR in the TroveManager, which is still TBD based on economic
  * modelling.
  *
@@ -42,15 +42,15 @@ contract('newTroveManager', async accounts => {
 
   let priceFeedAVAX
   let priceFeedETH
-  let yusdToken
+  let pusdToken
   let sortedTroves
   let troveManager
   let activePool
   let stabilityPool
   let defaultPool
   let borrowerOperations
-  let sYETI
-  let yetiToken
+  let sPREON
+  let preonToken
 
   let tokenSuperRisky
   let priceFeedSuperRisky
@@ -59,7 +59,7 @@ contract('newTroveManager', async accounts => {
 
   let contracts
 
-  const getOpenTroveYUSDAmount = async (totalDebt) => th.getOpenTroveYUSDAmount(contracts, totalDebt)
+  const getOpenTrovePUSDAmount = async (totalDebt) => th.getOpenTrovePUSDAmount(contracts, totalDebt)
   const getNetBorrowingAmount = async (debtWithFee) => th.getNetBorrowingAmount(contracts, debtWithFee)
   const getActualDebtFromComposite = async (compositeDebt) => th.getActualDebtFromComposite(compositeDebt, contracts)
   const openTrove = async (params) => th.openTrove(contracts, params)
@@ -67,7 +67,7 @@ contract('newTroveManager', async accounts => {
   const getTroveEntireDebt = async (trove) => th.getTroveEntireDebt(contracts, trove)
   const getTroveStake = async (trove) => th.getTroveStake(contracts, trove)
 
-  let YUSD_GAS_COMPENSATION
+  let PUSD_GAS_COMPENSATION
   let MIN_NET_DEBT
   let BORROWING_FEE_FLOOR
 
@@ -80,22 +80,22 @@ contract('newTroveManager', async accounts => {
       contracts = await deploymentHelper.deployLiquityCore()
       contracts.borrowerOperations = await BorrowerOperationsTester.new()
       contracts.troveManager = await TroveManagerTester.new()
-      contracts = await deploymentHelper.deployYUSDTokenTester(contracts)
-      const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+      contracts = await deploymentHelper.deployPUSDTokenTester(contracts)
+      const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
-      await deploymentHelper.connectYETIContracts(YETIContracts)
-      await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-      await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+      await deploymentHelper.connectPREONContracts(PREONContracts)
+      await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+      await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
       if (withProxy) {
         const users = [alice, bob, carol, dennis, whale, A, B, C, D, E]
-        await deploymentHelper.deployProxyScripts(contracts, YETIContracts, owner, users)
+        await deploymentHelper.deployProxyScripts(contracts, PREONContracts, owner, users)
       }
 
       // priceFeed = contracts.priceFeedTestnet
       priceFeedAVAX = contracts.priceFeedAVAX
       priceFeedETH = contracts.priceFeedETH
-      yusdToken = contracts.yusdToken
+      pusdToken = contracts.pusdToken
       sortedTroves = contracts.sortedTroves
       troveManager = contracts.troveManager
       activePool = contracts.activePool
@@ -125,12 +125,12 @@ contract('newTroveManager', async accounts => {
       stableCoin = result.token
       priceFeedStableCoin = result.priceFeed
 
-      sYETI = YETIContracts.sYETI
-      yetiToken = YETIContracts.yetiToken
-      communityIssuance = YETIContracts.communityIssuance
-      lockupContractFactory = YETIContracts.lockupContractFactory
+      sPREON = PREONContracts.sPREON
+      preonToken = PREONContracts.preonToken
+      communityIssuance = PREONContracts.communityIssuance
+      lockupContractFactory = PREONContracts.lockupContractFactory
 
-      YUSD_GAS_COMPENSATION = await borrowerOperations.YUSD_GAS_COMPENSATION()
+      PUSD_GAS_COMPENSATION = await borrowerOperations.PUSD_GAS_COMPENSATION()
       MIN_NET_DEBT = await borrowerOperations.MIN_NET_DEBT()
       BORROWING_FEE_FLOOR = await borrowerOperations.BORROWING_FEE_FLOOR()
     })
@@ -157,7 +157,7 @@ contract('newTroveManager', async accounts => {
       let priceFeeds = [contracts.priceFeedETH, contracts.priceFeedAVAX];
       await th.openTroveWithColls(contracts, {
         ICR: toBN(dec(2, 18)),
-        from: whale, colls: [contracts.weth, contracts.wavax], amounts: amounts, yusdAmount: toBN(dec(2000, 18)), priceFeeds: priceFeeds
+        from: whale, colls: [contracts.weth, contracts.wavax], amounts: amounts, pusdAmount: toBN(dec(2000, 18)), priceFeeds: priceFeeds
       });
 
       // console.log("");
@@ -178,7 +178,7 @@ contract('newTroveManager', async accounts => {
 
       await th.openTroveWithColls(contracts, {
         ICR: toBN(dec(2, 18)),
-        from: alice, colls: colls, amounts: amounts, yusdAmount: toBN(dec(2000, 18)), priceFeeds: priceFeeds
+        from: alice, colls: colls, amounts: amounts, pusdAmount: toBN(dec(2000, 18)), priceFeeds: priceFeeds
       });
 
       const troveColls2 = await troveManager.getTroveColls(alice);
@@ -197,8 +197,8 @@ contract('newTroveManager', async accounts => {
 
       // console.log("");
 
-      const aliceYUSD = await yusdToken.balanceOf(alice)
-      // console.log("yusd MINTED:", (aliceYUSD.div(toBN(10 ** 18))).toNumber());
+      const alicePUSD = await pusdToken.balanceOf(alice)
+      // console.log("pusd MINTED:", (alicePUSD.div(toBN(10 ** 18))).toNumber());
 
       const aliceAvax = await contracts.wavax.balanceOf(alice)
       // console.log("wavax alice has:", (aliceAvax.div(toBN(10 ** 18))).toNumber());
@@ -318,8 +318,8 @@ contract('newTroveManager', async accounts => {
       assert.equal(entireSystemColl, A_coll.add(C_coll).add(th.applyLiquidationFee(B_coll.add(D_coll))))
 
 
-      // check YUSD gas compensation
-      assert.equal((await yusdToken.balanceOf(owner)).toString(), dec(400, 18))
+      // check PUSD gas compensation
+      assert.equal((await pusdToken.balanceOf(owner)).toString(), dec(400, 18))
     })
 
     it("redeemCollateral() - MultiCollateral: Sanity test for doing one redemption, checks correct amounts.", async () => {
@@ -343,7 +343,7 @@ contract('newTroveManager', async accounts => {
       // console.log(th.toNormalBase(wavaxToMintAlice), "WAVAX");
       // console.log("");
       let priceFeeds = [contracts.priceFeedETH, contracts.priceFeedAVAX];
-      await th.openTroveWithColls(contracts, { from: A, colls: colls, amounts: amountsAlice, extraYUSDAmount: await getOpenTroveYUSDAmount(toBN(dec(6000, 18))), oracles: priceFeeds });
+      await th.openTroveWithColls(contracts, { from: A, colls: colls, amounts: amountsAlice, extraPUSDAmount: await getOpenTrovePUSDAmount(toBN(dec(6000, 18))), oracles: priceFeeds });
 
       // Bob creates a Trove and adds first collateral
       let wethToMintBob = toBN(dec(1000, 18));
@@ -362,17 +362,17 @@ contract('newTroveManager', async accounts => {
       // console.log(th.toNormalBase(wethToMintBob), "WETH");
       // console.log(th.toNormalBase(wavaxToMintBob), "WAVAX");
       // console.log("");
-      await th.openTroveWithColls(contracts, { from: B, colls: colls, amounts: amountsBob, extraYUSDAmount: await getOpenTroveYUSDAmount(toBN(dec(20000, 18))), oracles: priceFeeds });
+      await th.openTroveWithColls(contracts, { from: B, colls: colls, amounts: amountsBob, extraPUSDAmount: await getOpenTrovePUSDAmount(toBN(dec(20000, 18))), oracles: priceFeeds });
 
-      //await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(6000, 18)), A, A, [contracts.weth.address], [dec(1000, 18)], { from: A })
-      //await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(1000, 18)], { from: B })
+      //await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(6000, 18)), A, A, [contracts.weth.address], [dec(1000, 18)], { from: A })
+      //await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(1000, 18)], { from: B })
 
       await troveManager.setBaseRate(0)
 
       // skip bootstrapping phase
       await th.fastForwardTime(timeValues.SECONDS_IN_ONE_WEEK * 2, web3.currentProvider)
 
-      const A_YUSD_Balance_Before = await contracts.yusdToken.balanceOf(A)
+      const A_PUSD_Balance_Before = await contracts.pusdToken.balanceOf(A)
       const B_debt_before = await troveManager.getTroveDebt(B)
 
       const A_WETH_Balance_Before = await contracts.weth.balanceOf(A)
@@ -384,24 +384,24 @@ contract('newTroveManager', async accounts => {
 
       const active_pool_before = (await activePool.getCollateral(contracts.weth.address)).add(await activePool.getCollateral(contracts.wavax.address))
 
-      // YUSD redemption is 5000 YUSD
-      const YUSDRedemption = dec(1000, 18)
-      const finalYUSDAmount = await th.estimateYUSDEligible(contracts, YUSDRedemption)
-      // console.log("ESTIMATED YUSD", finalYUSDAmount.toString())
-      const finalYUSDFeeAmount = th.toBN(YUSDRedemption).sub(finalYUSDAmount);
+      // PUSD redemption is 5000 PUSD
+      const PUSDRedemption = dec(1000, 18)
+      const finalPUSDAmount = await th.estimatePUSDEligible(contracts, PUSDRedemption)
+      // console.log("ESTIMATED PUSD", finalPUSDAmount.toString())
+      const finalPUSDFeeAmount = th.toBN(PUSDRedemption).sub(finalPUSDAmount);
 
-      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, YUSDRedemption, th._100pct)
+      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, PUSDRedemption, th._100pct)
       assert.isTrue(tx1.receipt.status)
 
-      const actualYUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
-      const actualYUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
+      const actualPUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
+      const actualPUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
       const actualCollAmount = ((th.getEmittedRedemptionValues(tx1))[4][0]).add((th.getEmittedRedemptionValues(tx1))[4][1])
 
-      assert.isTrue(actualYUSDAmount.eq(finalYUSDAmount))
-      await th.assertIsApproximatelyEqual(actualCollAmount, finalYUSDAmount.div(toBN(200)), 100000)
-      assert.isTrue(actualYUSDFee.lt(finalYUSDFeeAmount))
+      assert.isTrue(actualPUSDAmount.eq(finalPUSDAmount))
+      await th.assertIsApproximatelyEqual(actualCollAmount, finalPUSDAmount.div(toBN(200)), 100000)
+      assert.isTrue(actualPUSDFee.lt(finalPUSDFeeAmount))
 
-      const A_YUSD_Balance_After = await contracts.yusdToken.balanceOf(A)
+      const A_PUSD_Balance_After = await contracts.pusdToken.balanceOf(A)
       const B_debt_after = await troveManager.getTroveDebt(B)
 
       const A_WETH_Balance_After = await contracts.weth.balanceOf(A)
@@ -412,44 +412,44 @@ contract('newTroveManager', async accounts => {
       const B_Coll_After = B_WETH_Collateral_After.add(B_WAVAX_Collateral_After)
       const active_pool_after = (await activePool.getCollateral(contracts.weth.address)).add(await activePool.getCollateral(contracts.wavax.address))
 
-      // Assert that A lost the correct amount of YUSD. Approximate because fee amount not correct
+      // Assert that A lost the correct amount of PUSD. Approximate because fee amount not correct
       await th.assertIsApproximatelyEqual(
-        A_YUSD_Balance_After,
-        A_YUSD_Balance_Before.sub(finalYUSDAmount).sub(finalYUSDFeeAmount),
+        A_PUSD_Balance_After,
+        A_PUSD_Balance_Before.sub(finalPUSDAmount).sub(finalPUSDFeeAmount),
         100000)
 
-      // Assert that B's debt has decreased by the correct amount of YUSD
-      assert.isTrue(B_debt_after.eq(B_debt_before.sub(finalYUSDAmount)))
+      // Assert that B's debt has decreased by the correct amount of PUSD
+      assert.isTrue(B_debt_after.eq(B_debt_before.sub(finalPUSDAmount)))
 
       // Make sure that A gained an appropriate amount of collateral
       await th.assertIsApproximatelyEqual(
         A_Coll_Balance_After,
-        A_Coll_Balance_Before.add(finalYUSDAmount.div(th.toBN(200))),
+        A_Coll_Balance_Before.add(finalPUSDAmount.div(th.toBN(200))),
         100000)
-      //assert.isTrue(A_Coll_Balance_After.eq(A_Coll_Balance_Before.add(finalYUSDAmount.div(th.toBN(200)))))
+      //assert.isTrue(A_Coll_Balance_After.eq(A_Coll_Balance_Before.add(finalPUSDAmount.div(th.toBN(200)))))
 
       // Make sure that B lost that amount of collateral
       await th.assertIsApproximatelyEqual(
         B_Coll_After,
-        B_Coll_Before.sub(finalYUSDAmount.div(th.toBN(200))),
+        B_Coll_Before.sub(finalPUSDAmount.div(th.toBN(200))),
         100000)
-      //assert.isTrue(B_Coll_After.eq(B_Coll_Before.sub(finalYUSDAmount.div(th.toBN(200)))))
+      //assert.isTrue(B_Coll_After.eq(B_Coll_Before.sub(finalPUSDAmount.div(th.toBN(200)))))
 
       // Make sure active pool has decreased by the correct amount of WETH
       await th.assertIsApproximatelyEqual(
         active_pool_after,
-        active_pool_before.sub(finalYUSDAmount.div(th.toBN(200))),
+        active_pool_before.sub(finalPUSDAmount.div(th.toBN(200))),
         100000)
-      //assert.isTrue(active_pool_after.eq(active_pool_before.sub(finalYUSDAmount.div(th.toBN(200)))))
+      //assert.isTrue(active_pool_after.eq(active_pool_before.sub(finalPUSDAmount.div(th.toBN(200)))))
     })
 
     it("redeemCollateral() - MultiCollateral: redeems trove with one collateral first, a trove with multiple collaterals second, and partially redeems third trove with one collateral", async () => {
       await th.addERC20(contracts.weth, A, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: A })
       await th.addERC20(contracts.weth, B, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: B })
       await th.addERC20(contracts.weth, C, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: C })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(9999, 18)], { from: B })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(2000, 18)), C, C, [contracts.weth.address], [dec(50, 18)], { from: C })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(9999, 18)], { from: B })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(2000, 18)), C, C, [contracts.weth.address], [dec(50, 18)], { from: C })
 
       // Dennis creates a Trove and adds first collateral
       let wethToMintDennis = toBN(dec(25, 18));
@@ -472,7 +472,7 @@ contract('newTroveManager', async accounts => {
       // skip bootstrapping phase
       await th.fastForwardTime(timeValues.SECONDS_IN_ONE_WEEK * 2, web3.currentProvider)
 
-      const A_YUSD_Balance_Before = await contracts.yusdToken.balanceOf(A)
+      const A_PUSD_Balance_Before = await contracts.pusdToken.balanceOf(A)
       const B_debt_before = await troveManager.getTroveDebt(B)
 
       const A_WETH_Balance_Before = await contracts.weth.balanceOf(A)
@@ -482,28 +482,28 @@ contract('newTroveManager', async accounts => {
 
       const active_pool_before = (await activePool.getCollateral(contracts.weth.address)).add(await activePool.getCollateral(contracts.wavax.address))
 
-      // YUSD redemption is 6000 YUSD. Should close C, D and take some of B.
-      const YUSDRedemption = dec(6000, 18)
-      const finalYUSDAmount = await th.estimateYUSDEligible(contracts, YUSDRedemption)
-      const finalYUSDFeeAmount = th.toBN(YUSDRedemption).sub(finalYUSDAmount);
+      // PUSD redemption is 6000 PUSD. Should close C, D and take some of B.
+      const PUSDRedemption = dec(6000, 18)
+      const finalPUSDAmount = await th.estimatePUSDEligible(contracts, PUSDRedemption)
+      const finalPUSDFeeAmount = th.toBN(PUSDRedemption).sub(finalPUSDAmount);
 
-      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, YUSDRedemption, th._100pct)
+      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, PUSDRedemption, th._100pct)
       assert.isTrue(tx1.receipt.status)
 
-      const actualYUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
-      const actualYUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
+      const actualPUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
+      const actualPUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
       const actualETHAmount = (th.getEmittedRedemptionValues(tx1))[4][0]
       const actualAVAXAmount = (th.getEmittedRedemptionValues(tx1))[4][1]
       const actualCollAmount = actualETHAmount.add(actualAVAXAmount)
       // console.log('actual avax', actualAVAXAmount.toString())
       // console.log('actual eth', actualETHAmount.toString())
 
-      assert.isTrue(actualYUSDAmount.eq(finalYUSDAmount))
+      assert.isTrue(actualPUSDAmount.eq(finalPUSDAmount))
       // console.log('actual', actualCollAmount.toString())
-      // console.log('yusdamount', (finalYUSDAmount.div(toBN(200))).toString())
-      //await th.assertIsApproximatelyEqual(actualCollAmount, (finalYUSDAmount.div(toBN(200))))
-      assert.isTrue(actualCollAmount.eq(finalYUSDAmount.div(toBN(200))))
-      assert.isTrue(actualYUSDFee.lt(finalYUSDFeeAmount))
+      // console.log('pusdamount', (finalPUSDAmount.div(toBN(200))).toString())
+      //await th.assertIsApproximatelyEqual(actualCollAmount, (finalPUSDAmount.div(toBN(200))))
+      assert.isTrue(actualCollAmount.eq(finalPUSDAmount.div(toBN(200))))
+      assert.isTrue(actualPUSDFee.lt(finalPUSDFeeAmount))
 
       assert.isTrue(await sortedTroves.contains(A))
       assert.isTrue(await sortedTroves.contains(B))
@@ -514,7 +514,7 @@ contract('newTroveManager', async accounts => {
       // console.log('eth surplus after', (await contracts.collSurplusPool.getCollateral(contracts.weth.address)).toString())
       // console.log('avax surplus after', (await contracts.collSurplusPool.getCollateral(contracts.wavax.address)).toString())
       assert.isTrue(collSurplusPoolAfter.eq(th.toBN(dec(82, 18))))
-      const A_YUSD_Balance_After = await contracts.yusdToken.balanceOf(A)
+      const A_PUSD_Balance_After = await contracts.pusdToken.balanceOf(A)
       const B_debt_after = await troveManager.getTroveDebt(B)
 
       const A_WETH_Balance_After = await contracts.weth.balanceOf(A)
@@ -524,42 +524,42 @@ contract('newTroveManager', async accounts => {
 
       const active_pool_after = await activePool.getCollateral(contracts.weth.address)
 
-      // Assert that A lost the correct amount of YUSD. Approximate because fee amount not correct
+      // Assert that A lost the correct amount of PUSD. Approximate because fee amount not correct
       await th.assertIsApproximatelyEqual(
-        A_YUSD_Balance_After,
-        A_YUSD_Balance_Before.sub(finalYUSDAmount).sub(finalYUSDFeeAmount),
+        A_PUSD_Balance_After,
+        A_PUSD_Balance_Before.sub(finalPUSDAmount).sub(finalPUSDFeeAmount),
         100000)
 
-      // Assert that B's debt has decreased by the correct amount of YUSD. 1800 * 2 offset from other troves.
+      // Assert that B's debt has decreased by the correct amount of PUSD. 1800 * 2 offset from other troves.
       // console.log('B debt after', B_debt_after.toString())
-      // console.log('B debt before', (B_debt_before.sub(finalYUSDAmount).add(toBN(dec(3600, 18)))).toString())
-      //assert.isTrue(B_debt_after.eq(B_debt_before.sub(finalYUSDAmount).add(toBN(dec(3600, 18)))))
+      // console.log('B debt before', (B_debt_before.sub(finalPUSDAmount).add(toBN(dec(3600, 18)))).toString())
+      //assert.isTrue(B_debt_after.eq(B_debt_before.sub(finalPUSDAmount).add(toBN(dec(3600, 18)))))
       await th.assertIsApproximatelyEqual(
         B_debt_after,
-        B_debt_before.sub(finalYUSDAmount).add(toBN(dec(3600, 18))),
+        B_debt_before.sub(finalPUSDAmount).add(toBN(dec(3600, 18))),
         100000)
 
       // Make sure that A gained an appropriate amount of collateral
       // console.log('A coll after', A_Coll_Balance_After.toString())
-      // console.log('A coll before', (A_Coll_Balance_Before.add(finalYUSDAmount.div(th.toBN(200)))).toString())
-      //assert.isTrue(A_Coll_Balance_After.eq(A_Coll_Balance_Before.add(finalYUSDAmount.div(th.toBN(200)))))
+      // console.log('A coll before', (A_Coll_Balance_Before.add(finalPUSDAmount.div(th.toBN(200)))).toString())
+      //assert.isTrue(A_Coll_Balance_After.eq(A_Coll_Balance_Before.add(finalPUSDAmount.div(th.toBN(200)))))
       await th.assertIsApproximatelyEqual(
         A_Coll_Balance_After,
-        A_Coll_Balance_Before.add(finalYUSDAmount.div(th.toBN(200))),
+        A_Coll_Balance_Before.add(finalPUSDAmount.div(th.toBN(200))),
         100000)
 
       // Make sure that B lost that amount of collateral. Total collateral offset with 13.5 eth and 4.5 avax from other troves.
-      //assert.isTrue(B_WETH_Collateral_After.eq(B_WETH_Collateral_Before.sub(finalYUSDAmount.div(th.toBN(200))).add(toBN(dec(18, 18)))))
+      //assert.isTrue(B_WETH_Collateral_After.eq(B_WETH_Collateral_Before.sub(finalPUSDAmount.div(th.toBN(200))).add(toBN(dec(18, 18)))))
       await th.assertIsApproximatelyEqual(
         B_WETH_Collateral_After,
-        B_WETH_Collateral_Before.sub(finalYUSDAmount.div(th.toBN(200))).add(toBN(dec(18, 18))),
+        B_WETH_Collateral_Before.sub(finalPUSDAmount.div(th.toBN(200))).add(toBN(dec(18, 18))),
         100000)
 
       // Make sure active pool has decreased by the correct amount of WETH
-      //assert.isTrue(active_pool_after.eq(active_pool_before.sub(finalYUSDAmount.div(th.toBN(200))).sub(toBN(dec(82, 18)))))
+      //assert.isTrue(active_pool_after.eq(active_pool_before.sub(finalPUSDAmount.div(th.toBN(200))).sub(toBN(dec(82, 18)))))
       await th.assertIsApproximatelyEqual(
         active_pool_after,
-        active_pool_before.sub(finalYUSDAmount.div(th.toBN(200))).sub(toBN(dec(82, 18))),
+        active_pool_before.sub(finalPUSDAmount.div(th.toBN(200))).sub(toBN(dec(82, 18))),
         100000)
     })
 
@@ -567,9 +567,9 @@ contract('newTroveManager', async accounts => {
       await th.addERC20(contracts.weth, A, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: A })
       await th.addERC20(contracts.weth, B, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: B })
       await th.addERC20(contracts.weth, C, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: C })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(9999, 18)], { from: B })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(4000, 18)), C, C, [contracts.weth.address], [dec(50, 18)], { from: C })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(9999, 18)], { from: B })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(4000, 18)), C, C, [contracts.weth.address], [dec(50, 18)], { from: C })
 
       // Dennis creates a Trove and adds first collateral
       let wethToMintDennis = toBN(dec(40, 18));
@@ -592,7 +592,7 @@ contract('newTroveManager', async accounts => {
       // skip bootstrapping phase
       await th.fastForwardTime(timeValues.SECONDS_IN_ONE_WEEK * 2, web3.currentProvider)
 
-      const A_YUSD_Balance_Before = await contracts.yusdToken.balanceOf(A)
+      const A_PUSD_Balance_Before = await contracts.pusdToken.balanceOf(A)
       const B_debt_before = await troveManager.getTroveDebt(B)
 
       const A_WETH_Balance_Before = await contracts.weth.balanceOf(A)
@@ -602,29 +602,29 @@ contract('newTroveManager', async accounts => {
 
       const active_pool_before = (await activePool.getCollateral(contracts.weth.address)).add(await activePool.getCollateral(contracts.wavax.address))
 
-      // YUSD redemption is 8000 YUSD. Should close D, C and take some of B.
-      const YUSDRedemption = dec(8000, 18)
-      const finalYUSDAmount = await th.estimateYUSDEligible(contracts, YUSDRedemption)
-      // console.log("finalYUSDAMOUNT", finalYUSDAmount.toString())
-      const finalYUSDFeeAmount = th.toBN(YUSDRedemption).sub(finalYUSDAmount);
+      // PUSD redemption is 8000 PUSD. Should close D, C and take some of B.
+      const PUSDRedemption = dec(8000, 18)
+      const finalPUSDAmount = await th.estimatePUSDEligible(contracts, PUSDRedemption)
+      // console.log("finalPUSDAMOUNT", finalPUSDAmount.toString())
+      const finalPUSDFeeAmount = th.toBN(PUSDRedemption).sub(finalPUSDAmount);
 
-      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, YUSDRedemption, th._100pct)
+      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, PUSDRedemption, th._100pct)
       assert.isTrue(tx1.receipt.status)
 
-      const actualYUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
-      const actualYUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
+      const actualPUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
+      const actualPUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
       const actualETHAmount = (th.getEmittedRedemptionValues(tx1))[4][0]
       const actualAVAXAmount = (th.getEmittedRedemptionValues(tx1))[4][1]
       const actualCollAmount = actualETHAmount.add(actualAVAXAmount)
       // console.log('actual avax', actualAVAXAmount.toString())
       // console.log('actual eth', actualETHAmount.toString())
 
-      assert.isTrue(actualYUSDAmount.eq(finalYUSDAmount))
+      assert.isTrue(actualPUSDAmount.eq(finalPUSDAmount))
       // console.log('actual', actualCollAmount.toString())
-      // console.log('yusdamount', (finalYUSDAmount.div(toBN(200))).toString())
-      //await th.assertIsApproximatelyEqual(actualCollAmount, (finalYUSDAmount.div(toBN(200))))
-      assert.isTrue(actualCollAmount.eq(finalYUSDAmount.div(toBN(200))))
-      assert.isTrue(actualYUSDFee.lt(finalYUSDFeeAmount))
+      // console.log('pusdamount', (finalPUSDAmount.div(toBN(200))).toString())
+      //await th.assertIsApproximatelyEqual(actualCollAmount, (finalPUSDAmount.div(toBN(200))))
+      assert.isTrue(actualCollAmount.eq(finalPUSDAmount.div(toBN(200))))
+      assert.isTrue(actualPUSDFee.lt(finalPUSDFeeAmount))
 
       assert.isTrue(await sortedTroves.contains(A))
       assert.isTrue(await sortedTroves.contains(B))
@@ -635,7 +635,7 @@ contract('newTroveManager', async accounts => {
       // console.log('eth surplus after', (await contracts.collSurplusPool.getCollateral(contracts.weth.address)).toString())
       // console.log('avax surplus after', (await contracts.collSurplusPool.getCollateral(contracts.wavax.address)).toString())
       assert.isTrue(collSurplusPoolAfter.eq(th.toBN(dec(72, 18)))) // 50 + 50 - 9 - 19 = 72
-      const A_YUSD_Balance_After = await contracts.yusdToken.balanceOf(A)
+      const A_PUSD_Balance_After = await contracts.pusdToken.balanceOf(A)
       const B_debt_after = await troveManager.getTroveDebt(B)
 
       const A_WETH_Balance_After = await contracts.weth.balanceOf(A)
@@ -645,53 +645,53 @@ contract('newTroveManager', async accounts => {
 
       const active_pool_after = await activePool.getCollateral(contracts.weth.address)
 
-      // Assert that A lost the correct amount of YUSD. Approximate because fee amount not correct
+      // Assert that A lost the correct amount of PUSD. Approximate because fee amount not correct
       await th.assertIsApproximatelyEqual(
-        A_YUSD_Balance_After,
-        A_YUSD_Balance_Before.sub(finalYUSDAmount).sub(finalYUSDFeeAmount),
+        A_PUSD_Balance_After,
+        A_PUSD_Balance_Before.sub(finalPUSDAmount).sub(finalPUSDFeeAmount),
         100000)
 
-      // Assert that B's debt has decreased by the correct amount of YUSD. 1800 + 3800 offset from other troves.
+      // Assert that B's debt has decreased by the correct amount of PUSD. 1800 + 3800 offset from other troves.
       // console.log('B debt after', B_debt_after.toString())
-      // console.log('B debt before', (B_debt_before.sub(finalYUSDAmount).add(toBN(dec(5600, 18)))).toString())
-      //assert.isTrue(B_debt_after.eq(B_debt_before.sub(finalYUSDAmount).add(toBN(dec(3600, 18)))))
+      // console.log('B debt before', (B_debt_before.sub(finalPUSDAmount).add(toBN(dec(5600, 18)))).toString())
+      //assert.isTrue(B_debt_after.eq(B_debt_before.sub(finalPUSDAmount).add(toBN(dec(3600, 18)))))
       await th.assertIsApproximatelyEqual(
         B_debt_after,
-        B_debt_before.sub(finalYUSDAmount).add(toBN(dec(5600, 18))),
+        B_debt_before.sub(finalPUSDAmount).add(toBN(dec(5600, 18))),
         100000)
 
       // Make sure that A gained an appropriate amount of collateral
       // console.log('A coll after', A_Coll_Balance_After.toString())
-      // console.log('A coll before', (A_Coll_Balance_Before.add(finalYUSDAmount.div(th.toBN(200)))).toString())
-      //assert.isTrue(A_Coll_Balance_After.eq(A_Coll_Balance_Before.add(finalYUSDAmount.div(th.toBN(200)))))
+      // console.log('A coll before', (A_Coll_Balance_Before.add(finalPUSDAmount.div(th.toBN(200)))).toString())
+      //assert.isTrue(A_Coll_Balance_After.eq(A_Coll_Balance_Before.add(finalPUSDAmount.div(th.toBN(200)))))
       await th.assertIsApproximatelyEqual(
         A_Coll_Balance_After,
-        A_Coll_Balance_Before.add(finalYUSDAmount.div(th.toBN(200))),
+        A_Coll_Balance_Before.add(finalPUSDAmount.div(th.toBN(200))),
         100000)
 
       // Make sure that B lost that amount of collateral. Total collateral offset with 18 eth from other troves.
-      //assert.isTrue(B_WETH_Collateral_After.eq(B_WETH_Collateral_Before.sub(finalYUSDAmount.div(th.toBN(200))).add(toBN(dec(18, 18)))))
+      //assert.isTrue(B_WETH_Collateral_After.eq(B_WETH_Collateral_Before.sub(finalPUSDAmount.div(th.toBN(200))).add(toBN(dec(18, 18)))))
       await th.assertIsApproximatelyEqual(
         B_WETH_Collateral_After,
-        B_WETH_Collateral_Before.sub(finalYUSDAmount.div(th.toBN(200))).add(toBN(dec(28, 18))),
+        B_WETH_Collateral_Before.sub(finalPUSDAmount.div(th.toBN(200))).add(toBN(dec(28, 18))),
         100000)
 
       // Make sure active pool has decreased by the correct amount of WETH
-      //assert.isTrue(active_pool_after.eq(active_pool_before.sub(finalYUSDAmount.div(th.toBN(200))).sub(toBN(dec(82, 18)))))
+      //assert.isTrue(active_pool_after.eq(active_pool_before.sub(finalPUSDAmount.div(th.toBN(200))).sub(toBN(dec(82, 18)))))
       await th.assertIsApproximatelyEqual(
         active_pool_after,
-        active_pool_before.sub(finalYUSDAmount.div(th.toBN(200))).sub(toBN(dec(72, 18))),
+        active_pool_before.sub(finalPUSDAmount.div(th.toBN(200))).sub(toBN(dec(72, 18))),
         100000)
 
-      //Trove A reedems 1800 YUSD from trove D, which has 10 WAVAX and 40 ETH. Trove A's WAVAX balance = 1.8 WAVAX = (1800 YUSD x (10 WAVAX / 50 WAVAX/WETH))/200
+      //Trove A reedems 1800 PUSD from trove D, which has 10 WAVAX and 40 ETH. Trove A's WAVAX balance = 1.8 WAVAX = (1800 PUSD x (10 WAVAX / 50 WAVAX/WETH))/200
       assert(A_WAVAX_Balance_After.eq(toBN(dec(18, 17))))
     })
 
     it("redeemCollateral() - MultiCollateral: perform two separate redemptions, check if two troves positions update, check if final ICR's are correct", async () => {
       await th.addERC20(contracts.weth, A, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: A })
       await th.addERC20(contracts.weth, B, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: B })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(10000, 18)], { from: B })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(10000, 18)], { from: B })
 
       // Carol creates a Trove and adds first collateral
       let wethToMintCarol = toBN(dec(30, 18));
@@ -707,7 +707,7 @@ contract('newTroveManager', async accounts => {
       let amountsCarol = [wethToMintCarol, wavaxToMintCarol];
       let colls = [contracts.weth, contracts.wavax];
       let priceFeeds = [contracts.priceFeedETH, contracts.priceFeedAVAX];
-      await th.openTroveWithColls(contracts, { from: C, colls: colls, YUSDAmount: await getOpenTroveYUSDAmount(dec(3000, 18)), amounts: amountsCarol, priceFeeds: priceFeeds });
+      await th.openTroveWithColls(contracts, { from: C, colls: colls, PUSDAmount: await getOpenTrovePUSDAmount(dec(3000, 18)), amounts: amountsCarol, priceFeeds: priceFeeds });
 
       // Dennis creates a Trove and adds first collateral
       let wethToMintDennis = toBN(dec(40, 18));
@@ -721,55 +721,55 @@ contract('newTroveManager', async accounts => {
       assert.isTrue(wavaxMintedDennis);
 
       let amountsDennis = [wethToMintDennis, wavaxToMintDennis];
-      await th.openTroveWithColls(contracts, { from: D, colls: colls, YUSDAmount: await getOpenTroveYUSDAmount(dec(4000, 18)), amounts: amountsDennis, priceFeeds: priceFeeds });
+      await th.openTroveWithColls(contracts, { from: D, colls: colls, PUSDAmount: await getOpenTrovePUSDAmount(dec(4000, 18)), amounts: amountsDennis, priceFeeds: priceFeeds });
 
       await troveManager.setBaseRate(0)
 
       // skip bootstrapping phase
       await th.fastForwardTime(timeValues.SECONDS_IN_ONE_WEEK * 2, web3.currentProvider)
 
-      // YUSD redemption is 2000 YUSD. Shouldn't fully redeem any troves.
-      const YUSDRedemption = dec(2000, 18)
-      const finalYUSDAmount = await th.estimateYUSDEligible(contracts, YUSDRedemption)
-      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, YUSDRedemption, th._100pct)
+      // PUSD redemption is 2000 PUSD. Shouldn't fully redeem any troves.
+      const PUSDRedemption = dec(2000, 18)
+      const finalPUSDAmount = await th.estimatePUSDEligible(contracts, PUSDRedemption)
+      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, PUSDRedemption, th._100pct)
       assert.isTrue(tx1.receipt.status)
 
       //check if debt and collat of trove D are correct after partial redemption
       const D_totalColl = ((await th.getTroveEntireColl(contracts, D))[0]).add((await th.getTroveEntireColl(contracts, D))[1]).mul(toBN(200))
       const D_totalDebt = (await th.getTroveEntireDebt(contracts, D))
-      assert(D_totalDebt.eq(toBN(dec(4000, 18)).sub(finalYUSDAmount)))
+      assert(D_totalDebt.eq(toBN(dec(4000, 18)).sub(finalPUSDAmount)))
       await th.assertIsApproximatelyEqual(
         D_totalColl,
-        toBN(dec(10000, 18)).sub(finalYUSDAmount),
+        toBN(dec(10000, 18)).sub(finalPUSDAmount),
         100000)
 
-      const YUSDRedemption2 = dec(1000, 18)
-      const finalYUSDAmount2 = await th.estimateYUSDEligible(contracts, YUSDRedemption2)
-      const tx2 = await th.redeemCollateralAndGetTxObject(A, contracts, YUSDRedemption2, th._100pct)
+      const PUSDRedemption2 = dec(1000, 18)
+      const finalPUSDAmount2 = await th.estimatePUSDEligible(contracts, PUSDRedemption2)
+      const tx2 = await th.redeemCollateralAndGetTxObject(A, contracts, PUSDRedemption2, th._100pct)
       assert.isTrue(tx2.receipt.status)
 
       //check if debt and collat of trove C are correct after partial redemption
       const C_totalColl = ((await th.getTroveEntireColl(contracts, C))[0]).add((await th.getTroveEntireColl(contracts, C))[1]).mul(toBN(200))
       const C_totalDebt = (await th.getTroveEntireDebt(contracts, C))
-      assert(C_totalDebt.eq(toBN(dec(3000, 18)).sub(finalYUSDAmount2)))
+      assert(C_totalDebt.eq(toBN(dec(3000, 18)).sub(finalPUSDAmount2)))
       await th.assertIsApproximatelyEqual(
         C_totalColl,
-        toBN(dec(10000, 18)).sub(finalYUSDAmount2),
+        toBN(dec(10000, 18)).sub(finalPUSDAmount2),
         100000)
 
       //check trove D's collateral and debt are unchanged
-      assert(D_totalDebt.eq(toBN(dec(4000, 18)).sub(finalYUSDAmount)))
+      assert(D_totalDebt.eq(toBN(dec(4000, 18)).sub(finalPUSDAmount)))
       await th.assertIsApproximatelyEqual(
         D_totalColl,
-        toBN(dec(10000, 18)).sub(finalYUSDAmount),
+        toBN(dec(10000, 18)).sub(finalPUSDAmount),
         100000)
     })
 
     it("redeemCollateral() - MultiCollateral: fully redeem trove C with riskytoken and weth, partially redeem trove B", async () => {
       await th.addERC20(contracts.weth, A, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: A })
       await th.addERC20(contracts.weth, B, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: B })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(10000, 18)], { from: B })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(10000, 18)], { from: B })
       // Carol creates a Trove and adds first collateral
       let tokenRiskyMintCarol = toBN(dec(16, 18));
       let wethToMintCarol = toBN(dec(20, 18));
@@ -787,14 +787,14 @@ contract('newTroveManager', async accounts => {
       let amountsCarol = [wethToMintCarol, tokenRiskyMintCarol];
       let colls = [contracts.weth, tokenSuperRisky];
       let priceFeeds = [contracts.priceFeedETH, priceFeedSuperRisky];
-      await th.openTroveWithColls(contracts, { from: C, colls: colls, YUSDAmount: await getOpenTroveYUSDAmount(dec(3000, 18)), amounts: amountsCarol, priceFeeds: priceFeeds });
+      await th.openTroveWithColls(contracts, { from: C, colls: colls, PUSDAmount: await getOpenTrovePUSDAmount(dec(3000, 18)), amounts: amountsCarol, priceFeeds: priceFeeds });
 
       await troveManager.setBaseRate(0)
 
       // skip bootstrapping phase
       await th.fastForwardTime(timeValues.SECONDS_IN_ONE_WEEK * 2, web3.currentProvider)
 
-      const A_YUSD_Balance_Before = await contracts.yusdToken.balanceOf(A)
+      const A_PUSD_Balance_Before = await contracts.pusdToken.balanceOf(A)
       const B_debt_before = await troveManager.getTroveDebt(B)
 
       const A_WETH_Balance_Before = await contracts.weth.balanceOf(A)
@@ -804,17 +804,17 @@ contract('newTroveManager', async accounts => {
 
       const active_pool_before = (await activePool.getCollateral(contracts.weth.address)).add(await activePool.getCollateral(tokenSuperRisky.address))
 
-      // YUSD redemption is 3000 YUSD.
-      const YUSDRedemption = dec(3000, 18)
-      const finalYUSDAmount = await th.estimateYUSDEligible(contracts, YUSDRedemption)
-      // console.log("finalYUSDAMOUNT", finalYUSDAmount.toString())
-      const finalYUSDFeeAmount = th.toBN(YUSDRedemption).sub(finalYUSDAmount);
+      // PUSD redemption is 3000 PUSD.
+      const PUSDRedemption = dec(3000, 18)
+      const finalPUSDAmount = await th.estimatePUSDEligible(contracts, PUSDRedemption)
+      // console.log("finalPUSDAMOUNT", finalPUSDAmount.toString())
+      const finalPUSDFeeAmount = th.toBN(PUSDRedemption).sub(finalPUSDAmount);
 
-      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, YUSDRedemption, th._100pct)
+      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, PUSDRedemption, th._100pct)
       assert.isTrue(tx1.receipt.status)
 
-      const actualYUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
-      const actualYUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
+      const actualPUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
+      const actualPUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
       const actualETHAmount = (th.getEmittedRedemptionValues(tx1))[4][0]
       const actualRISKYAmount = (th.getEmittedRedemptionValues(tx1))[4][1]
       const actualCollAmount = actualETHAmount.add(actualRISKYAmount)
@@ -822,18 +822,18 @@ contract('newTroveManager', async accounts => {
       // console.log('actual eth', actualETHAmount.toString())
 
       //checks that the correct amount of risky tokens were liquidated:
-      // 3000 YUSD - gascomp = 2800 YUSD -> (2800 YUSD debt / 5600 YUSD collat) x Amount of Risky tokens = 8
-      // Trove A redeems 2888.538 YUSD. Fully redeems Trove C. Partially redeems Trove B's ETH (~88.538 YUSD in ETH)
+      // 3000 PUSD - gascomp = 2800 PUSD -> (2800 PUSD debt / 5600 PUSD collat) x Amount of Risky tokens = 8
+      // Trove A redeems 2888.538 PUSD. Fully redeems Trove C. Partially redeems Trove B's ETH (~88.538 PUSD in ETH)
       assert.isTrue(actualRISKYAmount.eq(toBN(dec(8, 18))))
-      const ETHinYUSD = actualETHAmount.mul(toBN(200))
-      const RISKYinYUSD = actualRISKYAmount.mul(toBN(100))
-      // console.log(ETHinYUSD.toString())
-      // console.log(finalYUSDAmount.sub(RISKYinYUSD).toString())
+      const ETHinPUSD = actualETHAmount.mul(toBN(200))
+      const RISKYinPUSD = actualRISKYAmount.mul(toBN(100))
+      // console.log(ETHinPUSD.toString())
+      // console.log(finalPUSDAmount.sub(RISKYinPUSD).toString())
 
-      //check if ETH redeemed equals total YUSD redeemed - risky token redeemed
+      //check if ETH redeemed equals total PUSD redeemed - risky token redeemed
       await th.assertIsApproximatelyEqual(
-        ETHinYUSD,
-        finalYUSDAmount.sub(RISKYinYUSD),
+        ETHinPUSD,
+        finalPUSDAmount.sub(RISKYinPUSD),
         100000)
       const collSurplusPoolAfter = (await contracts.collSurplusPool.getCollateral(contracts.weth.address)).add(await contracts.collSurplusPool.getCollateral(tokenSuperRisky.address))
       // console.log('eth surplus after', (await contracts.collSurplusPool.getCollateral(contracts.weth.address)).toString())
@@ -844,8 +844,8 @@ contract('newTroveManager', async accounts => {
     it("redeemCollateral() - MultiCollateral: fully redeem trove C with stablecoin and weth, partially redeem trove B", async () => {
       await th.addERC20(contracts.weth, A, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: A })
       await th.addERC20(contracts.weth, B, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: B })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(10000, 18)], { from: B })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(10000, 18)], { from: B })
       // Carol creates a Trove and adds first collateral
       let stableToMintCarol = toBN(dec(1600, 18));
       let wethToMintCarol = toBN(dec(20, 18));
@@ -862,14 +862,14 @@ contract('newTroveManager', async accounts => {
       let amountsCarol = [wethToMintCarol, stableToMintCarol];
       let colls = [contracts.weth, stableCoin];
       let priceFeeds = [contracts.priceFeedETH, priceFeedStableCoin];
-      await th.openTroveWithColls(contracts, { from: C, colls: colls, YUSDAmount: await getOpenTroveYUSDAmount(dec(3000, 18)), amounts: amountsCarol, priceFeeds: priceFeeds });
+      await th.openTroveWithColls(contracts, { from: C, colls: colls, PUSDAmount: await getOpenTrovePUSDAmount(dec(3000, 18)), amounts: amountsCarol, priceFeeds: priceFeeds });
 
       await troveManager.setBaseRate(0)
 
       // skip bootstrapping phase
       await th.fastForwardTime(timeValues.SECONDS_IN_ONE_WEEK * 2, web3.currentProvider)
 
-      const A_YUSD_Balance_Before = await contracts.yusdToken.balanceOf(A)
+      const A_PUSD_Balance_Before = await contracts.pusdToken.balanceOf(A)
       const B_debt_before = await troveManager.getTroveDebt(B)
 
       const A_WETH_Balance_Before = await contracts.weth.balanceOf(A)
@@ -879,17 +879,17 @@ contract('newTroveManager', async accounts => {
 
       const active_pool_before = (await activePool.getCollateral(contracts.weth.address)).add(await activePool.getCollateral(stableCoin.address))
 
-      // YUSD redemption is 3000 YUSD.
-      const YUSDRedemption = dec(3000, 18)
-      const finalYUSDAmount = await th.estimateYUSDEligible(contracts, YUSDRedemption)
-      // console.log("finalYUSDAMOUNT", finalYUSDAmount.toString())
-      const finalYUSDFeeAmount = th.toBN(YUSDRedemption).sub(finalYUSDAmount);
+      // PUSD redemption is 3000 PUSD.
+      const PUSDRedemption = dec(3000, 18)
+      const finalPUSDAmount = await th.estimatePUSDEligible(contracts, PUSDRedemption)
+      // console.log("finalPUSDAMOUNT", finalPUSDAmount.toString())
+      const finalPUSDFeeAmount = th.toBN(PUSDRedemption).sub(finalPUSDAmount);
 
-      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, YUSDRedemption, th._100pct)
+      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, PUSDRedemption, th._100pct)
       assert.isTrue(tx1.receipt.status)
 
-      const actualYUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
-      const actualYUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
+      const actualPUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
+      const actualPUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
       const actualETHAmount = (th.getEmittedRedemptionValues(tx1))[4][0]
       const actualSTABLEAmount = (th.getEmittedRedemptionValues(tx1))[4][1]
       const actualCollAmount = actualETHAmount.add(actualSTABLEAmount)
@@ -897,17 +897,17 @@ contract('newTroveManager', async accounts => {
       // console.log('actual eth', actualETHAmount.toString())
 
       //checks that the correct amount of stable coins were liquidated:
-      // 3000 YUSD - gascomp = 2800 YUSD -> (2800 YUSD debt / 5600 YUSD collat) x Amount of Risky tokens = 8
-      // Trove A redeems 2888.538 YUSD. Fully redeems Trove C. Partially redeems Trove B's ETH (~88.538 YUSD in ETH)
+      // 3000 PUSD - gascomp = 2800 PUSD -> (2800 PUSD debt / 5600 PUSD collat) x Amount of Risky tokens = 8
+      // Trove A redeems 2888.538 PUSD. Fully redeems Trove C. Partially redeems Trove B's ETH (~88.538 PUSD in ETH)
       assert(actualSTABLEAmount.eq(toBN(dec(800, 18))))
-      const ETHinYUSD = actualETHAmount.mul(toBN(200))
-      // console.log(ETHinYUSD.toString())
-      // console.log(finalYUSDAmount.sub(actualSTABLEAmount).toString())
+      const ETHinPUSD = actualETHAmount.mul(toBN(200))
+      // console.log(ETHinPUSD.toString())
+      // console.log(finalPUSDAmount.sub(actualSTABLEAmount).toString())
 
-      //check if ETH redeemed equals total YUSD redeemed - stable coin redeemed
+      //check if ETH redeemed equals total PUSD redeemed - stable coin redeemed
       await th.assertIsApproximatelyEqual(
-        ETHinYUSD,
-        finalYUSDAmount.sub(actualSTABLEAmount),
+        ETHinPUSD,
+        finalPUSDAmount.sub(actualSTABLEAmount),
         100000)
       const collSurplusPoolAfter = (await contracts.collSurplusPool.getCollateral(contracts.weth.address)).add(await contracts.collSurplusPool.getCollateral(stableCoin.address))
       // console.log('eth surplus after', (await contracts.collSurplusPool.getCollateral(contracts.weth.address)).toString())
@@ -918,8 +918,8 @@ contract('newTroveManager', async accounts => {
     it("redeemCollateral() - MultiCollateral: partially redeem trove C with riskytoken stablecoin and weth", async () => {
       await th.addERC20(contracts.weth, A, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: A })
       await th.addERC20(contracts.weth, B, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: B })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(10000, 18)], { from: B })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(10000, 18)], { from: B })
       // Carol creates a Trove and adds first collateral
       let tokenRiskyMintCarol = toBN(dec(16, 18));
       let wethToMintCarol = toBN(dec(20, 18));
@@ -945,7 +945,7 @@ contract('newTroveManager', async accounts => {
       let amountsCarol = [wethToMintCarol, tokenRiskyMintCarol, stableToMintCarol];
       let colls = [contracts.weth, tokenSuperRisky, stableCoin];
       let priceFeeds = [contracts.priceFeedETH, priceFeedSuperRisky, priceFeedStableCoin];
-      await th.openTroveWithColls(contracts, { from: C, colls: colls, YUSDAmount: await getOpenTroveYUSDAmount(dec(5150, 18)), amounts: amountsCarol, priceFeeds: priceFeeds });
+      await th.openTroveWithColls(contracts, { from: C, colls: colls, PUSDAmount: await getOpenTrovePUSDAmount(dec(5150, 18)), amounts: amountsCarol, priceFeeds: priceFeeds });
 
       await troveManager.setBaseRate(0)
 
@@ -957,13 +957,13 @@ contract('newTroveManager', async accounts => {
       const A_STABLE_Balance_Before = await stableCoin.balanceOf(A)
       const A_Coll_Balance_Before = A_WETH_Balance_Before.add(A_RISKY_Balance_Before).add(A_STABLE_Balance_Before)
 
-      // YUSD redemption is 1320 YUSD
-      const YUSDRedemption = toBN(dec(1320, 18))
-      const tx1 = await th.performRedemptionWithMaxFeeAmount(A, contracts, YUSDRedemption, YUSDRedemption)
+      // PUSD redemption is 1320 PUSD
+      const PUSDRedemption = toBN(dec(1320, 18))
+      const tx1 = await th.performRedemptionWithMaxFeeAmount(A, contracts, PUSDRedemption, PUSDRedemption)
       assert.isTrue(tx1.receipt.status)
 
-      const actualYUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
-      const actualYUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
+      const actualPUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
+      const actualPUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
       const actualETHAmount = (th.getEmittedRedemptionValues(tx1))[4][0]
       const actualRISKYAmount = (th.getEmittedRedemptionValues(tx1))[4][1]
       const actualSTABLEAmount = (th.getEmittedRedemptionValues(tx1))[4][2]
@@ -973,7 +973,7 @@ contract('newTroveManager', async accounts => {
       // console.log('actual stable', actualSTABLEAmount.toString())
 
       //checks that the correct amount of risky tokens were redeemed:
-      // (1320 YUSD debt / 6600 YUSD collat) = 0.2
+      // (1320 PUSD debt / 6600 PUSD collat) = 0.2
       // 0.2 x 16 risky tokens = 3.2 risky redeemed && 0.2 x 1000 stable tokens = 200 stable redeemed && 0.2 x 20 weth = 4 weth redeemed
       assert(actualRISKYAmount.eq(toBN(dec(32, 17))))
       assert(actualSTABLEAmount.eq(toBN(dec(200, 18))))
@@ -983,8 +983,8 @@ contract('newTroveManager', async accounts => {
     it("redeemCollateral() - MultiCollateral: redeems trove C with riskytoken stablecoin and weth TWICE", async () => {
       await th.addERC20(contracts.weth, A, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: A })
       await th.addERC20(contracts.weth, B, contracts.borrowerOperations.address, toBN(dec(100, 30)), { from: B })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
-      await borrowerOperations.openTrove(th._100pct, await getOpenTroveYUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(10000, 18)], { from: B })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), A, A, [contracts.weth.address], [dec(10000, 18)], { from: A })
+      await borrowerOperations.openTrove(th._100pct, await getOpenTrovePUSDAmount(dec(20000, 18)), B, B, [contracts.weth.address], [dec(10000, 18)], { from: B })
       // Carol creates a Trove and adds first collateral
       let tokenRiskyMintCarol = toBN(dec(16, 18));
       let wethToMintCarol = toBN(dec(20, 18));
@@ -1010,7 +1010,7 @@ contract('newTroveManager', async accounts => {
       let amountsCarol = [wethToMintCarol, tokenRiskyMintCarol, stableToMintCarol];
       let colls = [contracts.weth, tokenSuperRisky, stableCoin];
       let priceFeeds = [contracts.priceFeedETH, priceFeedSuperRisky, priceFeedStableCoin];
-      await th.openTroveWithColls(contracts, { from: C, colls: colls, YUSDAmount: await getOpenTroveYUSDAmount(dec(5150, 18)), amounts: amountsCarol, priceFeeds: priceFeeds });
+      await th.openTroveWithColls(contracts, { from: C, colls: colls, PUSDAmount: await getOpenTrovePUSDAmount(dec(5150, 18)), amounts: amountsCarol, priceFeeds: priceFeeds });
 
       await troveManager.setBaseRate(0)
 
@@ -1022,13 +1022,13 @@ contract('newTroveManager', async accounts => {
       const A_STABLE_Balance_Before = await stableCoin.balanceOf(A)
       const A_Coll_Balance_Before = A_WETH_Balance_Before.add(A_RISKY_Balance_Before).add(A_STABLE_Balance_Before)
 
-      // YUSD redemption is 1320 YUSD
-      const YUSDRedemption = toBN(dec(1320, 18))
-      const tx1 = await th.performRedemptionWithMaxFeeAmount(A, contracts, YUSDRedemption, YUSDRedemption)
+      // PUSD redemption is 1320 PUSD
+      const PUSDRedemption = toBN(dec(1320, 18))
+      const tx1 = await th.performRedemptionWithMaxFeeAmount(A, contracts, PUSDRedemption, PUSDRedemption)
       assert.isTrue(tx1.receipt.status)
 
-      const actualYUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
-      const actualYUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
+      const actualPUSDAmount = (th.getEmittedRedemptionValues(tx1))[1]
+      const actualPUSDFee = (th.getEmittedRedemptionValues(tx1))[2]
       const actualETHAmount = (th.getEmittedRedemptionValues(tx1))[4][0]
       const actualRISKYAmount = (th.getEmittedRedemptionValues(tx1))[4][1]
       const actualSTABLEAmount = (th.getEmittedRedemptionValues(tx1))[4][2]
@@ -1038,14 +1038,14 @@ contract('newTroveManager', async accounts => {
       // console.log('actual stable', actualSTABLEAmount.toString())
 
       //checks that the correct amount of risky tokens were redeemed:
-      // (1320 YUSD debt / 6600 YUSD collat) = 0.2
+      // (1320 PUSD debt / 6600 PUSD collat) = 0.2
       // 0.2 x 16 risky tokens = 3.2 risky redeemed && 0.2 x 1000 stable tokens = 200 stable redeemed && 0.2 x 20 weth = 4 weth redeemed
       assert(actualRISKYAmount.eq(toBN(dec(32, 17))))
       assert(actualSTABLEAmount.eq(toBN(dec(200, 18))))
       assert(actualETHAmount.eq(toBN(dec(4, 18))))
 
-      const YUSDRedemption2 = toBN(dec(1320, 18))
-      const tx2 = await th.performRedemptionWithMaxFeeAmount(A, contracts, YUSDRedemption2, YUSDRedemption2)
+      const PUSDRedemption2 = toBN(dec(1320, 18))
+      const tx2 = await th.performRedemptionWithMaxFeeAmount(A, contracts, PUSDRedemption2, PUSDRedemption2)
       assert.isTrue(tx2.receipt.status)
       const actualETHAmount2 = (th.getEmittedRedemptionValues(tx2))[4][0]
       const actualRISKYAmount2 = (th.getEmittedRedemptionValues(tx2))[4][1]
@@ -1097,9 +1097,9 @@ contract('newTroveManager', async accounts => {
       // Redeem troves and assert that that trove has been updated properly in the list.
       const bottomBeforeRedemption = await contracts.sortedTroves.getLast()
       const ICRBefore = await troveManager.getCurrentICR(bottomBeforeRedemption)
-      const YUSDRedemption = dec(8000, 18)
+      const PUSDRedemption = dec(8000, 18)
 
-      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, YUSDRedemption, th._100pct)
+      const tx1 = await th.redeemCollateralAndGetTxObject(A, contracts, PUSDRedemption, th._100pct)
       assert.isTrue(tx1.receipt.status)
 
       assert.isTrue((await sortedTroves.getOldICR(bottomBeforeRedemption)).eq(await troveManager.getCurrentICR(bottomBeforeRedemption)))
@@ -1113,7 +1113,7 @@ contract('newTroveManager', async accounts => {
     testCorpus({ withProxy: false })
   })
 
-  // Sequentially add coll and withdraw YUSD, 1 account at a time
+  // Sequentially add coll and withdraw PUSD, 1 account at a time
   const makeTrovesInSequence = async () => {
     // const makeTrovesInSequence = async () => {
 

@@ -30,7 +30,7 @@ contract('During the initial lockup period', async accounts => {
   const SECONDS_IN_ONE_MONTH = timeValues.SECONDS_IN_ONE_MONTH
   const SECONDS_IN_364_DAYS = timeValues.SECONDS_IN_ONE_DAY * 364
 
-  let YETIContracts
+  let PREONContracts
   let coreContracts
 
   // LCs for team members on vesting schedules
@@ -51,11 +51,11 @@ contract('During the initial lockup period', async accounts => {
   const investorInitialEntitlement_2 = dec(5, 24)
   const investorInitialEntitlement_3 = dec(6, 24)
 
-  const YETIEntitlement_A = dec(1, 24)
-  const YETIEntitlement_B = dec(2, 24)
-  const YETIEntitlement_C = dec(3, 24)
-  const YETIEntitlement_D = dec(4, 24)
-  const YETIEntitlement_E = dec(5, 24)
+  const PREONEntitlement_A = dec(1, 24)
+  const PREONEntitlement_B = dec(2, 24)
+  const PREONEntitlement_C = dec(3, 24)
+  const PREONEntitlement_D = dec(4, 24)
+  const PREONEntitlement_E = dec(5, 24)
 
   let oneYearFromSystemDeployment
   let twoYearsFromSystemDeployment
@@ -63,20 +63,20 @@ contract('During the initial lockup period', async accounts => {
   beforeEach(async () => {
     // Deploy all contracts from the first account
     coreContracts = await deploymentHelper.deployLiquityCore()
-    YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+    PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
-    sYETI = YETIContracts.sYETI
-    yetiToken = YETIContracts.yetiToken
-    communityIssuance = YETIContracts.communityIssuance
-    lockupContractFactory = YETIContracts.lockupContractFactory
+    sPREON = PREONContracts.sPREON
+    preonToken = PREONContracts.preonToken
+    communityIssuance = PREONContracts.communityIssuance
+    lockupContractFactory = PREONContracts.lockupContractFactory
 
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectCoreContracts(coreContracts, YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, coreContracts)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectCoreContracts(coreContracts, PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, coreContracts)
 
-    oneYearFromSystemDeployment = await th.getTimeFromSystemDeployment(yetiToken, web3, timeValues.SECONDS_IN_ONE_YEAR)
+    oneYearFromSystemDeployment = await th.getTimeFromSystemDeployment(preonToken, web3, timeValues.SECONDS_IN_ONE_YEAR)
     const secondsInTwoYears = toBN(timeValues.SECONDS_IN_ONE_YEAR).mul(toBN('2'))
-    twoYearsFromSystemDeployment = await th.getTimeFromSystemDeployment(yetiToken, web3, secondsInTwoYears)
+    twoYearsFromSystemDeployment = await th.getTimeFromSystemDeployment(preonToken, web3, secondsInTwoYears)
 
     // Deploy 3 LCs for team members on vesting schedules
     const deployedLCtx_T1 = await lockupContractFactory.deployLockupContract(teamMember_1, oneYearFromSystemDeployment, { from: liquityAG })
@@ -98,160 +98,160 @@ contract('During the initial lockup period', async accounts => {
     LC_I2 = await th.getLCFromDeploymentTx(deployedLCtx_I2)
     LC_I3 = await th.getLCFromDeploymentTx(deployedLCtx_I3)
 
-    // Multisig transfers initial YETI entitlements to LCs
-    await yetiToken.transfer(LC_T1.address, teamMemberInitialEntitlement_1, { from: multisig })
-    await yetiToken.transfer(LC_T2.address, teamMemberInitialEntitlement_2, { from: multisig })
-    await yetiToken.transfer(LC_T3.address, teamMemberInitialEntitlement_3, { from: multisig })
+    // Multisig transfers initial PREON entitlements to LCs
+    await preonToken.transfer(LC_T1.address, teamMemberInitialEntitlement_1, { from: multisig })
+    await preonToken.transfer(LC_T2.address, teamMemberInitialEntitlement_2, { from: multisig })
+    await preonToken.transfer(LC_T3.address, teamMemberInitialEntitlement_3, { from: multisig })
 
-    await yetiToken.transfer(LC_I1.address, investorInitialEntitlement_1, { from: multisig })
-    await yetiToken.transfer(LC_I2.address, investorInitialEntitlement_2, { from: multisig })
-    await yetiToken.transfer(LC_I3.address, investorInitialEntitlement_3, { from: multisig })
+    await preonToken.transfer(LC_I1.address, investorInitialEntitlement_1, { from: multisig })
+    await preonToken.transfer(LC_I2.address, investorInitialEntitlement_2, { from: multisig })
+    await preonToken.transfer(LC_I3.address, investorInitialEntitlement_3, { from: multisig })
 
     // Fast forward time 364 days, so that still less than 1 year since launch has passed
     await th.fastForwardTime(SECONDS_IN_364_DAYS, web3.currentProvider)
   })
 
-  describe('YETI transfer during first year after YETI deployment', async accounts => {
+  describe('PREON transfer during first year after PREON deployment', async accounts => {
     // --- Liquity AG transfer restriction, 1st year ---
-    it("Liquity multisig can not transfer YETI to a LC that was deployed directly", async () => {
+    it("Liquity multisig can not transfer PREON to a LC that was deployed directly", async () => {
       // Liquity multisig deploys LC_A
-      const LC_A = await LockupContract.new(yetiToken.address, A, oneYearFromSystemDeployment, { from: multisig })
+      const LC_A = await LockupContract.new(preonToken.address, A, oneYearFromSystemDeployment, { from: multisig })
 
       // Account F deploys LC_B
-      const LC_B = await LockupContract.new(yetiToken.address, B, oneYearFromSystemDeployment, { from: F })
+      const LC_B = await LockupContract.new(preonToken.address, B, oneYearFromSystemDeployment, { from: F })
 
-      // YETI deployer deploys LC_C
-      const LC_C = await LockupContract.new(yetiToken.address, A, oneYearFromSystemDeployment, { from: liquityAG })
+      // PREON deployer deploys LC_C
+      const LC_C = await LockupContract.new(preonToken.address, A, oneYearFromSystemDeployment, { from: liquityAG })
 
-      // Liquity multisig attempts YETI transfer to LC_A
+      // Liquity multisig attempts PREON transfer to LC_A
       try {
-        const YETItransferTx_A = await yetiToken.transfer(LC_A.address, dec(1, 18), { from: multisig })
-        assert.isFalse(YETItransferTx_A.receipt.status)
+        const PREONtransferTx_A = await preonToken.transfer(LC_A.address, dec(1, 18), { from: multisig })
+        assert.isFalse(PREONtransferTx_A.receipt.status)
       } catch (error) {
-        assert.include(error.message, "YETIToken: recipient must be a LockupContract registered in the Factory")
+        assert.include(error.message, "PREONToken: recipient must be a LockupContract registered in the Factory")
       }
 
-      // Liquity multisig attempts YETI transfer to LC_B
+      // Liquity multisig attempts PREON transfer to LC_B
       try {
-        const YETItransferTx_B = await yetiToken.transfer(LC_B.address, dec(1, 18), { from: multisig })
-        assert.isFalse(YETItransferTx_B.receipt.status)
+        const PREONtransferTx_B = await preonToken.transfer(LC_B.address, dec(1, 18), { from: multisig })
+        assert.isFalse(PREONtransferTx_B.receipt.status)
       } catch (error) {
-        assert.include(error.message, "YETIToken: recipient must be a LockupContract registered in the Factory")
+        assert.include(error.message, "PREONToken: recipient must be a LockupContract registered in the Factory")
       }
 
       try {
-        const YETItransferTx_C = await yetiToken.transfer(LC_C.address, dec(1, 18), { from: multisig })
-        assert.isFalse(YETItransferTx_C.receipt.status)
+        const PREONtransferTx_C = await preonToken.transfer(LC_C.address, dec(1, 18), { from: multisig })
+        assert.isFalse(PREONtransferTx_C.receipt.status)
       } catch (error) {
-        assert.include(error.message, "YETIToken: recipient must be a LockupContract registered in the Factory")
+        assert.include(error.message, "PREONToken: recipient must be a LockupContract registered in the Factory")
       }
     })
 
     it("Liquity multisig can not transfer to an EOA or Liquity system contracts", async () => {
-      // Multisig attempts YETI transfer to EOAs
-      const YETItransferTxPromise_1 = yetiToken.transfer(A, dec(1, 18), { from: multisig })
-      const YETItransferTxPromise_2 = yetiToken.transfer(B, dec(1, 18), { from: multisig })
-      await assertRevert(YETItransferTxPromise_1)
-      await assertRevert(YETItransferTxPromise_2)
+      // Multisig attempts PREON transfer to EOAs
+      const PREONtransferTxPromise_1 = preonToken.transfer(A, dec(1, 18), { from: multisig })
+      const PREONtransferTxPromise_2 = preonToken.transfer(B, dec(1, 18), { from: multisig })
+      await assertRevert(PREONtransferTxPromise_1)
+      await assertRevert(PREONtransferTxPromise_2)
 
-      // Multisig attempts YETI transfer to core Liquity contracts
+      // Multisig attempts PREON transfer to core Liquity contracts
       for (const contract of Object.keys(coreContracts)) {
-        const YETItransferTxPromise = yetiToken.transfer(coreContracts[contract].address, dec(1, 18), { from: multisig })
-        await assertRevert(YETItransferTxPromise, "YETIToken: recipient must be a LockupContract registered in the Factory")
+        const PREONtransferTxPromise = preonToken.transfer(coreContracts[contract].address, dec(1, 18), { from: multisig })
+        await assertRevert(PREONtransferTxPromise, "PREONToken: recipient must be a LockupContract registered in the Factory")
       }
 
-      // Multisig attempts YETI transfer to YETI contracts (excluding LCs)
-      for (const contract of Object.keys(YETIContracts)) {
-        const YETItransferTxPromise = yetiToken.transfer(YETIContracts[contract].address, dec(1, 18), { from: multisig })
-        await assertRevert(YETItransferTxPromise, "YETIToken: recipient must be a LockupContract registered in the Factory")
+      // Multisig attempts PREON transfer to PREON contracts (excluding LCs)
+      for (const contract of Object.keys(PREONContracts)) {
+        const PREONtransferTxPromise = preonToken.transfer(PREONContracts[contract].address, dec(1, 18), { from: multisig })
+        await assertRevert(PREONtransferTxPromise, "PREONToken: recipient must be a LockupContract registered in the Factory")
       }
     })
 
     // --- Liquity AG approval restriction, 1st year ---
-    it("Liquity multisig can not approve any EOA or Liquity system contract to spend their YETI", async () => {
-      // Multisig attempts to approve EOAs to spend YETI
-      const YETIApproveTxPromise_1 = yetiToken.approve(A, dec(1, 18), { from: multisig })
-      const YETIApproveTxPromise_2 = yetiToken.approve(B, dec(1, 18), { from: multisig })
-      await assertRevert(YETIApproveTxPromise_1, "YETIToken: caller must not be the multisig")
-      await assertRevert(YETIApproveTxPromise_2, "YETIToken: caller must not be the multisig")
+    it("Liquity multisig can not approve any EOA or Liquity system contract to spend their PREON", async () => {
+      // Multisig attempts to approve EOAs to spend PREON
+      const PREONApproveTxPromise_1 = preonToken.approve(A, dec(1, 18), { from: multisig })
+      const PREONApproveTxPromise_2 = preonToken.approve(B, dec(1, 18), { from: multisig })
+      await assertRevert(PREONApproveTxPromise_1, "PREONToken: caller must not be the multisig")
+      await assertRevert(PREONApproveTxPromise_2, "PREONToken: caller must not be the multisig")
 
-      // Multisig attempts to approve Liquity contracts to spend YETI
+      // Multisig attempts to approve Liquity contracts to spend PREON
       for (const contract of Object.keys(coreContracts)) {
-        const YETIApproveTxPromise = yetiToken.approve(coreContracts[contract].address, dec(1, 18), { from: multisig })
-        await assertRevert(YETIApproveTxPromise, "YETIToken: caller must not be the multisig")
+        const PREONApproveTxPromise = preonToken.approve(coreContracts[contract].address, dec(1, 18), { from: multisig })
+        await assertRevert(PREONApproveTxPromise, "PREONToken: caller must not be the multisig")
       }
 
-      // Multisig attempts to approve YETI contracts to spend YETI (excluding LCs)
-      for (const contract of Object.keys(YETIContracts)) {
-        const YETIApproveTxPromise = yetiToken.approve(YETIContracts[contract].address, dec(1, 18), { from: multisig })
-        await assertRevert(YETIApproveTxPromise, "YETIToken: caller must not be the multisig")
+      // Multisig attempts to approve PREON contracts to spend PREON (excluding LCs)
+      for (const contract of Object.keys(PREONContracts)) {
+        const PREONApproveTxPromise = preonToken.approve(PREONContracts[contract].address, dec(1, 18), { from: multisig })
+        await assertRevert(PREONApproveTxPromise, "PREONToken: caller must not be the multisig")
       }
     })
 
     // --- Liquity AG increaseAllowance restriction, 1st year ---
     it("Liquity multisig can not increaseAllowance for any EOA or Liquity contract", async () => {
-      // Multisig attempts to approve EOAs to spend YETI
-      const YETIIncreaseAllowanceTxPromise_1 = yetiToken.increaseAllowance(A, dec(1, 18), { from: multisig })
-      const YETIIncreaseAllowanceTxPromise_2 = yetiToken.increaseAllowance(B, dec(1, 18), { from: multisig })
-      await assertRevert(YETIIncreaseAllowanceTxPromise_1, "YETIToken: caller must not be the multisig")
-      await assertRevert(YETIIncreaseAllowanceTxPromise_2, "YETIToken: caller must not be the multisig")
+      // Multisig attempts to approve EOAs to spend PREON
+      const PREONIncreaseAllowanceTxPromise_1 = preonToken.increaseAllowance(A, dec(1, 18), { from: multisig })
+      const PREONIncreaseAllowanceTxPromise_2 = preonToken.increaseAllowance(B, dec(1, 18), { from: multisig })
+      await assertRevert(PREONIncreaseAllowanceTxPromise_1, "PREONToken: caller must not be the multisig")
+      await assertRevert(PREONIncreaseAllowanceTxPromise_2, "PREONToken: caller must not be the multisig")
 
-      // Multisig attempts to approve Liquity contracts to spend YETI
+      // Multisig attempts to approve Liquity contracts to spend PREON
       for (const contract of Object.keys(coreContracts)) {
-        const YETIIncreaseAllowanceTxPromise = yetiToken.increaseAllowance(coreContracts[contract].address, dec(1, 18), { from: multisig })
-        await assertRevert(YETIIncreaseAllowanceTxPromise, "YETIToken: caller must not be the multisig")
+        const PREONIncreaseAllowanceTxPromise = preonToken.increaseAllowance(coreContracts[contract].address, dec(1, 18), { from: multisig })
+        await assertRevert(PREONIncreaseAllowanceTxPromise, "PREONToken: caller must not be the multisig")
       }
 
-      // Multisig attempts to approve YETI contracts to spend YETI (excluding LCs)
-      for (const contract of Object.keys(YETIContracts)) {
-        const YETIIncreaseAllowanceTxPromise = yetiToken.increaseAllowance(YETIContracts[contract].address, dec(1, 18), { from: multisig })
-        await assertRevert(YETIIncreaseAllowanceTxPromise, "YETIToken: caller must not be the multisig")
+      // Multisig attempts to approve PREON contracts to spend PREON (excluding LCs)
+      for (const contract of Object.keys(PREONContracts)) {
+        const PREONIncreaseAllowanceTxPromise = preonToken.increaseAllowance(PREONContracts[contract].address, dec(1, 18), { from: multisig })
+        await assertRevert(PREONIncreaseAllowanceTxPromise, "PREONToken: caller must not be the multisig")
       }
     })
 
     // --- Liquity AG decreaseAllowance restriction, 1st year ---
     it("Liquity multisig can not decreaseAllowance for any EOA or Liquity contract", async () => {
       // Multisig attempts to decreaseAllowance on EOAs 
-      const YETIDecreaseAllowanceTxPromise_1 = yetiToken.decreaseAllowance(A, dec(1, 18), { from: multisig })
-      const YETIDecreaseAllowanceTxPromise_2 = yetiToken.decreaseAllowance(B, dec(1, 18), { from: multisig })
-      await assertRevert(YETIDecreaseAllowanceTxPromise_1, "YETIToken: caller must not be the multisig")
-      await assertRevert(YETIDecreaseAllowanceTxPromise_2, "YETIToken: caller must not be the multisig")
+      const PREONDecreaseAllowanceTxPromise_1 = preonToken.decreaseAllowance(A, dec(1, 18), { from: multisig })
+      const PREONDecreaseAllowanceTxPromise_2 = preonToken.decreaseAllowance(B, dec(1, 18), { from: multisig })
+      await assertRevert(PREONDecreaseAllowanceTxPromise_1, "PREONToken: caller must not be the multisig")
+      await assertRevert(PREONDecreaseAllowanceTxPromise_2, "PREONToken: caller must not be the multisig")
 
       // Multisig attempts to decrease allowance on Liquity contracts
       for (const contract of Object.keys(coreContracts)) {
-        const YETIDecreaseAllowanceTxPromise = yetiToken.decreaseAllowance(coreContracts[contract].address, dec(1, 18), { from: multisig })
-        await assertRevert(YETIDecreaseAllowanceTxPromise, "YETIToken: caller must not be the multisig")
+        const PREONDecreaseAllowanceTxPromise = preonToken.decreaseAllowance(coreContracts[contract].address, dec(1, 18), { from: multisig })
+        await assertRevert(PREONDecreaseAllowanceTxPromise, "PREONToken: caller must not be the multisig")
       }
 
-      // Multisig attempts to decrease allowance on YETI contracts (excluding LCs)
-      for (const contract of Object.keys(YETIContracts)) {
-        const YETIDecreaseAllowanceTxPromise = yetiToken.decreaseAllowance(YETIContracts[contract].address, dec(1, 18), { from: multisig })
-        await assertRevert(YETIDecreaseAllowanceTxPromise, "YETIToken: caller must not be the multisig")
+      // Multisig attempts to decrease allowance on PREON contracts (excluding LCs)
+      for (const contract of Object.keys(PREONContracts)) {
+        const PREONDecreaseAllowanceTxPromise = preonToken.decreaseAllowance(PREONContracts[contract].address, dec(1, 18), { from: multisig })
+        await assertRevert(PREONDecreaseAllowanceTxPromise, "PREONToken: caller must not be the multisig")
       }
     })
 
     // --- Liquity multisig transferFrom restriction, 1st year ---
     it("Liquity multisig can not be the sender in a transferFrom() call", async () => {
       // EOAs attempt to use multisig as sender in a transferFrom()
-      const YETItransferFromTxPromise_1 = yetiToken.transferFrom(multisig, A, dec(1, 18), { from: A })
-      const YETItransferFromTxPromise_2 = yetiToken.transferFrom(multisig, C, dec(1, 18), { from: B })
-      await assertRevert(YETItransferFromTxPromise_1, "YETIToken: sender must not be the multisig")
-      await assertRevert(YETItransferFromTxPromise_2, "YETIToken: sender must not be the multisig")
+      const PREONtransferFromTxPromise_1 = preonToken.transferFrom(multisig, A, dec(1, 18), { from: A })
+      const PREONtransferFromTxPromise_2 = preonToken.transferFrom(multisig, C, dec(1, 18), { from: B })
+      await assertRevert(PREONtransferFromTxPromise_1, "PREONToken: sender must not be the multisig")
+      await assertRevert(PREONtransferFromTxPromise_2, "PREONToken: sender must not be the multisig")
     })
 
     //  --- staking, 1st year ---
-    it("Liquity multisig can not stake their YETI in the staking contract", async () => {
-      const SYETITxPromise_1 = sYETI.mint(dec(1, 18), { from: multisig })
-      await assertRevert(SYETITxPromise_1, "YETIToken: sender must not be the multisig")
+    it("Liquity multisig can not stake their PREON in the staking contract", async () => {
+      const SPREONTxPromise_1 = sPREON.mint(dec(1, 18), { from: multisig })
+      await assertRevert(SPREONTxPromise_1, "PREONToken: sender must not be the multisig")
     })
 
     // --- Anyone else ---
 
-    it("Anyone (other than Liquity multisig) can transfer YETI to LCs deployed by anyone through the Factory", async () => {
-      // Start D, E, F with some YETI
-      await yetiToken.unprotectedMint(D, dec(1, 24))
-      await yetiToken.unprotectedMint(E, dec(2, 24))
-      await yetiToken.unprotectedMint(F, dec(3, 24))
+    it("Anyone (other than Liquity multisig) can transfer PREON to LCs deployed by anyone through the Factory", async () => {
+      // Start D, E, F with some PREON
+      await preonToken.unprotectedMint(D, dec(1, 24))
+      await preonToken.unprotectedMint(E, dec(2, 24))
+      await preonToken.unprotectedMint(F, dec(3, 24))
 
       // H, I, and Liquity AG deploy lockup contracts with A, B, C as beneficiaries, respectively
       const deployedLCtx_A = await lockupContractFactory.deployLockupContract(A, oneYearFromSystemDeployment, { from: H })
@@ -264,165 +264,165 @@ contract('During the initial lockup period', async accounts => {
       const LCAddress_C = await th.getLCAddressFromDeploymentTx(deployedLCtx_C)
 
       // Check balances of LCs are 0
-      assert.equal(await yetiToken.balanceOf(LCAddress_A), '0')
-      assert.equal(await yetiToken.balanceOf(LCAddress_B), '0')
-      assert.equal(await yetiToken.balanceOf(LCAddress_C), '0')
+      assert.equal(await preonToken.balanceOf(LCAddress_A), '0')
+      assert.equal(await preonToken.balanceOf(LCAddress_B), '0')
+      assert.equal(await preonToken.balanceOf(LCAddress_C), '0')
 
-      // D, E, F transfer YETI to LCs
-      await yetiToken.transfer(LCAddress_A, dec(1, 24), { from: D })
-      await yetiToken.transfer(LCAddress_B, dec(2, 24), { from: E })
-      await yetiToken.transfer(LCAddress_C, dec(3, 24), { from: F })
+      // D, E, F transfer PREON to LCs
+      await preonToken.transfer(LCAddress_A, dec(1, 24), { from: D })
+      await preonToken.transfer(LCAddress_B, dec(2, 24), { from: E })
+      await preonToken.transfer(LCAddress_C, dec(3, 24), { from: F })
 
       // Check balances of LCs has increased
-      assert.equal(await yetiToken.balanceOf(LCAddress_A), dec(1, 24))
-      assert.equal(await yetiToken.balanceOf(LCAddress_B), dec(2, 24))
-      assert.equal(await yetiToken.balanceOf(LCAddress_C), dec(3, 24))
+      assert.equal(await preonToken.balanceOf(LCAddress_A), dec(1, 24))
+      assert.equal(await preonToken.balanceOf(LCAddress_B), dec(2, 24))
+      assert.equal(await preonToken.balanceOf(LCAddress_C), dec(3, 24))
     })
 
-    it("Anyone (other than Liquity multisig) can transfer YETI to LCs deployed by anyone directly", async () => {
-      // Start D, E, F with some YETI
-      await yetiToken.unprotectedMint(D, dec(1, 24))
-      await yetiToken.unprotectedMint(E, dec(2, 24))
-      await yetiToken.unprotectedMint(F, dec(3, 24))
+    it("Anyone (other than Liquity multisig) can transfer PREON to LCs deployed by anyone directly", async () => {
+      // Start D, E, F with some PREON
+      await preonToken.unprotectedMint(D, dec(1, 24))
+      await preonToken.unprotectedMint(E, dec(2, 24))
+      await preonToken.unprotectedMint(F, dec(3, 24))
 
       // H, I, LiqAG deploy lockup contracts with A, B, C as beneficiaries, respectively
-      const LC_A = await LockupContract.new(yetiToken.address, A, oneYearFromSystemDeployment, { from: H })
-      const LC_B = await LockupContract.new(yetiToken.address, B, oneYearFromSystemDeployment, { from: I })
-      const LC_C = await LockupContract.new(yetiToken.address, C, oneYearFromSystemDeployment, { from: multisig })
+      const LC_A = await LockupContract.new(preonToken.address, A, oneYearFromSystemDeployment, { from: H })
+      const LC_B = await LockupContract.new(preonToken.address, B, oneYearFromSystemDeployment, { from: I })
+      const LC_C = await LockupContract.new(preonToken.address, C, oneYearFromSystemDeployment, { from: multisig })
 
       // Check balances of LCs are 0
-      assert.equal(await yetiToken.balanceOf(LC_A.address), '0')
-      assert.equal(await yetiToken.balanceOf(LC_B.address), '0')
-      assert.equal(await yetiToken.balanceOf(LC_C.address), '0')
+      assert.equal(await preonToken.balanceOf(LC_A.address), '0')
+      assert.equal(await preonToken.balanceOf(LC_B.address), '0')
+      assert.equal(await preonToken.balanceOf(LC_C.address), '0')
 
-      // D, E, F transfer YETI to LCs
-      await yetiToken.transfer(LC_A.address, dec(1, 24), { from: D })
-      await yetiToken.transfer(LC_B.address, dec(2, 24), { from: E })
-      await yetiToken.transfer(LC_C.address, dec(3, 24), { from: F })
+      // D, E, F transfer PREON to LCs
+      await preonToken.transfer(LC_A.address, dec(1, 24), { from: D })
+      await preonToken.transfer(LC_B.address, dec(2, 24), { from: E })
+      await preonToken.transfer(LC_C.address, dec(3, 24), { from: F })
 
       // Check balances of LCs has increased
-      assert.equal(await yetiToken.balanceOf(LC_A.address), dec(1, 24))
-      assert.equal(await yetiToken.balanceOf(LC_B.address), dec(2, 24))
-      assert.equal(await yetiToken.balanceOf(LC_C.address), dec(3, 24))
+      assert.equal(await preonToken.balanceOf(LC_A.address), dec(1, 24))
+      assert.equal(await preonToken.balanceOf(LC_B.address), dec(2, 24))
+      assert.equal(await preonToken.balanceOf(LC_C.address), dec(3, 24))
     })
 
     it("Anyone (other than liquity multisig) can transfer to an EOA", async () => {
-      // Start D, E, F with some YETI
-      await yetiToken.unprotectedMint(D, dec(1, 24))
-      await yetiToken.unprotectedMint(E, dec(2, 24))
-      await yetiToken.unprotectedMint(F, dec(3, 24))
+      // Start D, E, F with some PREON
+      await preonToken.unprotectedMint(D, dec(1, 24))
+      await preonToken.unprotectedMint(E, dec(2, 24))
+      await preonToken.unprotectedMint(F, dec(3, 24))
 
-      // YETI holders transfer to other transfer to EOAs
-      const YETItransferTx_1 = await yetiToken.transfer(A, dec(1, 18), { from: D })
-      const YETItransferTx_2 = await yetiToken.transfer(B, dec(1, 18), { from: E })
-      const YETItransferTx_3 = await yetiToken.transfer(multisig, dec(1, 18), { from: F })
+      // PREON holders transfer to other transfer to EOAs
+      const PREONtransferTx_1 = await preonToken.transfer(A, dec(1, 18), { from: D })
+      const PREONtransferTx_2 = await preonToken.transfer(B, dec(1, 18), { from: E })
+      const PREONtransferTx_3 = await preonToken.transfer(multisig, dec(1, 18), { from: F })
 
-      assert.isTrue(YETItransferTx_1.receipt.status)
-      assert.isTrue(YETItransferTx_2.receipt.status)
-      assert.isTrue(YETItransferTx_3.receipt.status)
+      assert.isTrue(PREONtransferTx_1.receipt.status)
+      assert.isTrue(PREONtransferTx_2.receipt.status)
+      assert.isTrue(PREONtransferTx_3.receipt.status)
     })
 
-    it("Anyone (other than liquity multisig) can approve any EOA or to spend their YETI", async () => {
-      // EOAs approve EOAs to spend YETI
-      const YETIapproveTx_1 = await yetiToken.approve(A, dec(1, 18), { from: F })
-      const YETIapproveTx_2 = await yetiToken.approve(B, dec(1, 18), { from: G })
-      await assert.isTrue(YETIapproveTx_1.receipt.status)
-      await assert.isTrue(YETIapproveTx_2.receipt.status)
+    it("Anyone (other than liquity multisig) can approve any EOA or to spend their PREON", async () => {
+      // EOAs approve EOAs to spend PREON
+      const PREONapproveTx_1 = await preonToken.approve(A, dec(1, 18), { from: F })
+      const PREONapproveTx_2 = await preonToken.approve(B, dec(1, 18), { from: G })
+      await assert.isTrue(PREONapproveTx_1.receipt.status)
+      await assert.isTrue(PREONapproveTx_2.receipt.status)
     })
 
     it("Anyone (other than liquity multisig) can increaseAllowance for any EOA or Liquity contract", async () => {
-      // Anyone can increaseAllowance of EOAs to spend YETI
-      const YETIIncreaseAllowanceTx_1 = await yetiToken.increaseAllowance(A, dec(1, 18), { from: F })
-      const YETIIncreaseAllowanceTx_2 = await yetiToken.increaseAllowance(B, dec(1, 18), { from: G })
-      await assert.isTrue(YETIIncreaseAllowanceTx_1.receipt.status)
-      await assert.isTrue(YETIIncreaseAllowanceTx_2.receipt.status)
+      // Anyone can increaseAllowance of EOAs to spend PREON
+      const PREONIncreaseAllowanceTx_1 = await preonToken.increaseAllowance(A, dec(1, 18), { from: F })
+      const PREONIncreaseAllowanceTx_2 = await preonToken.increaseAllowance(B, dec(1, 18), { from: G })
+      await assert.isTrue(PREONIncreaseAllowanceTx_1.receipt.status)
+      await assert.isTrue(PREONIncreaseAllowanceTx_2.receipt.status)
 
       // Increase allowance of core Liquity contracts
       for (const contract of Object.keys(coreContracts)) {
-        const YETIIncreaseAllowanceTx = await yetiToken.increaseAllowance(coreContracts[contract].address, dec(1, 18), { from: F })
-        await assert.isTrue(YETIIncreaseAllowanceTx.receipt.status)
+        const PREONIncreaseAllowanceTx = await preonToken.increaseAllowance(coreContracts[contract].address, dec(1, 18), { from: F })
+        await assert.isTrue(PREONIncreaseAllowanceTx.receipt.status)
       }
 
-      // Increase allowance of YETI contracts
-      for (const contract of Object.keys(YETIContracts)) {
-        const YETIIncreaseAllowanceTx = await yetiToken.increaseAllowance(YETIContracts[contract].address, dec(1, 18), { from: F })
-        await assert.isTrue(YETIIncreaseAllowanceTx.receipt.status)
+      // Increase allowance of PREON contracts
+      for (const contract of Object.keys(PREONContracts)) {
+        const PREONIncreaseAllowanceTx = await preonToken.increaseAllowance(PREONContracts[contract].address, dec(1, 18), { from: F })
+        await assert.isTrue(PREONIncreaseAllowanceTx.receipt.status)
       }
     })
 
     it("Anyone (other than liquity multisig) can decreaseAllowance for any EOA or Liquity contract", async () => {
-      //First, increase allowance of A, B and coreContracts and YETI contracts
-      const YETIIncreaseAllowanceTx_1 = await yetiToken.increaseAllowance(A, dec(1, 18), { from: F })
-      const YETIIncreaseAllowanceTx_2 = await yetiToken.increaseAllowance(B, dec(1, 18), { from: G })
-      await assert.isTrue(YETIIncreaseAllowanceTx_1.receipt.status)
-      await assert.isTrue(YETIIncreaseAllowanceTx_2.receipt.status)
+      //First, increase allowance of A, B and coreContracts and PREON contracts
+      const PREONIncreaseAllowanceTx_1 = await preonToken.increaseAllowance(A, dec(1, 18), { from: F })
+      const PREONIncreaseAllowanceTx_2 = await preonToken.increaseAllowance(B, dec(1, 18), { from: G })
+      await assert.isTrue(PREONIncreaseAllowanceTx_1.receipt.status)
+      await assert.isTrue(PREONIncreaseAllowanceTx_2.receipt.status)
 
       for (const contract of Object.keys(coreContracts)) {
-        const YETItransferTx = await yetiToken.increaseAllowance(coreContracts[contract].address, dec(1, 18), { from: F })
-        await assert.isTrue(YETItransferTx.receipt.status)
+        const PREONtransferTx = await preonToken.increaseAllowance(coreContracts[contract].address, dec(1, 18), { from: F })
+        await assert.isTrue(PREONtransferTx.receipt.status)
       }
 
-      for (const contract of Object.keys(YETIContracts)) {
-        const YETItransferTx = await yetiToken.increaseAllowance(YETIContracts[contract].address, dec(1, 18), { from: F })
-        await assert.isTrue(YETItransferTx.receipt.status)
+      for (const contract of Object.keys(PREONContracts)) {
+        const PREONtransferTx = await preonToken.increaseAllowance(PREONContracts[contract].address, dec(1, 18), { from: F })
+        await assert.isTrue(PREONtransferTx.receipt.status)
       }
 
       // Decrease allowance of A, B
-      const YETIDecreaseAllowanceTx_1 = await yetiToken.decreaseAllowance(A, dec(1, 18), { from: F })
-      const YETIDecreaseAllowanceTx_2 = await yetiToken.decreaseAllowance(B, dec(1, 18), { from: G })
-      await assert.isTrue(YETIDecreaseAllowanceTx_1.receipt.status)
-      await assert.isTrue(YETIDecreaseAllowanceTx_2.receipt.status)
+      const PREONDecreaseAllowanceTx_1 = await preonToken.decreaseAllowance(A, dec(1, 18), { from: F })
+      const PREONDecreaseAllowanceTx_2 = await preonToken.decreaseAllowance(B, dec(1, 18), { from: G })
+      await assert.isTrue(PREONDecreaseAllowanceTx_1.receipt.status)
+      await assert.isTrue(PREONDecreaseAllowanceTx_2.receipt.status)
 
       // Decrease allowance of core contracts
       for (const contract of Object.keys(coreContracts)) {
-        const YETIDecreaseAllowanceTx = await yetiToken.decreaseAllowance(coreContracts[contract].address, dec(1, 18), { from: F })
-        await assert.isTrue(YETIDecreaseAllowanceTx.receipt.status)
+        const PREONDecreaseAllowanceTx = await preonToken.decreaseAllowance(coreContracts[contract].address, dec(1, 18), { from: F })
+        await assert.isTrue(PREONDecreaseAllowanceTx.receipt.status)
       }
 
-      // Decrease allowance of YETI contracts
-      for (const contract of Object.keys(YETIContracts)) {
-        const YETIDecreaseAllowanceTx = await yetiToken.decreaseAllowance(YETIContracts[contract].address, dec(1, 18), { from: F })
-        await assert.isTrue(YETIDecreaseAllowanceTx.receipt.status)
+      // Decrease allowance of PREON contracts
+      for (const contract of Object.keys(PREONContracts)) {
+        const PREONDecreaseAllowanceTx = await preonToken.decreaseAllowance(PREONContracts[contract].address, dec(1, 18), { from: F })
+        await assert.isTrue(PREONDecreaseAllowanceTx.receipt.status)
       }
     })
 
     it("Anyone (other than liquity multisig) can be the sender in a transferFrom() call", async () => {
       // Fund A, B
-      await yetiToken.unprotectedMint(A, dec(1, 18))
-      await yetiToken.unprotectedMint(B, dec(1, 18))
+      await preonToken.unprotectedMint(A, dec(1, 18))
+      await preonToken.unprotectedMint(B, dec(1, 18))
 
       // A, B approve F, G
-      await yetiToken.approve(F, dec(1, 18), { from: A })
-      await yetiToken.approve(G, dec(1, 18), { from: B })
+      await preonToken.approve(F, dec(1, 18), { from: A })
+      await preonToken.approve(G, dec(1, 18), { from: B })
 
-      const YETItransferFromTx_1 = await yetiToken.transferFrom(A, F, dec(1, 18), { from: F })
-      const YETItransferFromTx_2 = await yetiToken.transferFrom(B, C, dec(1, 18), { from: G })
-      await assert.isTrue(YETItransferFromTx_1.receipt.status)
-      await assert.isTrue(YETItransferFromTx_2.receipt.status)
+      const PREONtransferFromTx_1 = await preonToken.transferFrom(A, F, dec(1, 18), { from: F })
+      const PREONtransferFromTx_2 = await preonToken.transferFrom(B, C, dec(1, 18), { from: G })
+      await assert.isTrue(PREONtransferFromTx_1.receipt.status)
+      await assert.isTrue(PREONtransferFromTx_2.receipt.status)
     })
 
-    it("Anyone (other than liquity AG) can stake their YETI in the staking contract", async () => {
+    it("Anyone (other than liquity AG) can stake their PREON in the staking contract", async () => {
       // Fund F
-      await yetiToken.unprotectedMint(F, dec(1, 18))
+      await preonToken.unprotectedMint(F, dec(1, 18))
 
-      const SYETITx_1 = await sYETI.mint(dec(1, 18), { from: F })
-      await assert.isTrue(SYETITx_1.receipt.status)
+      const SPREONTx_1 = await sPREON.mint(dec(1, 18), { from: F })
+      await assert.isTrue(SPREONTx_1.receipt.status)
     })
 
   })
   // --- LCF ---
 
   describe('Lockup Contract Factory negative tests', async accounts => {
-    it("deployLockupContract(): reverts when YETI token address is not set", async () => {
+    it("deployLockupContract(): reverts when PREON token address is not set", async () => {
       // Fund F
-      await yetiToken.unprotectedMint(F, dec(20, 24))
+      await preonToken.unprotectedMint(F, dec(20, 24))
 
       // deploy new LCF
       const LCFNew = await LockupContractFactory.new()
 
-      // Check YETIToken address not registered
-      const registeredYETITokenAddr = await LCFNew.yetiTokenAddress()
-      assert.equal(registeredYETITokenAddr, ZERO_ADDRESS)
+      // Check PREONToken address not registered
+      const registeredPREONTokenAddr = await LCFNew.preonTokenAddress()
+      assert.equal(registeredPREONTokenAddr, ZERO_ADDRESS)
 
       const tx = LCFNew.deployLockupContract(A, oneYearFromSystemDeployment, { from: F })
       await assertRevert(tx)
@@ -430,55 +430,55 @@ contract('During the initial lockup period', async accounts => {
   })
 
   // --- LCs ---
-  describe('Transferring YETI to LCs', async accounts => {
-    it("Liquity multisig can transfer YETI (vesting) to lockup contracts they deployed", async () => {
-      const initialYETIBalanceOfLC_T1 = await yetiToken.balanceOf(LC_T1.address)
-      const initialYETIBalanceOfLC_T2 = await yetiToken.balanceOf(LC_T2.address)
-      const initialYETIBalanceOfLC_T3 = await yetiToken.balanceOf(LC_T3.address)
+  describe('Transferring PREON to LCs', async accounts => {
+    it("Liquity multisig can transfer PREON (vesting) to lockup contracts they deployed", async () => {
+      const initialPREONBalanceOfLC_T1 = await preonToken.balanceOf(LC_T1.address)
+      const initialPREONBalanceOfLC_T2 = await preonToken.balanceOf(LC_T2.address)
+      const initialPREONBalanceOfLC_T3 = await preonToken.balanceOf(LC_T3.address)
 
       // Check initial LC balances == entitlements
-      assert.equal(initialYETIBalanceOfLC_T1, teamMemberInitialEntitlement_1)
-      assert.equal(initialYETIBalanceOfLC_T2, teamMemberInitialEntitlement_2)
-      assert.equal(initialYETIBalanceOfLC_T3, teamMemberInitialEntitlement_3)
+      assert.equal(initialPREONBalanceOfLC_T1, teamMemberInitialEntitlement_1)
+      assert.equal(initialPREONBalanceOfLC_T2, teamMemberInitialEntitlement_2)
+      assert.equal(initialPREONBalanceOfLC_T3, teamMemberInitialEntitlement_3)
 
       // One month passes
       await th.fastForwardTime(SECONDS_IN_ONE_MONTH, web3.currentProvider)
 
       // Liquity multisig transfers vesting amount
-      await yetiToken.transfer(LC_T1.address, dec(1, 24), { from: multisig })
-      await yetiToken.transfer(LC_T2.address, dec(1, 24), { from: multisig })
-      await yetiToken.transfer(LC_T3.address, dec(1, 24), { from: multisig })
+      await preonToken.transfer(LC_T1.address, dec(1, 24), { from: multisig })
+      await preonToken.transfer(LC_T2.address, dec(1, 24), { from: multisig })
+      await preonToken.transfer(LC_T3.address, dec(1, 24), { from: multisig })
 
-      // Get new LC YETI balances
-      const YETIBalanceOfLC_T1_1 = await yetiToken.balanceOf(LC_T1.address)
-      const YETIBalanceOfLC_T2_1 = await yetiToken.balanceOf(LC_T2.address)
-      const YETIBalanceOfLC_T3_1 = await yetiToken.balanceOf(LC_T3.address)
+      // Get new LC PREON balances
+      const PREONBalanceOfLC_T1_1 = await preonToken.balanceOf(LC_T1.address)
+      const PREONBalanceOfLC_T2_1 = await preonToken.balanceOf(LC_T2.address)
+      const PREONBalanceOfLC_T3_1 = await preonToken.balanceOf(LC_T3.address)
 
       // // Check team member LC balances have increased 
-      assert.isTrue(YETIBalanceOfLC_T1_1.eq(th.toBN(initialYETIBalanceOfLC_T1).add(th.toBN(dec(1, 24)))))
-      assert.isTrue(YETIBalanceOfLC_T2_1.eq(th.toBN(initialYETIBalanceOfLC_T2).add(th.toBN(dec(1, 24)))))
-      assert.isTrue(YETIBalanceOfLC_T3_1.eq(th.toBN(initialYETIBalanceOfLC_T3).add(th.toBN(dec(1, 24)))))
+      assert.isTrue(PREONBalanceOfLC_T1_1.eq(th.toBN(initialPREONBalanceOfLC_T1).add(th.toBN(dec(1, 24)))))
+      assert.isTrue(PREONBalanceOfLC_T2_1.eq(th.toBN(initialPREONBalanceOfLC_T2).add(th.toBN(dec(1, 24)))))
+      assert.isTrue(PREONBalanceOfLC_T3_1.eq(th.toBN(initialPREONBalanceOfLC_T3).add(th.toBN(dec(1, 24)))))
 
       // Another month passes
       await th.fastForwardTime(SECONDS_IN_ONE_MONTH, web3.currentProvider)
 
       // Liquity multisig transfers vesting amount
-      await yetiToken.transfer(LC_T1.address, dec(1, 24), { from: multisig })
-      await yetiToken.transfer(LC_T2.address, dec(1, 24), { from: multisig })
-      await yetiToken.transfer(LC_T3.address, dec(1, 24), { from: multisig })
+      await preonToken.transfer(LC_T1.address, dec(1, 24), { from: multisig })
+      await preonToken.transfer(LC_T2.address, dec(1, 24), { from: multisig })
+      await preonToken.transfer(LC_T3.address, dec(1, 24), { from: multisig })
 
-      // Get new LC YETI balances
-      const YETIBalanceOfLC_T1_2 = await yetiToken.balanceOf(LC_T1.address)
-      const YETIBalanceOfLC_T2_2 = await yetiToken.balanceOf(LC_T2.address)
-      const YETIBalanceOfLC_T3_2 = await yetiToken.balanceOf(LC_T3.address)
+      // Get new LC PREON balances
+      const PREONBalanceOfLC_T1_2 = await preonToken.balanceOf(LC_T1.address)
+      const PREONBalanceOfLC_T2_2 = await preonToken.balanceOf(LC_T2.address)
+      const PREONBalanceOfLC_T3_2 = await preonToken.balanceOf(LC_T3.address)
 
       // Check team member LC balances have increased again
-      assert.isTrue(YETIBalanceOfLC_T1_2.eq(YETIBalanceOfLC_T1_1.add(th.toBN(dec(1, 24)))))
-      assert.isTrue(YETIBalanceOfLC_T2_2.eq(YETIBalanceOfLC_T2_1.add(th.toBN(dec(1, 24)))))
-      assert.isTrue(YETIBalanceOfLC_T3_2.eq(YETIBalanceOfLC_T3_1.add(th.toBN(dec(1, 24)))))
+      assert.isTrue(PREONBalanceOfLC_T1_2.eq(PREONBalanceOfLC_T1_1.add(th.toBN(dec(1, 24)))))
+      assert.isTrue(PREONBalanceOfLC_T2_2.eq(PREONBalanceOfLC_T2_1.add(th.toBN(dec(1, 24)))))
+      assert.isTrue(PREONBalanceOfLC_T3_2.eq(PREONBalanceOfLC_T3_1.add(th.toBN(dec(1, 24)))))
     })
 
-    it("Liquity multisig can transfer YETI to lockup contracts deployed by anyone", async () => {
+    it("Liquity multisig can transfer PREON to lockup contracts deployed by anyone", async () => {
       // A, B, C each deploy a lockup contract with themself as beneficiary
       const deployedLCtx_A = await lockupContractFactory.deployLockupContract(A, twoYearsFromSystemDeployment, { from: A })
       const deployedLCtx_B = await lockupContractFactory.deployLockupContract(B, twoYearsFromSystemDeployment, { from: B })
@@ -490,28 +490,28 @@ contract('During the initial lockup period', async accounts => {
       const LC_C = await th.getLCFromDeploymentTx(deployedLCtx_C)
 
       // Check balances of LCs are 0
-      assert.equal(await yetiToken.balanceOf(LC_A.address), '0')
-      assert.equal(await yetiToken.balanceOf(LC_B.address), '0')
-      assert.equal(await yetiToken.balanceOf(LC_C.address), '0')
+      assert.equal(await preonToken.balanceOf(LC_A.address), '0')
+      assert.equal(await preonToken.balanceOf(LC_B.address), '0')
+      assert.equal(await preonToken.balanceOf(LC_C.address), '0')
 
       // One month passes
       await th.fastForwardTime(SECONDS_IN_ONE_MONTH, web3.currentProvider)
 
-      // Liquity multisig transfers YETI to LCs deployed by other accounts
-      await yetiToken.transfer(LC_A.address, dec(1, 24), { from: multisig })
-      await yetiToken.transfer(LC_B.address, dec(2, 24), { from: multisig })
-      await yetiToken.transfer(LC_C.address, dec(3, 24), { from: multisig })
+      // Liquity multisig transfers PREON to LCs deployed by other accounts
+      await preonToken.transfer(LC_A.address, dec(1, 24), { from: multisig })
+      await preonToken.transfer(LC_B.address, dec(2, 24), { from: multisig })
+      await preonToken.transfer(LC_C.address, dec(3, 24), { from: multisig })
 
       // Check balances of LCs have increased
-      assert.equal(await yetiToken.balanceOf(LC_A.address), dec(1, 24))
-      assert.equal(await yetiToken.balanceOf(LC_B.address), dec(2, 24))
-      assert.equal(await yetiToken.balanceOf(LC_C.address), dec(3, 24))
+      assert.equal(await preonToken.balanceOf(LC_A.address), dec(1, 24))
+      assert.equal(await preonToken.balanceOf(LC_B.address), dec(2, 24))
+      assert.equal(await preonToken.balanceOf(LC_C.address), dec(3, 24))
     })
   })
 
   describe('Deploying new LCs', async accounts => {
-    it("YETI Deployer can deploy LCs through the Factory", async () => {
-      // YETI deployer deploys LCs
+    it("PREON Deployer can deploy LCs through the Factory", async () => {
+      // PREON deployer deploys LCs
       const LCDeploymentTx_A = await lockupContractFactory.deployLockupContract(A, oneYearFromSystemDeployment, { from: liquityAG })
       const LCDeploymentTx_B = await lockupContractFactory.deployLockupContract(B, twoYearsFromSystemDeployment, { from: liquityAG })
       const LCDeploymentTx_C = await lockupContractFactory.deployLockupContract(C, '9595995999999900000023423234', { from: liquityAG })
@@ -522,7 +522,7 @@ contract('During the initial lockup period', async accounts => {
     })
 
     it("Liquity multisig can deploy LCs through the Factory", async () => {
-      // YETI deployer deploys LCs
+      // PREON deployer deploys LCs
       const LCDeploymentTx_A = await lockupContractFactory.deployLockupContract(A, oneYearFromSystemDeployment, { from: multisig })
       const LCDeploymentTx_B = await lockupContractFactory.deployLockupContract(B, twoYearsFromSystemDeployment, { from: multisig })
       const LCDeploymentTx_C = await lockupContractFactory.deployLockupContract(C, '9595995999999900000023423234', { from: multisig })
@@ -545,15 +545,15 @@ contract('During the initial lockup period', async accounts => {
       assert.isTrue(LCDeploymentTx_4.receipt.status)
     })
 
-    it("YETI Deployer can deploy LCs directly", async () => {
-      // YETI deployer deploys LCs
-      const LC_A = await LockupContract.new(yetiToken.address, A, oneYearFromSystemDeployment, { from: liquityAG })
+    it("PREON Deployer can deploy LCs directly", async () => {
+      // PREON deployer deploys LCs
+      const LC_A = await LockupContract.new(preonToken.address, A, oneYearFromSystemDeployment, { from: liquityAG })
       const LC_A_txReceipt = await web3.eth.getTransactionReceipt(LC_A.transactionHash)
 
-      const LC_B = await LockupContract.new(yetiToken.address, B, twoYearsFromSystemDeployment, { from: liquityAG })
+      const LC_B = await LockupContract.new(preonToken.address, B, twoYearsFromSystemDeployment, { from: liquityAG })
       const LC_B_txReceipt = await web3.eth.getTransactionReceipt(LC_B.transactionHash)
 
-      const LC_C = await LockupContract.new(yetiToken.address, C, twoYearsFromSystemDeployment, { from: liquityAG })
+      const LC_C = await LockupContract.new(preonToken.address, C, twoYearsFromSystemDeployment, { from: liquityAG })
       const LC_C_txReceipt = await web3.eth.getTransactionReceipt(LC_C.transactionHash)
 
       // Check deployment succeeded
@@ -563,14 +563,14 @@ contract('During the initial lockup period', async accounts => {
     })
 
     it("Liquity multisig can deploy LCs directly", async () => {
-      // YETI deployer deploys LCs
-      const LC_A = await LockupContract.new(yetiToken.address, A, oneYearFromSystemDeployment, { from: multisig })
+      // PREON deployer deploys LCs
+      const LC_A = await LockupContract.new(preonToken.address, A, oneYearFromSystemDeployment, { from: multisig })
       const LC_A_txReceipt = await web3.eth.getTransactionReceipt(LC_A.transactionHash)
 
-      const LC_B = await LockupContract.new(yetiToken.address, B, twoYearsFromSystemDeployment, { from: multisig })
+      const LC_B = await LockupContract.new(preonToken.address, B, twoYearsFromSystemDeployment, { from: multisig })
       const LC_B_txReceipt = await web3.eth.getTransactionReceipt(LC_B.transactionHash)
 
-      const LC_C = await LockupContract.new(yetiToken.address, C, twoYearsFromSystemDeployment, { from: multisig })
+      const LC_C = await LockupContract.new(preonToken.address, C, twoYearsFromSystemDeployment, { from: multisig })
       const LC_C_txReceipt = await web3.eth.getTransactionReceipt(LC_C.transactionHash)
 
       // Check deployment succeeded
@@ -581,13 +581,13 @@ contract('During the initial lockup period', async accounts => {
 
     it("Anyone can deploy LCs directly", async () => {
       // Various EOAs deploy LCs
-      const LC_A = await LockupContract.new(yetiToken.address, A, oneYearFromSystemDeployment, { from: D })
+      const LC_A = await LockupContract.new(preonToken.address, A, oneYearFromSystemDeployment, { from: D })
       const LC_A_txReceipt = await web3.eth.getTransactionReceipt(LC_A.transactionHash)
 
-      const LC_B = await LockupContract.new(yetiToken.address, B, twoYearsFromSystemDeployment, { from: E })
+      const LC_B = await LockupContract.new(preonToken.address, B, twoYearsFromSystemDeployment, { from: E })
       const LC_B_txReceipt = await web3.eth.getTransactionReceipt(LC_B.transactionHash)
 
-      const LC_C = await LockupContract.new(yetiToken.address, C, twoYearsFromSystemDeployment, { from: F })
+      const LC_C = await LockupContract.new(preonToken.address, C, twoYearsFromSystemDeployment, { from: F })
       const LC_C_txReceipt = await web3.eth.getTransactionReceipt(LC_C.transactionHash)
 
       // Check deployment succeeded
@@ -598,13 +598,13 @@ contract('During the initial lockup period', async accounts => {
 
     it("Anyone can deploy LCs with unlockTime = one year from deployment, directly and through factory", async () => {
       // Deploy directly
-      const LC_1 = await LockupContract.new(yetiToken.address, A, oneYearFromSystemDeployment, { from: D })
+      const LC_1 = await LockupContract.new(preonToken.address, A, oneYearFromSystemDeployment, { from: D })
       const LCTxReceipt_1 = await web3.eth.getTransactionReceipt(LC_1.transactionHash)
 
-      const LC_2 = await LockupContract.new(yetiToken.address, B, oneYearFromSystemDeployment, { from: liquityAG })
+      const LC_2 = await LockupContract.new(preonToken.address, B, oneYearFromSystemDeployment, { from: liquityAG })
       const LCTxReceipt_2 = await web3.eth.getTransactionReceipt(LC_2.transactionHash)
 
-      const LC_3 = await LockupContract.new(yetiToken.address, C, oneYearFromSystemDeployment, { from: multisig })
+      const LC_3 = await LockupContract.new(preonToken.address, C, oneYearFromSystemDeployment, { from: multisig })
       const LCTxReceipt_3 = await web3.eth.getTransactionReceipt(LC_2.transactionHash)
 
       // Deploy through factory
@@ -626,13 +626,13 @@ contract('During the initial lockup period', async accounts => {
       const _17YearsFromDeployment = oneYearFromSystemDeployment.add(toBN(timeValues.SECONDS_IN_ONE_YEAR).mul(toBN('2')))
       
       // Deploy directly
-      const LC_1 = await LockupContract.new(yetiToken.address, A, twoYearsFromSystemDeployment, { from: D })
+      const LC_1 = await LockupContract.new(preonToken.address, A, twoYearsFromSystemDeployment, { from: D })
       const LCTxReceipt_1 = await web3.eth.getTransactionReceipt(LC_1.transactionHash)
 
-      const LC_2 = await LockupContract.new(yetiToken.address, B, justOverOneYear, { from: multisig })
+      const LC_2 = await LockupContract.new(preonToken.address, B, justOverOneYear, { from: multisig })
       const LCTxReceipt_2 = await web3.eth.getTransactionReceipt(LC_2.transactionHash)
 
-      const LC_3 = await LockupContract.new(yetiToken.address, E, _17YearsFromDeployment, { from: E })
+      const LC_3 = await LockupContract.new(preonToken.address, E, _17YearsFromDeployment, { from: E })
       const LCTxReceipt_3 = await web3.eth.getTransactionReceipt(LC_3.transactionHash)
 
       // Deploy through factory
@@ -653,9 +653,9 @@ contract('During the initial lockup period', async accounts => {
       const justUnderOneYear = oneYearFromSystemDeployment.sub(toBN('1'))
      
       // Attempt to deploy directly
-      const directDeploymentTxPromise_1 = LockupContract.new(yetiToken.address, A, justUnderOneYear, { from: D })
-      const directDeploymentTxPromise_2 = LockupContract.new(yetiToken.address, B, '43200', { from: multisig })
-      const directDeploymentTxPromise_3 =  LockupContract.new(yetiToken.address, E, '354534', { from: E })
+      const directDeploymentTxPromise_1 = LockupContract.new(preonToken.address, A, justUnderOneYear, { from: D })
+      const directDeploymentTxPromise_2 = LockupContract.new(preonToken.address, B, '43200', { from: multisig })
+      const directDeploymentTxPromise_3 =  LockupContract.new(preonToken.address, E, '354534', { from: E })
   
       // Attempt to deploy through factory
       const factoryDploymentTxPromise_1 = lockupContractFactory.deployLockupContract(A, justUnderOneYear, { from: E })
@@ -682,7 +682,7 @@ contract('During the initial lockup period', async accounts => {
 
         // Liquity multisig attempts withdrawal from LC they deployed through the Factory
         try {
-          const withdrawalAttempt = await LC_T1.withdrawYETI({ from: multisig })
+          const withdrawalAttempt = await LC_T1.withdrawPREON({ from: multisig })
           assert.isFalse(withdrawalAttempt.receipt.status)
         } catch (error) {
           assert.include(error.message, "LockupContract: caller is not the beneficiary")
@@ -694,8 +694,8 @@ contract('During the initial lockup period', async accounts => {
         const deployedLCtx_B = await lockupContractFactory.deployLockupContract(B, oneYearFromSystemDeployment, { from: D })
         const LC_B = await th.getLCFromDeploymentTx(deployedLCtx_B)
 
-        //YETI multisig fund the newly deployed LCs
-        await yetiToken.transfer(LC_B.address, dec(2, 18), { from: multisig })
+        //PREON multisig fund the newly deployed LCs
+        await preonToken.transfer(LC_B.address, dec(2, 18), { from: multisig })
 
         // Check currentTime < unlockTime
         const currentTime = toBN(await th.getLatestBlockTimestamp(web3))
@@ -704,7 +704,7 @@ contract('During the initial lockup period', async accounts => {
 
         // Liquity multisig attempts withdrawal from LCs
         try {
-          const withdrawalAttempt_B = await LC_B.withdrawYETI({ from: multisig })
+          const withdrawalAttempt_B = await LC_B.withdrawPREON({ from: multisig })
           assert.isFalse(withdrawalAttempt_B.receipt.status)
         } catch (error) {
           assert.include(error.message, "LockupContract: caller is not the beneficiary")
@@ -717,7 +717,7 @@ contract('During the initial lockup period', async accounts => {
         const LC_B = await th.getLCFromDeploymentTx(deployedLCtx_B)
 
         // Liquity multisig funds contracts
-        await yetiToken.transfer(LC_B.address, dec(2, 18), { from: multisig })
+        await preonToken.transfer(LC_B.address, dec(2, 18), { from: multisig })
 
         // Check currentTime < unlockTime
         const currentTime = toBN(await th.getLatestBlockTimestamp(web3))
@@ -739,7 +739,7 @@ contract('During the initial lockup period', async accounts => {
         for (LC of LCs) {
           try {
             const beneficiary = await LC.beneficiary()
-            const withdrawalAttempt = await LC.withdrawYETI({ from: beneficiary })
+            const withdrawalAttempt = await LC.withdrawPREON({ from: beneficiary })
             assert.isFalse(withdrawalAttempt.receipt.status)
           } catch (error) {
             assert.include(error.message, "LockupContract: The lockup duration must have passed")
@@ -753,7 +753,7 @@ contract('During the initial lockup period', async accounts => {
         const LC_B = await th.getLCFromDeploymentTx(deployedLCtx_B)
 
         // Liquity multisig funds contract
-        await yetiToken.transfer(LC_B.address, dec(2, 18), { from: multisig })
+        await preonToken.transfer(LC_B.address, dec(2, 18), { from: multisig })
 
         // Check currentTime < unlockTime
         const currentTime = toBN(await th.getLatestBlockTimestamp(web3))
@@ -765,17 +765,17 @@ contract('During the initial lockup period', async accounts => {
         // Several EOAs attempt to withdraw from LC deployed by D
         for (account of variousEOAs) {
           try {
-            const withdrawalAttempt = await LC_B.withdrawYETI({ from: account })
+            const withdrawalAttempt = await LC_B.withdrawPREON({ from: account })
             assert.isFalse(withdrawalAttempt.receipt.status)
           } catch (error) {
             assert.include(error.message, "LockupContract: caller is not the beneficiary")
           }
         }
 
-        // Several EOAs attempt to withdraw from LC_T1 deployed by YETI deployer
+        // Several EOAs attempt to withdraw from LC_T1 deployed by PREON deployer
         for (account of variousEOAs) {
           try {
-            const withdrawalAttempt = await LC_T1.withdrawYETI({ from: account })
+            const withdrawalAttempt = await LC_T1.withdrawPREON({ from: account })
             assert.isFalse(withdrawalAttempt.receipt.status)
           } catch (error) {
             assert.include(error.message, "LockupContract: caller is not the beneficiary")

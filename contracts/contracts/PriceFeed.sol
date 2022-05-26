@@ -35,7 +35,7 @@ contract PriceFeed is Ownable, CheckContract, BaseMath, IPriceFeed {
   // Maximum deviation allowed between two consecutive Chainlink oracle prices. 18-digit precision.
   uint256 public constant MAX_PRICE_DEVIATION_FROM_PREVIOUS_ROUND = 5e17; // 50%
 
-  // The last good price seen from an oracle by Yeti
+  // The last good price seen from an oracle by Preon
   uint256 public lastGoodPrice;
 
   struct ChainlinkResponse {
@@ -81,11 +81,11 @@ contract PriceFeed is Ownable, CheckContract, BaseMath, IPriceFeed {
 
   /*
    * fetchPrice():
-   * Returns the latest price obtained from the Oracle. Called by Yeti functions that require a current price.
+   * Returns the latest price obtained from the Oracle. Called by Preon functions that require a current price.
    *
    * Also callable by anyone externally.
    *
-   * Non-view function - it stores the last good price seen by Yeti.
+   * Non-view function - it stores the last good price seen by Preon.
    *
    * Uses a Chainlink Oracle and checks it isn't broken or frozen.
    * If the Chainlink Oracle is broken or frozen, then returns the last good price seen
@@ -117,11 +117,11 @@ contract PriceFeed is Ownable, CheckContract, BaseMath, IPriceFeed {
 
   /*
    * fetchPrice_v():
-   * Returns the latest price obtained from the Oracle. Called by Yeti functions that require a current price.
+   * Returns the latest price obtained from the Oracle. Called by Preon functions that require a current price.
    *
    * Also callable by anyone externally.
    *
-   * Non-view function - it stores the last good price seen by Yeti.
+   * Non-view function - it stores the last good price seen by Preon.
    *
    * Uses a Chainlink Oracle and checks it isn't broken or frozen.
    * If the Chainlink Oracle is broken or frozen, then returns the last good price seen
@@ -237,17 +237,17 @@ contract PriceFeed is Ownable, CheckContract, BaseMath, IPriceFeed {
     returns (uint256)
   {
     /*
-     * Convert the price returned by the Chainlink oracle to an 18-digit decimal for use by Yeti.
-     * At date of Yeti launch, Chainlink uses an 8-digit price, but we also handle the possibility of
+     * Convert the price returned by the Chainlink oracle to an 18-digit decimal for use by Preon.
+     * At date of Preon launch, Chainlink uses an 8-digit price, but we also handle the possibility of
      * future changes.
      *
      */
     uint256 price;
     if (_answerDigits >= TARGET_DIGITS) {
-      // Scale the returned price value down to Yeti's target precision
+      // Scale the returned price value down to Preon's target precision
       price = _price.div(10**(_answerDigits - TARGET_DIGITS));
     } else if (_answerDigits < TARGET_DIGITS) {
-      // Scale the returned price value up to Yeti's target precision
+      // Scale the returned price value up to Preon's target precision
       price = _price.mul(10**(TARGET_DIGITS - _answerDigits));
     }
     return price;

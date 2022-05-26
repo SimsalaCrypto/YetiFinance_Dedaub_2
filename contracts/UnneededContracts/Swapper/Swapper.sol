@@ -44,7 +44,7 @@ contract Swapper is Ownable {
         uint256 _amount,
         uint256 _minReceived
     ) external returns (uint256) {
-        _requireFromYetiContract();
+        _requireFromPreonContract();
         uint256 initAVAXBalance = address(this).balance;
 
         // transfer token in
@@ -63,7 +63,7 @@ contract Swapper is Ownable {
         return diff;
     }
 
-    function _requireFromYetiContract() internal view {
+    function _requireFromPreonContract() internal view {
         require(msg.sender == borrowerOperationsAddress);
     }
 }

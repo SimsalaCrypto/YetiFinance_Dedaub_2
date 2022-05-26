@@ -6,7 +6,7 @@ import "./Interfaces/IBorrowerOperations.sol";
 import "./Interfaces/IStabilityPool.sol";
 import "./Interfaces/IBorrowerOperations.sol";
 import "./Interfaces/ITroveManager.sol";
-import "./Interfaces/IYUSDToken.sol";
+import "./Interfaces/IPUSDToken.sol";
 import "./Interfaces/ISortedTroves.sol";
 import "./Interfaces/ICommunityIssuance.sol";
 import "./Interfaces/IWhitelist.sol";
@@ -20,17 +20,17 @@ import "./Dependencies/CheckContract.sol";
 import "./Dependencies/SafeERC20.sol";
 
 /*
- * The Stability Pool holds YUSD tokens deposited by Stability Pool depositors.
+ * The Stability Pool holds PUSD tokens deposited by Stability Pool depositors.
  *
- * When a trove is liquidated, then depending on system conditions, some of its YUSD debt gets offset with
- * YUSD in the Stability Pool: that is, the offset debt evaporates, and an equal amount of YUSD tokens in the Stability Pool is burned.
+ * When a trove is liquidated, then depending on system conditions, some of its PUSD debt gets offset with
+ * PUSD in the Stability Pool: that is, the offset debt evaporates, and an equal amount of PUSD tokens in the Stability Pool is burned.
  *
- * Thus, a liquidation causes each depositor to receive a YUSD loss, in proportion to their deposit as a share of total deposits.
+ * Thus, a liquidation causes each depositor to receive a PUSD loss, in proportion to their deposit as a share of total deposits.
  * They also receive an Collateral gain, as the amount of collateral of the liquidated trove is distributed among Stability depositors,
  * in the same proportion.
  *
  * When a liquidation occurs, it depletes every deposit by the same fraction: for example, a liquidation that depletes 40%
- * of the total YUSD in the Stability Pool, depletes 40% of each deposit.
+ * of the total PUSD in the Stability Pool, depletes 40% of each deposit.
  *
  * A deposit that has experienced a series of liquidations is termed a "compounded deposit": each liquidation depletes the deposit,
  * multiplying it by some factor in range ]0,1[
@@ -92,7 +92,7 @@ import "./Dependencies/SafeERC20.sol";
  *
  * Otherwise, we then compare the current scale to the deposit's scale snapshot. If they're equal, the compounded deposit is given by d_t * P/P_t.
  * If it spans one scale change, it is given by d_t * P/(P_t * 1e9). If it spans more than one scale change, we define the compounded deposit
- * as 0, since it is now less than 1e-9'th of its initial value (e.g. a deposit of 1 billion YUSD has depleted to < 1 YUSD).
+ * as 0, since it is now less than 1e-9'th of its initial value (e.g. a deposit of 1 billion PUSD has depleted to < 1 PUSD).
  *
  *
  *  --- TRACKING DEPOSITOR'S COLLATERAL AMOUNT GAIN OVER SCALE CHANGES AND EPOCHS ---
@@ -132,19 +132,19 @@ import "./Dependencies/SafeERC20.sol";
  * https://github.com/liquity/liquity/blob/master/papers/Scalable_Reward_Distribution_with_Compounding_Stakes.pdf
  *
  *
- * --- YETI ISSUANCE TO STABILITY POOL DEPOSITORS ---
+ * --- PREON ISSUANCE TO STABILITY POOL DEPOSITORS ---
  *
- * An YETI issuance event occurs at every deposit operation, and every liquidation.
+ * An PREON issuance event occurs at every deposit operation, and every liquidation.
  *
  * Each deposit is tagged with the address of the front end through which it was made.
  *
- * All deposits earn a share of the issued YETI in proportion to the deposit as a share of total deposits. The YETI earned
+ * All deposits earn a share of the issued PREON in proportion to the deposit as a share of total deposits. The PREON earned
  * by a given deposit, is split between the depositor and the front end through which the deposit was made, based on the front end's kickbackRate.
  *
  * Please see the system Readme for an overview:
- * https://github.com/liquity/dev/blob/main/README.md#yeti-issuance-to-stability-providers
+ * https://github.com/liquity/dev/blob/main/README.md#preon-issuance-to-stability-providers
  *
- * We use the same mathematical product-sum approach to track YETI gains for depositors, where 'G' is the sum corresponding to YETI gains.
+ * We use the same mathematical product-sum approach to track PREON gains for depositors, where 'G' is the sum corresponding to PREON gains.
  * The product P (and snapshot P_t) is re-used, as the ratio P/P_t tracks a deposit's depletion due to liquidations.
  *
  */
@@ -159,13 +159,13 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
 
   IBorrowerOperations internal borrowerOperations;
   ITroveManager internal troveManager;
-  IYUSDToken internal yusdToken;
+  IPUSDToken internal pusdToken;
   ICommunityIssuance internal communityIssuance;
   // Needed to check if there are pending liquidations
   ISortedTroves internal sortedTroves;
 
-  // Tracker for YUSD held in the pool. Changes when users deposit/withdraw, and when Trove debt is offset.
-  uint256 internal totalYUSDDeposits;
+  // Tracker for PUSD held in the pool. Changes when users deposit/withdraw, and when Trove debt is offset.
+  uint256 internal totalPUSDDeposits;
 
   // totalColl.tokens and totalColl.amounts should be the same length and always be the same length
   // as whitelist.validCollaterals(). Anytime a new collateral is added to whitelist
@@ -198,7 +198,7 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
    * that tracks P, S, G, scale, and epoch.
    * depositor's snapshot is updated only when they
    * deposit or withdraw from stability pool
-   * depositSnapshots are used to allocate YETI rewards, calculate compoundedYUSDDepositAmount
+   * depositSnapshots are used to allocate PREON rewards, calculate compoundedPUSDDepositAmount
    * and to calculate how much Collateral amount the depositor is entitled to
    */
   mapping(address => Snapshots) public depositSnapshots; // depositor address -> snapshots struct
@@ -208,7 +208,7 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
   mapping(address => Snapshots) public frontEndSnapshots; // front end address -> snapshots struct
 
   /*  Product 'P': Running product by which to multiply an initial deposit, in order to find the current compounded deposit,
-   * after a series of liquidations have occurred, each of which cancel some YUSD debt with the deposit.
+   * after a series of liquidations have occurred, each of which cancel some PUSD debt with the deposit.
    *
    * During its lifetime, a deposit's value evolves from d_t to d_t * P / P_t , where P_t
    * is the snapshot of P taken at the instant the deposit was made. 18-digit decimal.
@@ -236,31 +236,31 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     public epochToScaleToSum;
 
   /*
-   * Similarly, the sum 'G' is used to calculate YETI gains. During it's lifetime, each deposit d_t earns a YETI gain of
+   * Similarly, the sum 'G' is used to calculate PREON gains. During it's lifetime, each deposit d_t earns a PREON gain of
    *  ( d_t * [G - G_t] )/P_t, where G_t is the depositor's snapshot of G taken at time t when  the deposit was made.
    *
-   *  YETI reward events occur are triggered by depositor operations (new deposit, topup, withdrawal), and liquidations.
-   *  In each case, the YETI reward is issued (i.e. G is updated), before other state changes are made.
+   *  PREON reward events occur are triggered by depositor operations (new deposit, topup, withdrawal), and liquidations.
+   *  In each case, the PREON reward is issued (i.e. G is updated), before other state changes are made.
    */
   mapping(uint128 => mapping(uint128 => uint256)) public epochToScaleToG;
 
-  // Error tracker for the error correction in the YETI issuance calculation
-  uint256 public lastYETIError;
+  // Error tracker for the error correction in the PREON issuance calculation
+  uint256 public lastPREONError;
   // Error trackers for the error correction in the offset calculation
   uint256[] public lastAssetError_Offset;
-  uint256 public lastYUSDLossError_Offset;
+  uint256 public lastPUSDLossError_Offset;
 
   // --- Events ---
 
   event StabilityPoolBalanceUpdated(address[] assets, uint256[] amounts);
   event StabilityPoolBalancesUpdated(address[] assets, uint256[] amounts);
-  event StabilityPoolYUSDBalanceUpdated(uint256 _newBalance);
+  event StabilityPoolPUSDBalanceUpdated(uint256 _newBalance);
 
   event BorrowerOperationsAddressChanged(address _newBorrowerOperationsAddress);
   event TroveManagerAddressChanged(address _newTroveManagerAddress);
   event ActivePoolAddressChanged(address _newActivePoolAddress);
   event DefaultPoolAddressChanged(address _newDefaultPoolAddress);
-  event YUSDTokenAddressChanged(address _newYUSDTokenAddress);
+  event PUSDTokenAddressChanged(address _newPUSDTokenAddress);
   event SortedTrovesAddressChanged(address _newSortedTrovesAddress);
   event CommunityIssuanceAddressChanged(address _newCommunityIssuanceAddress);
 
@@ -294,10 +294,10 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     address indexed _depositor,
     address[] collaterals,
     uint256[] _amounts,
-    uint256 _YUSDLoss
+    uint256 _PUSDLoss
   );
-  event YETIPaidToDepositor(address indexed _depositor, uint256 _YETI);
-  event YETIPaidToFrontEnd(address indexed _frontEnd, uint256 _YETI);
+  event PREONPaidToDepositor(address indexed _depositor, uint256 _PREON);
+  event PREONPaidToFrontEnd(address indexed _frontEnd, uint256 _PREON);
   event CollateralSent(address _to, address[] _collaterals, uint256[] _amounts);
 
   // --- Contract setters ---
@@ -306,7 +306,7 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     address _borrowerOperationsAddress,
     address _troveManagerAddress,
     address _activePoolAddress,
-    address _yusdTokenAddress,
+    address _pusdTokenAddress,
     address _sortedTrovesAddress,
     address _communityIssuanceAddress,
     address _whitelistAddress,
@@ -315,7 +315,7 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     checkContract(_borrowerOperationsAddress);
     checkContract(_troveManagerAddress);
     checkContract(_activePoolAddress);
-    checkContract(_yusdTokenAddress);
+    checkContract(_pusdTokenAddress);
     checkContract(_sortedTrovesAddress);
     checkContract(_communityIssuanceAddress);
     checkContract(_whitelistAddress);
@@ -324,7 +324,7 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     borrowerOperations = IBorrowerOperations(_borrowerOperationsAddress);
     troveManager = ITroveManager(_troveManagerAddress);
     activePool = IActivePool(_activePoolAddress);
-    yusdToken = IYUSDToken(_yusdTokenAddress);
+    pusdToken = IPUSDToken(_pusdTokenAddress);
     sortedTroves = ISortedTroves(_sortedTrovesAddress);
     communityIssuance = ICommunityIssuance(_communityIssuanceAddress);
     whitelist = IWhitelist(_whitelistAddress);
@@ -335,7 +335,7 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     emit BorrowerOperationsAddressChanged(_borrowerOperationsAddress);
     emit TroveManagerAddressChanged(_troveManagerAddress);
     emit ActivePoolAddressChanged(_activePoolAddress);
-    emit YUSDTokenAddressChanged(_yusdTokenAddress);
+    emit PUSDTokenAddressChanged(_pusdTokenAddress);
     emit SortedTrovesAddressChanged(_sortedTrovesAddress);
     emit CommunityIssuanceAddressChanged(_communityIssuanceAddress);
 
@@ -371,18 +371,18 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     return (totalColl.tokens, totalColl.amounts);
   }
 
-  function getTotalYUSDDeposits() external view override returns (uint256) {
-    return totalYUSDDeposits;
+  function getTotalPUSDDeposits() external view override returns (uint256) {
+    return totalPUSDDeposits;
   }
 
   // --- External Depositor Functions ---
 
   /*  provideToSP():
    *
-   * - Triggers a YETI issuance, based on time passed since the last issuance. The YETI issuance is shared between *all* depositors and front ends
+   * - Triggers a PREON issuance, based on time passed since the last issuance. The PREON issuance is shared between *all* depositors and front ends
    * - Tags the deposit with the provided front end tag param, if it's a new deposit
-   * - Sends depositor's accumulated gains (YETI, collateral assets) to depositor
-   * - Sends the tagged front end's accumulated YETI gains to the tagged front end
+   * - Sends depositor's accumulated gains (PREON, collateral assets) to depositor
+   * - Sends the tagged front end's accumulated PREON gains to the tagged front end
    * - Increases deposit and tagged front end's stake, and takes new snapshots for each.
    */
   function provideToSP(uint256 _amount, address _frontEndTag)
@@ -397,7 +397,7 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
 
     ICommunityIssuance communityIssuanceCached = communityIssuance;
 
-    _triggerYETIIssuance(communityIssuanceCached);
+    _triggerPREONIssuance(communityIssuanceCached);
 
     if (initialDeposit == 0) {
       _setFrontEndTag(msg.sender, _frontEndTag);
@@ -405,12 +405,12 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     (address[] memory assets, uint256[] memory amounts) = getDepositorGains(
       msg.sender
     );
-    uint256 compoundedYUSDDeposit = getCompoundedYUSDDeposit(msg.sender);
-    uint256 YUSDLoss = initialDeposit.sub(compoundedYUSDDeposit); // Needed only for event log
+    uint256 compoundedPUSDDeposit = getCompoundedPUSDDeposit(msg.sender);
+    uint256 PUSDLoss = initialDeposit.sub(compoundedPUSDDeposit); // Needed only for event log
 
-    // First pay out any YETI gains
+    // First pay out any PREON gains
     address frontEnd = deposits[msg.sender].frontEndTag;
-    _payOutYETIGains(communityIssuanceCached, msg.sender, frontEnd);
+    _payOutPREONGains(communityIssuanceCached, msg.sender, frontEnd);
 
     // Update front end stake:
     uint256 compoundedFrontEndStake = getCompoundedFrontEndStake(frontEnd);
@@ -418,25 +418,25 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     _updateFrontEndStakeAndSnapshots(frontEnd, newFrontEndStake);
     emit FrontEndStakeChanged(frontEnd, newFrontEndStake, msg.sender);
 
-    // just pulls YUSD into the pool, updates totalYUSDDeposits variable for the stability pool
+    // just pulls PUSD into the pool, updates totalPUSDDeposits variable for the stability pool
     // and throws an event
-    _sendYUSDtoStabilityPool(msg.sender, _amount);
+    _sendPUSDtoStabilityPool(msg.sender, _amount);
 
-    uint256 newDeposit = compoundedYUSDDeposit.add(_amount);
+    uint256 newDeposit = compoundedPUSDDeposit.add(_amount);
     _updateDepositAndSnapshots(msg.sender, newDeposit);
     emit UserDepositChanged(msg.sender, newDeposit);
 
-    emit GainsWithdrawn(msg.sender, assets, amounts, YUSDLoss); // YUSD Loss required for event log
+    emit GainsWithdrawn(msg.sender, assets, amounts, PUSDLoss); // PUSD Loss required for event log
 
     _sendGainsToDepositor(msg.sender, assets, amounts);
   }
 
   /*  withdrawFromSP():
    *
-   * - Triggers a YETI issuance, based on time passed since the last issuance. The YETI issuance is shared between *all* depositors and front ends
+   * - Triggers a PREON issuance, based on time passed since the last issuance. The PREON issuance is shared between *all* depositors and front ends
    * - Removes the deposit's front end tag if it is a full withdrawal
-   * - Sends all depositor's accumulated gains (YETI, collateral assets) to depositor
-   * - Sends the tagged front end's accumulated YETI gains to the tagged front end
+   * - Sends all depositor's accumulated gains (PREON, collateral assets) to depositor
+   * - Sends the tagged front end's accumulated PREON gains to the tagged front end
    * - Decreases deposit and tagged front end's stake, and takes new snapshots for each.
    *
    * If _amount > userDeposit, the user withdraws all of their compounded deposit.
@@ -450,68 +450,68 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
 
     ICommunityIssuance communityIssuanceCached = communityIssuance;
 
-    _triggerYETIIssuance(communityIssuanceCached);
+    _triggerPREONIssuance(communityIssuanceCached);
 
     (address[] memory assets, uint256[] memory amounts) = getDepositorGains(
       msg.sender
     );
 
-    uint256 compoundedYUSDDeposit = getCompoundedYUSDDeposit(msg.sender);
+    uint256 compoundedPUSDDeposit = getCompoundedPUSDDeposit(msg.sender);
 
-    uint256 YUSDtoWithdraw = LiquityMath._min(_amount, compoundedYUSDDeposit);
-    uint256 YUSDLoss = initialDeposit.sub(compoundedYUSDDeposit); // Needed only for event log
+    uint256 PUSDtoWithdraw = LiquityMath._min(_amount, compoundedPUSDDeposit);
+    uint256 PUSDLoss = initialDeposit.sub(compoundedPUSDDeposit); // Needed only for event log
 
-    // First pay out any YETI gains
+    // First pay out any PREON gains
     address frontEnd = deposits[msg.sender].frontEndTag;
-    _payOutYETIGains(communityIssuanceCached, msg.sender, frontEnd);
+    _payOutPREONGains(communityIssuanceCached, msg.sender, frontEnd);
 
     // Update front end stake
     uint256 compoundedFrontEndStake = getCompoundedFrontEndStake(frontEnd);
-    uint256 newFrontEndStake = compoundedFrontEndStake.sub(YUSDtoWithdraw);
+    uint256 newFrontEndStake = compoundedFrontEndStake.sub(PUSDtoWithdraw);
     _updateFrontEndStakeAndSnapshots(frontEnd, newFrontEndStake);
     emit FrontEndStakeChanged(frontEnd, newFrontEndStake, msg.sender);
 
-    _sendYUSDToDepositor(msg.sender, YUSDtoWithdraw);
+    _sendPUSDToDepositor(msg.sender, PUSDtoWithdraw);
 
     // Update deposit
-    uint256 newDeposit = compoundedYUSDDeposit.sub(YUSDtoWithdraw);
+    uint256 newDeposit = compoundedPUSDDeposit.sub(PUSDtoWithdraw);
     _updateDepositAndSnapshots(msg.sender, newDeposit);
     emit UserDepositChanged(msg.sender, newDeposit);
 
-    emit GainsWithdrawn(msg.sender, assets, amounts, YUSDLoss); // YUSD Loss required for event log
+    emit GainsWithdrawn(msg.sender, assets, amounts, PUSDLoss); // PUSD Loss required for event log
 
     _sendGainsToDepositor(msg.sender, assets, amounts);
   }
 
-  // --- YETI issuance functions ---
+  // --- PREON issuance functions ---
 
-  function _triggerYETIIssuance(ICommunityIssuance _communityIssuance)
+  function _triggerPREONIssuance(ICommunityIssuance _communityIssuance)
     internal
   {
-    uint256 YETIIssuance = _communityIssuance.issueYETI();
-    _updateG(YETIIssuance);
+    uint256 PREONIssuance = _communityIssuance.issuePREON();
+    _updateG(PREONIssuance);
   }
 
-  function _updateG(uint256 _YETIIssuance) internal {
-    uint256 totalYUSD = totalYUSDDeposits; // cached to save an SLOAD
+  function _updateG(uint256 _PREONIssuance) internal {
+    uint256 totalPUSD = totalPUSDDeposits; // cached to save an SLOAD
     /*
-     * When total deposits is 0, G is not updated. In this case, the YETI issued can not be obtained by later
+     * When total deposits is 0, G is not updated. In this case, the PREON issued can not be obtained by later
      * depositors - it is missed out on, and remains in the balanceof the CommunityIssuance contract.
      *
      */
-    if (totalYUSD == 0 || _YETIIssuance == 0) {
+    if (totalPUSD == 0 || _PREONIssuance == 0) {
       return;
     }
 
-    uint256 YETIPerUnitStaked = _computeYETIPerUnitStaked(
-      _YETIIssuance,
-      totalYUSD
+    uint256 PREONPerUnitStaked = _computePREONPerUnitStaked(
+      _PREONIssuance,
+      totalPUSD
     );
 
-    uint256 marginalYETIGain = YETIPerUnitStaked.mul(P);
+    uint256 marginalPREONGain = PREONPerUnitStaked.mul(P);
     epochToScaleToG[currentEpoch][currentScale] = epochToScaleToG[currentEpoch][
       currentScale
-    ].add(marginalYETIGain);
+    ].add(marginalPREONGain);
 
     emit G_Updated(
       epochToScaleToG[currentEpoch][currentScale],
@@ -520,12 +520,12 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     );
   }
 
-  function _computeYETIPerUnitStaked(
-    uint256 _YETIIssuance,
-    uint256 _totalYUSDDeposits
+  function _computePREONPerUnitStaked(
+    uint256 _PREONIssuance,
+    uint256 _totalPUSDDeposits
   ) internal returns (uint256) {
     /*
-     * Calculate the YETI-per-unit staked.  Division uses a "feedback" error correction, to keep the
+     * Calculate the PREON-per-unit staked.  Division uses a "feedback" error correction, to keep the
      * cumulative error low in the running total G:
      *
      * 1) Form a numerator which compensates for the floor division error that occurred the last time this
@@ -535,22 +535,22 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
      * 4) Store this error for use in the next correction when this function is called.
      * 5) Note: static analysis tools complain about this "division before multiplication", however, it is intended.
      */
-    uint256 YETINumerator = _YETIIssuance.mul(DECIMAL_PRECISION).add(
-      lastYETIError
+    uint256 PREONNumerator = _PREONIssuance.mul(DECIMAL_PRECISION).add(
+      lastPREONError
     );
 
-    uint256 YETIPerUnitStaked = YETINumerator.div(_totalYUSDDeposits);
-    lastYETIError = YETINumerator.sub(
-      YETIPerUnitStaked.mul(_totalYUSDDeposits)
+    uint256 PREONPerUnitStaked = PREONNumerator.div(_totalPUSDDeposits);
+    lastPREONError = PREONNumerator.sub(
+      PREONPerUnitStaked.mul(_totalPUSDDeposits)
     );
 
-    return YETIPerUnitStaked;
+    return PREONPerUnitStaked;
   }
 
   // --- Liquidation functions ---
 
   /*
-   * Cancels out the specified debt against the YUSD contained in the Stability Pool (as far as possible)
+   * Cancels out the specified debt against the PUSD contained in the Stability Pool (as far as possible)
    * and transfers the Trove's collateral from ActivePool to StabilityPool.
    * Only called by liquidation functions in the TroveManager.
    */
@@ -560,27 +560,27 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     uint256[] memory _amountsAdded
   ) external override {
     _requireCallerIsTML();
-    uint256 totalYUSD = totalYUSDDeposits; // cached to save an SLOAD
-    if (totalYUSD == 0 || _debtToOffset == 0) {
+    uint256 totalPUSD = totalPUSDDeposits; // cached to save an SLOAD
+    if (totalPUSD == 0 || _debtToOffset == 0) {
       return;
     }
 
-    _triggerYETIIssuance(communityIssuance);
+    _triggerPREONIssuance(communityIssuance);
 
     (
       uint256[] memory AssetGainPerUnitStaked,
-      uint256 YUSDLossPerUnitStaked
+      uint256 PUSDLossPerUnitStaked
     ) = _computeRewardsPerUnitStaked(
         _tokens,
         _amountsAdded,
         _debtToOffset,
-        totalYUSD
+        totalPUSD
       );
 
     _updateRewardSumAndProduct(
       _tokens,
       AssetGainPerUnitStaked,
-      YUSDLossPerUnitStaked
+      PUSDLossPerUnitStaked
     ); // updates S and P
     _moveOffsetCollAndDebt(_tokens, _amountsAdded, _debtToOffset);
   }
@@ -588,7 +588,7 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
   // --- Offset helper functions ---
 
   /*
-   * Compute the YUSD and Collateral amount rewards. Uses a "feedback" error correction, to keep
+   * Compute the PUSD and Collateral amount rewards. Uses a "feedback" error correction, to keep
    * the cumulative error in the P and S state variables low:
    *
    * 1) Form numerators which compensate for the floor division errors that occurred the last time this
@@ -602,12 +602,12 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     address[] memory _tokens,
     uint256[] memory _amountsAdded,
     uint256 _debtToOffset,
-    uint256 _totalYUSDDeposits
+    uint256 _totalPUSDDeposits
   )
     internal
     returns (
       uint256[] memory AssetGainPerUnitStaked,
-      uint256 YUSDLossPerUnitStaked
+      uint256 PUSDLossPerUnitStaked
     )
   {
     uint256 amountsLen = _amountsAdded.length;
@@ -622,38 +622,38 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     }
 
     require(
-      _debtToOffset <= _totalYUSDDeposits,
-      "SP:This debt less than totalYUSD"
+      _debtToOffset <= _totalPUSDDeposits,
+      "SP:This debt less than totalPUSD"
     );
-    if (_debtToOffset == _totalYUSDDeposits) {
-      YUSDLossPerUnitStaked = DECIMAL_PRECISION; // When the Pool depletes to 0, so does each deposit
-      lastYUSDLossError_Offset = 0;
+    if (_debtToOffset == _totalPUSDDeposits) {
+      PUSDLossPerUnitStaked = DECIMAL_PRECISION; // When the Pool depletes to 0, so does each deposit
+      lastPUSDLossError_Offset = 0;
     } else {
-      uint256 YUSDLossNumerator = _debtToOffset.mul(DECIMAL_PRECISION).sub(
-        lastYUSDLossError_Offset
+      uint256 PUSDLossNumerator = _debtToOffset.mul(DECIMAL_PRECISION).sub(
+        lastPUSDLossError_Offset
       );
       /*
-       * Add 1 to make error in quotient positive. We want "slightly too much" YUSD loss,
-       * which ensures the error in any given compoundedYUSDDeposit favors the Stability Pool.
+       * Add 1 to make error in quotient positive. We want "slightly too much" PUSD loss,
+       * which ensures the error in any given compoundedPUSDDeposit favors the Stability Pool.
        */
-      YUSDLossPerUnitStaked = (YUSDLossNumerator.div(_totalYUSDDeposits)).add(
+      PUSDLossPerUnitStaked = (PUSDLossNumerator.div(_totalPUSDDeposits)).add(
         1
       );
-      lastYUSDLossError_Offset = (YUSDLossPerUnitStaked.mul(_totalYUSDDeposits))
-        .sub(YUSDLossNumerator);
+      lastPUSDLossError_Offset = (PUSDLossPerUnitStaked.mul(_totalPUSDDeposits))
+        .sub(PUSDLossNumerator);
     }
 
     AssetGainPerUnitStaked = new uint256[](_amountsAdded.length);
     for (uint256 i; i < amountsLen; ++i) {
       AssetGainPerUnitStaked[i] = CollateralNumerators[i].mul(currentP).div(
-        _totalYUSDDeposits
+        _totalPUSDDeposits
       );
     }
 
     for (uint256 i; i < amountsLen; ++i) {
       uint256 tokenIDX = whitelist.getIndex(_tokens[i]);
       lastAssetError_Offset[tokenIDX] = CollateralNumerators[i].sub(
-        AssetGainPerUnitStaked[i].mul(_totalYUSDDeposits).div(currentP)
+        AssetGainPerUnitStaked[i].mul(_totalPUSDDeposits).div(currentP)
       );
     }
   }
@@ -662,18 +662,18 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
   function _updateRewardSumAndProduct(
     address[] memory _assets,
     uint256[] memory _AssetGainPerUnitStaked,
-    uint256 _YUSDLossPerUnitStaked
+    uint256 _PUSDLossPerUnitStaked
   ) internal {
     uint256 currentP = P;
     uint256 newP;
 
-    require(_YUSDLossPerUnitStaked <= DECIMAL_PRECISION, "SP: YUSDLoss < 1");
+    require(_PUSDLossPerUnitStaked <= DECIMAL_PRECISION, "SP: PUSDLoss < 1");
     /*
-     * The newProductFactor is the factor by which to change all deposits, due to the depletion of Stability Pool YUSD in the liquidation.
-     * We make the product factor 0 if there was a pool-emptying. Otherwise, it is (1 - YUSDLossPerUnitStaked)
+     * The newProductFactor is the factor by which to change all deposits, due to the depletion of Stability Pool PUSD in the liquidation.
+     * We make the product factor 0 if there was a pool-emptying. Otherwise, it is (1 - PUSDLossPerUnitStaked)
      */
     uint256 newProductFactor = uint256(DECIMAL_PRECISION).sub(
-      _YUSDLossPerUnitStaked
+      _PUSDLossPerUnitStaked
     );
 
     uint128 currentScaleCached = currentScale;
@@ -735,21 +735,21 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     uint256 _debtToOffset
   ) internal {
     IActivePool activePoolCached = activePool;
-    // Cancel the liquidated YUSD debt with the YUSD in the stability pool
-    activePoolCached.decreaseYUSDDebt(_debtToOffset);
-    _decreaseYUSD(_debtToOffset);
+    // Cancel the liquidated PUSD debt with the PUSD in the stability pool
+    activePoolCached.decreasePUSDDebt(_debtToOffset);
+    _decreasePUSD(_debtToOffset);
 
     // Burn the debt that was successfully offset
-    yusdToken.burn(address(this), _debtToOffset);
+    pusdToken.burn(address(this), _debtToOffset);
 
     activePoolCached.sendCollaterals(address(this), _collsToAdd, _amountsToAdd);
   }
 
-  // Decreases YUSD Stability pool balance.
-  function _decreaseYUSD(uint256 _amount) internal {
-    uint256 newTotalYUSDDeposits = totalYUSDDeposits.sub(_amount);
-    totalYUSDDeposits = newTotalYUSDDeposits;
-    emit StabilityPoolYUSDBalanceUpdated(newTotalYUSDDeposits);
+  // Decreases PUSD Stability pool balance.
+  function _decreasePUSD(uint256 _amount) internal {
+    uint256 newTotalPUSDDeposits = totalPUSDDeposits.sub(_amount);
+    totalPUSDDeposits = newTotalPUSDDeposits;
+    emit StabilityPoolPUSDBalanceUpdated(newTotalPUSDDeposits);
   }
 
   // --- Reward calculator functions for depositor and front end ---
@@ -825,12 +825,12 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
   }
 
   /*
-   * Calculate the YETI gain earned by a deposit since its last snapshots were taken.
-   * Given by the formula:  YETI = d0 * (G - G(0))/P(0)
+   * Calculate the PREON gain earned by a deposit since its last snapshots were taken.
+   * Given by the formula:  PREON = d0 * (G - G(0))/P(0)
    * where G(0) and P(0) are the depositor's snapshots of the sum G and product P, respectively.
    * d0 is the last recorded deposit value.
    */
-  function getDepositorYETIGain(address _depositor)
+  function getDepositorPREONGain(address _depositor)
     public
     view
     override
@@ -854,20 +854,20 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
 
     Snapshots storage snapshots = depositSnapshots[_depositor];
 
-    uint256 YETIGain = kickbackRate
-      .mul(_getYETIGainFromSnapshots(initialDeposit, snapshots))
+    uint256 PREONGain = kickbackRate
+      .mul(_getPREONGainFromSnapshots(initialDeposit, snapshots))
       .div(DECIMAL_PRECISION);
 
-    return YETIGain;
+    return PREONGain;
   }
 
   /*
-   * Return the YETI gain earned by the front end. Given by the formula:  E = D0 * (G - G(0))/P(0)
+   * Return the PREON gain earned by the front end. Given by the formula:  E = D0 * (G - G(0))/P(0)
    * where G(0) and P(0) are the depositor's snapshots of the sum G and product P, respectively.
    *
    * D0 is the last recorded value of the front end's total tagged deposits.
    */
-  function getFrontEndYETIGain(address _frontEnd)
+  function getFrontEndPREONGain(address _frontEnd)
     public
     view
     override
@@ -883,19 +883,19 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
 
     Snapshots storage snapshots = frontEndSnapshots[_frontEnd];
 
-    uint256 YETIGain = frontEndShare
-      .mul(_getYETIGainFromSnapshots(frontEndStake, snapshots))
+    uint256 PREONGain = frontEndShare
+      .mul(_getPREONGainFromSnapshots(frontEndStake, snapshots))
       .div(DECIMAL_PRECISION);
-    return YETIGain;
+    return PREONGain;
   }
 
-  function _getYETIGainFromSnapshots(
+  function _getPREONGainFromSnapshots(
     uint256 initialStake,
     Snapshots storage snapshots
   ) internal view returns (uint256) {
     /*
-     * Grab the sum 'G' from the epoch at which the stake was made. The YETI gain may span up to one scale change.
-     * If it does, the second portion of the YETI gain is scaled by 1e9.
+     * Grab the sum 'G' from the epoch at which the stake was made. The PREON gain may span up to one scale change.
+     * If it does, the second portion of the PREON gain is scaled by 1e9.
      * If the gain spans no scale change, the second portion will be 0.
      */
     uint128 epochSnapshot = snapshots.epoch;
@@ -909,12 +909,12 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     uint256 secondPortion = epochToScaleToG[epochSnapshot][scaleSnapshot.add(1)]
       .div(SCALE_FACTOR);
 
-    uint256 YETIGain = initialStake
+    uint256 PREONGain = initialStake
       .mul(firstPortion.add(secondPortion))
       .div(P_Snapshot)
       .div(DECIMAL_PRECISION);
 
-    return YETIGain;
+    return PREONGain;
   }
 
   // --- Compounded deposit and compounded front end stake ---
@@ -923,7 +923,7 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
    * Return the user's compounded deposit. Given by the formula:  d = d0 * P/P(0)
    * where P(0) is the depositor's snapshot of the product P, taken when they last updated their deposit.
    */
-  function getCompoundedYUSDDeposit(address _depositor)
+  function getCompoundedPUSDDeposit(address _depositor)
     public
     view
     override
@@ -1022,16 +1022,16 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     return compoundedStake;
   }
 
-  // --- Sender functions for YUSD deposit, Collateral gains and YETI gains ---
+  // --- Sender functions for PUSD deposit, Collateral gains and PREON gains ---
 
-  // Transfer the YUSD tokens from the user to the Stability Pool's address, and update its recorded YUSD
-  function _sendYUSDtoStabilityPool(address _address, uint256 _amount)
+  // Transfer the PUSD tokens from the user to the Stability Pool's address, and update its recorded PUSD
+  function _sendPUSDtoStabilityPool(address _address, uint256 _amount)
     internal
   {
-    yusdToken.sendToPool(_address, address(this), _amount);
-    uint256 newTotalYUSDDeposits = totalYUSDDeposits.add(_amount);
-    totalYUSDDeposits = newTotalYUSDDeposits;
-    emit StabilityPoolYUSDBalanceUpdated(newTotalYUSDDeposits);
+    pusdToken.sendToPool(_address, address(this), _amount);
+    uint256 newTotalPUSDDeposits = totalPUSDDeposits.add(_amount);
+    totalPUSDDeposits = newTotalPUSDDeposits;
+    emit StabilityPoolPUSDBalanceUpdated(newTotalPUSDDeposits);
   }
 
   function _sendGainsToDepositor(
@@ -1059,16 +1059,16 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     totalColl.amounts = _leftSubColls(totalColl, assets, amounts);
   }
 
-  // Send YUSD to user and decrease YUSD in Pool
-  function _sendYUSDToDepositor(address _depositor, uint256 YUSDWithdrawal)
+  // Send PUSD to user and decrease PUSD in Pool
+  function _sendPUSDToDepositor(address _depositor, uint256 PUSDWithdrawal)
     internal
   {
-    if (YUSDWithdrawal == 0) {
+    if (PUSDWithdrawal == 0) {
       return;
     }
 
-    yusdToken.returnFromPool(address(this), _depositor, YUSDWithdrawal);
-    _decreaseYUSD(YUSDWithdrawal);
+    pusdToken.returnFromPool(address(this), _depositor, PUSDWithdrawal);
+    _decreasePUSD(PUSDWithdrawal);
   }
 
   // --- External Front End functions ---
@@ -1169,22 +1169,22 @@ contract StabilityPool is PoolBase, Ownable, CheckContract, IStabilityPool {
     emit FrontEndSnapshotUpdated(_frontEnd, currentP, currentG);
   }
 
-  function _payOutYETIGains(
+  function _payOutPREONGains(
     ICommunityIssuance _communityIssuance,
     address _depositor,
     address _frontEnd
   ) internal {
-    // Pay out front end's YETI gain
+    // Pay out front end's PREON gain
     if (_frontEnd != address(0)) {
-      uint256 frontEndYETIGain = getFrontEndYETIGain(_frontEnd);
-      _communityIssuance.sendYETI(_frontEnd, frontEndYETIGain);
-      emit YETIPaidToFrontEnd(_frontEnd, frontEndYETIGain);
+      uint256 frontEndPREONGain = getFrontEndPREONGain(_frontEnd);
+      _communityIssuance.sendPREON(_frontEnd, frontEndPREONGain);
+      emit PREONPaidToFrontEnd(_frontEnd, frontEndPREONGain);
     }
 
-    // Pay out depositor's YETI gain
-    uint256 depositorYETIGain = getDepositorYETIGain(_depositor);
-    _communityIssuance.sendYETI(_depositor, depositorYETIGain);
-    emit YETIPaidToDepositor(_depositor, depositorYETIGain);
+    // Pay out depositor's PREON gain
+    uint256 depositorPREONGain = getDepositorPREONGain(_depositor);
+    _communityIssuance.sendPREON(_depositor, depositorPREONGain);
+    emit PREONPaidToDepositor(_depositor, depositorPREONGain);
   }
 
   // --- 'require' functions ---

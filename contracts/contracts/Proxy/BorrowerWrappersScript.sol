@@ -9,15 +9,15 @@ import "../Interfaces/IBorrowerOperations.sol";
 import "../Interfaces/ITroveManager.sol";
 import "../Interfaces/IStabilityPool.sol";
 import "../Interfaces/IPriceFeed.sol";
-import "../Interfaces/ISYETI.sol";
+import "../Interfaces/ISPREON.sol";
 import "./BorrowerOperationsScript.sol";
 import "./ETHTransferScript.sol";
-import "./SYETIScript.sol";
+import "./SPREONScript.sol";
 
 contract BorrowerWrappersScript is
   BorrowerOperationsScript,
   ETHTransferScript,
-  SYETIScript
+  SPREONScript
 {
   using SafeMath for uint256;
 
@@ -25,18 +25,18 @@ contract BorrowerWrappersScript is
 
   ITroveManager immutable troveManager;
   IStabilityPool immutable stabilityPool;
-  IERC20 immutable yusdToken;
-  IERC20 immutable yetiToken;
-  ISYETI immutable sYETI;
+  IERC20 immutable pusdToken;
+  IERC20 immutable preonToken;
+  ISPREON immutable sPREON;
 
   constructor(
     address _borrowerOperationsAddress,
     address _troveManagerAddress,
-    address _sYETIAddress
+    address _sPREONAddress
   )
     public
     BorrowerOperationsScript(IBorrowerOperations(_borrowerOperationsAddress))
-    SYETIScript(_sYETIAddress)
+    SPREONScript(_sPREONAddress)
   {
     checkContract(_troveManagerAddress);
     ITroveManager troveManagerCached = ITroveManager(_troveManagerAddress);
@@ -50,23 +50,23 @@ contract BorrowerWrappersScript is
     //        checkContract(address(priceFeedCached));
     //        priceFeed = priceFeedCached;
 
-    address yusdTokenCached = address(troveManagerCached.yusdToken());
-    checkContract(yusdTokenCached);
-    yusdToken = IERC20(yusdTokenCached);
+    address pusdTokenCached = address(troveManagerCached.pusdToken());
+    checkContract(pusdTokenCached);
+    pusdToken = IERC20(pusdTokenCached);
 
-    address yetiTokenCached = address(troveManagerCached.yetiToken());
-    checkContract(yetiTokenCached);
-    yetiToken = IERC20(yetiTokenCached);
+    address preonTokenCached = address(troveManagerCached.preonToken());
+    checkContract(preonTokenCached);
+    preonToken = IERC20(preonTokenCached);
 
-    ISYETI sYETICached = troveManagerCached.sYETI();
+    ISPREON sPREONCached = troveManagerCached.sPREON();
     require(
-      _sYETIAddress == address(sYETICached),
-      "BorrowerWrappersScript: Wrong SYETI address"
+      _sPREONAddress == address(sPREONCached),
+      "BorrowerWrappersScript: Wrong SPREON address"
     );
-    sYETI = sYETICached;
+    sPREON = sPREONCached;
   }
 
-  //    function claimCollateralAndOpenTrove(uint _maxFee, uint _YUSDAmount, address _upperHint, address _lowerHint) external payable {
+  //    function claimCollateralAndOpenTrove(uint _maxFee, uint _PUSDAmount, address _upperHint, address _lowerHint) external payable {
   //        uint balanceBefore = address(this).balance;
   //
   //        // Claim collateral
@@ -80,78 +80,78 @@ contract BorrowerWrappersScript is
   //        uint totalCollateral = balanceAfter.sub(balanceBefore).add(msg.value);
   //
   //        // Open trove with obtained collateral, plus collateral sent by user
-  //        borrowerOperations.openTrove{ value: totalCollateral }(_maxFee, _YUSDAmount, _upperHint, _lowerHint);
+  //        borrowerOperations.openTrove{ value: totalCollateral }(_maxFee, _PUSDAmount, _upperHint, _lowerHint);
   //    }
   //
   //    function claimSPRewardsAndRecycle(uint _maxFee, address _upperHint, address _lowerHint) external {
   //        uint collBalanceBefore = address(this).balance;
-  //        uint yetiBalanceBefore = yetiToken.balanceOf(address(this));
+  //        uint preonBalanceBefore = preonToken.balanceOf(address(this));
   //
   //        // Claim rewards
   //        stabilityPool.withdrawFromSP(0);
   //
   //        uint collBalanceAfter = address(this).balance;
-  //        uint yetiBalanceAfter = yetiToken.balanceOf(address(this));
+  //        uint preonBalanceAfter = preonToken.balanceOf(address(this));
   //        uint claimedCollateral = collBalanceAfter.sub(collBalanceBefore);
   //
-  //        // Add claimed ETH to trove, get more YUSD and stake it into the Stability Pool
+  //        // Add claimed ETH to trove, get more PUSD and stake it into the Stability Pool
   //        if (claimedCollateral != 0) {
   //            _requireUserHasTrove(address(this));
-  //            uint YUSDAmount = _getNetYUSDAmount(claimedCollateral);
-  //            borrowerOperations.adjustTrove{ value: claimedCollateral }(_maxFee, 0, YUSDAmount, true, _upperHint, _lowerHint);
-  //            // Provide withdrawn YUSD to Stability Pool
-  //            if (YUSDAmount != 0) {
-  //                stabilityPool.provideToSP(YUSDAmount, address(0));
+  //            uint PUSDAmount = _getNetPUSDAmount(claimedCollateral);
+  //            borrowerOperations.adjustTrove{ value: claimedCollateral }(_maxFee, 0, PUSDAmount, true, _upperHint, _lowerHint);
+  //            // Provide withdrawn PUSD to Stability Pool
+  //            if (PUSDAmount != 0) {
+  //                stabilityPool.provideToSP(PUSDAmount, address(0));
   //            }
   //        }
   //
-  //        // Stake claimed YETI
-  //        uint claimedYETI = yetiBalanceAfter.sub(yetiBalanceBefore);
-  //        if (claimedYETI != 0) {
-  //             .stake(claimedYETI);
+  //        // Stake claimed PREON
+  //        uint claimedPREON = preonBalanceAfter.sub(preonBalanceBefore);
+  //        if (claimedPREON != 0) {
+  //             .stake(claimedPREON);
   //        }
   //    }
   //
   //    function claimStakingGainsAndRecycle(uint _maxFee, address _upperHint, address _lowerHint) external {
   //        uint collBalanceBefore = address(this).balance;
-  //        uint yusdBalanceBefore = yusdToken.balanceOf(address(this));
-  //        uint yetiBalanceBefore = yetiToken.balanceOf(address(this));
+  //        uint pusdBalanceBefore = pusdToken.balanceOf(address(this));
+  //        uint preonBalanceBefore = preonToken.balanceOf(address(this));
   //
   //        // Claim gains
-  //        sYETI.unstake(0);
+  //        sPREON.unstake(0);
   //
   //        uint gainedCollateral = address(this).balance.sub(collBalanceBefore); // stack too deep issues :'(
-  //        uint gainedYUSD = yusdToken.balanceOf(address(this)).sub(yusdBalanceBefore);
+  //        uint gainedPUSD = pusdToken.balanceOf(address(this)).sub(pusdBalanceBefore);
   //
-  //        uint netYUSDAmount;
-  //        // Top up trove and get more YUSD, keeping ICR constant
+  //        uint netPUSDAmount;
+  //        // Top up trove and get more PUSD, keeping ICR constant
   //        if (gainedCollateral != 0) {
   //            _requireUserHasTrove(address(this));
-  //            netYUSDAmount = _getNetYUSDAmount(gainedCollateral);
-  //            borrowerOperations.adjustTrove{ value: gainedCollateral }(_maxFee, 0, netYUSDAmount, true, _upperHint, _lowerHint);
+  //            netPUSDAmount = _getNetPUSDAmount(gainedCollateral);
+  //            borrowerOperations.adjustTrove{ value: gainedCollateral }(_maxFee, 0, netPUSDAmount, true, _upperHint, _lowerHint);
   //        }
   //
-  //        uint totalYUSD = gainedYUSD.add(netYUSDAmount);
-  //        if (totalYUSD != 0) {
-  //            stabilityPool.provideToSP(totalYUSD, address(0));
+  //        uint totalPUSD = gainedPUSD.add(netPUSDAmount);
+  //        if (totalPUSD != 0) {
+  //            stabilityPool.provideToSP(totalPUSD, address(0));
   //
-  //            // Providing to Stability Pool also triggers YETI claim, so stake it if any
-  //            uint yetiBalanceAfter = yetiToken.balanceOf(address(this));
-  //            uint claimedYETI = yetiBalanceAfter.sub(yetiBalanceBefore);
-  //            if (claimedYETI != 0) {
-  //                sYETI.mint(claimedYETI);
+  //            // Providing to Stability Pool also triggers PREON claim, so stake it if any
+  //            uint preonBalanceAfter = preonToken.balanceOf(address(this));
+  //            uint claimedPREON = preonBalanceAfter.sub(preonBalanceBefore);
+  //            if (claimedPREON != 0) {
+  //                sPREON.mint(claimedPREON);
   //            }
   //        }
   //
   //    }
   //
-  //    function _getNetYUSDAmount(uint _collateral) internal returns (uint) {
+  //    function _getNetPUSDAmount(uint _collateral) internal returns (uint) {
   //        uint price = priceFeed.fetchPrice();
   //        uint ICR = troveManager.getCurrentICR(address(this), price);
   //
-  //        uint YUSDAmount = _collateral.mul(price).div(ICR);
+  //        uint PUSDAmount = _collateral.mul(price).div(ICR);
   //        uint borrowingRate = troveManager.getBorrowingRateWithDecay();
-  //        uint netDebt = YUSDAmount.mul(LiquityMath.DECIMAL_PRECISION).div(LiquityMath.DECIMAL_PRECISION.add(borrowingRate));
+  //        uint netDebt = PUSDAmount.mul(LiquityMath.DECIMAL_PRECISION).div(LiquityMath.DECIMAL_PRECISION.add(borrowingRate));
   //
   //        return netDebt;
   //    }

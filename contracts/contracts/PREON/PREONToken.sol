@@ -3,10 +3,11 @@
 pragma solidity 0.6.11;
 
 import "./SafeMath.sol";
-import "./IYETIToken.sol";
+import "./IPREONToken.sol";
 
 /*
- * Brought to you by @YetiFinance
+ * Brought to you by @PreonFinances
+ * Thanks to @PreonFinance for the original implementation
  *
  * Based upon OpenZeppelin's ERC20 contract:
  * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/token/ERC20/ERC20.sol
@@ -15,28 +16,28 @@ import "./IYETIToken.sol";
  * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
  *
  *
- *  --- Functionality added specific to the YETIToken ---
+ *  --- Functionality added specific to the PREONToken ---
  *
- * 1) Transfer protection: Prevent accidentally sending YETI to directly to this address
+ * 1) Transfer protection: Prevent accidentally sending PREON to directly to this address
  *
- * 2) sendToSYETI(): Only callable by the SYETI contract to transfer YETI for staking.
+ * 2) sendToSPREON(): Only callable by the SPREON contract to transfer PREON for staking.
  *
  * 3) Supply hard-capped at 500 million
  *
- * 4) Yeti Finance Treasury and Yeti Finance Team addresses set at deployment
+ * 4) Preon Finance Treasury and Preon Finance Team addresses set at deployment
  *
- * 5) 365 million tokens are minted at deployment to the Yeti Finance Treasury
+ * 5) 365 million tokens are minted at deployment to the Preon Finance Treasury
  *
- * 6) 135 million tokens are minted at deployment to the Yeti Finance Team
+ * 6) 135 million tokens are minted at deployment to the Preon Finance Team
  *
  */
-contract YETIToken is IYETIToken {
+contract PREONToken is IPREONToken {
   using SafeMath for uint256;
 
   // --- ERC20 Data ---
 
-  string internal constant _NAME = "Yeti Finance";
-  string internal constant _SYMBOL = "YETI";
+  string internal constant _NAME = "Preon Finance";
+  string internal constant _SYMBOL = "PREON";
   string internal constant _VERSION = "1";
   uint8 internal constant _DECIMALS = 18;
 
@@ -65,25 +66,25 @@ contract YETIToken is IYETIToken {
 
   mapping(address => uint256) private _nonces;
 
-  // --- YETIToken specific data ---
+  // --- PREONToken specific data ---
 
   // uint for use with SafeMath
   uint256 internal _1_MILLION = 1e24; // 1e6 * 1e18 = 1e24
 
   uint256 internal immutable deploymentStartTime;
 
-  address public immutable sYETIAddress;
+  address public immutable sPREONAddress;
 
   // --- Functions ---
 
   constructor(
-    address _sYETIAddress,
+    address _sPREONAddress,
     address _treasuryAddress,
     address _teamAddress
   ) public {
     deploymentStartTime = block.timestamp;
 
-    sYETIAddress = _sYETIAddress;
+    sPREONAddress = _sPREONAddress;
 
     bytes32 hashedName = keccak256(bytes(_NAME));
     bytes32 hashedVersion = keccak256(bytes(_VERSION));
@@ -97,16 +98,16 @@ contract YETIToken is IYETIToken {
       hashedVersion
     );
 
-    // --- Initial YETI allocations ---
+    // --- Initial PREON allocations ---
 
-    // Allocate 365 million for Yeti Finance Treasury
+    // Allocate 365 million for Preon Finance Treasury
     uint256 treasuryEntitlement = _1_MILLION.mul(365);
     _totalSupply = _totalSupply.add(treasuryEntitlement);
     _balances[_treasuryAddress] = _balances[_treasuryAddress].add(
       treasuryEntitlement
     );
 
-    // Allocate 135 million for Yeti Finance Team
+    // Allocate 135 million for Preon Finance Team
     uint256 teamEntitlement = _1_MILLION.mul(135);
     _totalSupply = _totalSupply.add(teamEntitlement);
     _balances[_teamAddress] = _balances[_teamAddress].add(teamEntitlement);
@@ -147,7 +148,7 @@ contract YETIToken is IYETIToken {
       msg.sender,
       _allowances[sender][msg.sender].sub(
         amount,
-        "YETI: transfer amount exceeds allowance"
+        "PREON: transfer amount exceeds allowance"
       )
     );
     return true;
@@ -176,15 +177,15 @@ contract YETIToken is IYETIToken {
       spender,
       _allowances[msg.sender][spender].sub(
         subtractedValue,
-        "YETI: decreased allowance below zero"
+        "PREON: decreased allowance below zero"
       )
     );
     return true;
   }
 
-  function sendToSYETI(address _sender, uint256 _amount) external override {
-    _requireCallerIsSYETI();
-    _transfer(_sender, sYETIAddress, _amount);
+  function sendToSPREON(address _sender, uint256 _amount) external override {
+    _requireCallerIsSPREON();
+    _transfer(_sender, sPREONAddress, _amount);
   }
 
   // --- EIP 2612 functionality ---
@@ -206,7 +207,7 @@ contract YETIToken is IYETIToken {
     bytes32 r,
     bytes32 s
   ) external override {
-    require(deadline >= now, "YETI: expired deadline");
+    require(deadline >= now, "PREON: expired deadline");
     bytes32 digest = keccak256(
       abi.encodePacked(
         "\x19\x01",
@@ -224,7 +225,7 @@ contract YETIToken is IYETIToken {
       )
     );
     address recoveredAddress = ecrecover(digest, v, r, s);
-    require(recoveredAddress == owner, "YETI: invalid signature");
+    require(recoveredAddress == owner, "PREON: invalid signature");
     _approve(owner, spender, amount);
   }
 
@@ -255,11 +256,11 @@ contract YETIToken is IYETIToken {
     address recipient,
     uint256 amount
   ) internal {
-    require(sender != address(0), "YETI: transfer from the zero address");
+    require(sender != address(0), "PREON: transfer from the zero address");
 
     _balances[sender] = _balances[sender].sub(
       amount,
-      "YETI: transfer amount exceeds balance"
+      "PREON: transfer amount exceeds balance"
     );
     _balances[recipient] = _balances[recipient].add(amount);
     emit Transfer(sender, recipient, amount);
@@ -279,14 +280,14 @@ contract YETIToken is IYETIToken {
   function _requireValidRecipient(address _recipient) internal view {
     require(
       _recipient != address(this),
-      "YETI: Cannot transfer tokens directly to the YETI token contract"
+      "PREON: Cannot transfer tokens directly to the PREON token contract"
     );
   }
 
-  function _requireCallerIsSYETI() internal view {
+  function _requireCallerIsSPREON() internal view {
     require(
-      msg.sender == sYETIAddress,
-      "YETI: caller must be the SYETI contract"
+      msg.sender == sPREONAddress,
+      "PREON: caller must be the SPREON contract"
     );
   }
 

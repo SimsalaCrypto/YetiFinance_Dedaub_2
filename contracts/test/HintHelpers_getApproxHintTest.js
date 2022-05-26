@@ -8,7 +8,7 @@ const moneyVals = testHelpers.MoneyValues
 let latestRandomSeed = 31337
 
 const TroveManagerTester = artifacts.require("TroveManagerTester")
-const YUSDToken = artifacts.require("YUSDToken")
+const PUSDToken = artifacts.require("PUSDToken")
 
 contract('HintHelpers', async accounts => {
  
@@ -28,19 +28,19 @@ contract('HintHelpers', async accounts => {
 
   const getNetBorrowingAmount = async (debtWithFee) => th.getNetBorrowingAmount(contracts, debtWithFee)
 
-  /* Open a Trove for each account. YUSD debt is 200 YUSD each, with collateral beginning at
+  /* Open a Trove for each account. PUSD debt is 200 PUSD each, with collateral beginning at
   1.5 ether, and rising by 0.01 ether per Trove.  Hence, the ICR of account (i + 1) is always 1% greater than the ICR of account i. 
  */
 
- // Open Troves in parallel, then withdraw YUSD in parallel
+ // Open Troves in parallel, then withdraw PUSD in parallel
  const makeTrovesInParallel = async (accounts, n) => {
   activeAccounts = accounts.slice(0,n)
   // console.log(`number of accounts used is: ${activeAccounts.length}`)
   // console.time("makeTrovesInParallel")
   const openTrovepromises = activeAccounts.map((account, index) => openTrove(account, index))
   await Promise.all(openTrovepromises)
-  const withdrawYUSDpromises = activeAccounts.map(account => withdrawYUSDfromTrove(account))
-  await Promise.all(withdrawYUSDpromises)
+  const withdrawPUSDpromises = activeAccounts.map(account => withdrawPUSDfromTrove(account))
+  await Promise.all(withdrawPUSDpromises)
   // console.timeEnd("makeTrovesInParallel")
  }
 
@@ -50,11 +50,11 @@ contract('HintHelpers', async accounts => {
    await borrowerOperations.openTrove(th._100pct, 0, account, account, { from: account, value: coll })
  }
 
- const withdrawYUSDfromTrove = async (account) => {
-  await borrowerOperations.withdrawYUSD(th._100pct, '100000000000000000000', account, account, { from: account })
+ const withdrawPUSDfromTrove = async (account) => {
+  await borrowerOperations.withdrawPUSD(th._100pct, '100000000000000000000', account, account, { from: account })
  }
 
- // Sequentially add coll and withdraw YUSD, 1 account at a time
+ // Sequentially add coll and withdraw PUSD, 1 account at a time
   const makeTrovesInSequence = async (accounts, n) => {
     activeAccounts = accounts.slice(0,n)
     // console.log(`number of accounts used is: ${activeAccounts.length}`)
@@ -64,7 +64,7 @@ contract('HintHelpers', async accounts => {
     // console.time('makeTrovesInSequence')
     for (const account of activeAccounts) {
       const ICR_BN = toBN(ICR.toString().concat('0'.repeat(16)))
-      await th.openTrove(contracts, { extraYUSDAmount: toBN(dec(10000, 18)), ICR: ICR_BN, extraParams: { from: account } })
+      await th.openTrove(contracts, { extraPUSDAmount: toBN(dec(10000, 18)), ICR: ICR_BN, extraParams: { from: account } })
 
       ICR += 1
     }
@@ -74,14 +74,14 @@ contract('HintHelpers', async accounts => {
   before(async () => {
     contracts = await deploymentHelper.deployLiquityCore()
     contracts.troveManager = await TroveManagerTester.new()
-    contracts.yusdToken = await YUSDToken.new(
+    contracts.pusdToken = await PUSDToken.new(
         contracts.troveManager.address,
         contracts.troveManagerLiquidations.address,
         contracts.troveManagerRedemptions.address,
         contracts.stabilityPool.address,
         contracts.borrowerOperations.address
     )
-    const YETIContracts = await deploymentHelper.deployYETIContracts(bountyAddress, lpRewardsAddress, multisig)
+    const PREONContracts = await deploymentHelper.deployPREONContracts(bountyAddress, lpRewardsAddress, multisig)
 
     sortedTroves = contracts.sortedTroves
     troveManager = contracts.troveManager
@@ -89,9 +89,9 @@ contract('HintHelpers', async accounts => {
     hintHelpers = contracts.hintHelpers
     priceFeed = contracts.priceFeedETH
   
-    await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+    await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
     numAccounts = 10
     // numAccounts = 1000 // passed this test. 

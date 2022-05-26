@@ -4,7 +4,7 @@ pragma solidity 0.6.11;
 
 import "../Dependencies/SafeMath.sol";
 import "../Dependencies/SafeERC20.sol";
-import "../Interfaces/IYETIToken.sol";
+import "../Interfaces/IPREONToken.sol";
 
 /*
  * The lockup contract architecture utilizes a single LockupContract, with an unlockTime. The unlockTime is passed as an argument
@@ -13,7 +13,7 @@ import "../Interfaces/IYETIToken.sol";
  */
 contract ShortLockupContract {
   using SafeMath for uint256;
-  using SafeERC20 for IYETIToken;
+  using SafeERC20 for IPREONToken;
 
   // --- Data ---
   bytes32 public constant NAME = "LockupContract";
@@ -22,7 +22,7 @@ contract ShortLockupContract {
 
   address public immutable beneficiary;
 
-  IYETIToken public immutable yetiToken;
+  IPREONToken public immutable preonToken;
 
   // Unlock time is the Unix point in time at which the beneficiary can withdraw.
   uint256 public unlockTime;
@@ -30,16 +30,16 @@ contract ShortLockupContract {
   // --- Events ---
 
   event LockupContractCreated(address _beneficiary, uint256 _unlockTime);
-  event LockupContractEmptied(uint256 _YETIwithdrawal);
+  event LockupContractEmptied(uint256 _PREONwithdrawal);
 
   // --- Functions ---
 
   constructor(
-    address _yetiTokenAddress,
+    address _preonTokenAddress,
     address _beneficiary,
     uint256 _unlockTime
   ) public {
-    yetiToken = IYETIToken(_yetiTokenAddress);
+    preonToken = IPREONToken(_preonTokenAddress);
 
     /*
      * Set the unlock time to a chosen instant in the future, as long as it is at least 1 year after
@@ -51,14 +51,14 @@ contract ShortLockupContract {
     emit LockupContractCreated(_beneficiary, _unlockTime);
   }
 
-  function withdrawYETI() external {
+  function withdrawPREON() external {
     _requireCallerIsBeneficiary();
     _requireLockupDurationHasPassed();
 
-    IYETIToken yetiTokenCached = yetiToken;
-    uint256 YETIBalance = yetiTokenCached.balanceOf(address(this));
-    yetiTokenCached.safeTransfer(beneficiary, YETIBalance);
-    emit LockupContractEmptied(YETIBalance);
+    IPREONToken preonTokenCached = preonToken;
+    uint256 PREONBalance = preonTokenCached.balanceOf(address(this));
+    preonTokenCached.safeTransfer(beneficiary, PREONBalance);
+    emit LockupContractEmptied(PREONBalance);
   }
 
   // --- 'require' functions ---
@@ -80,7 +80,7 @@ contract ShortLockupContract {
   function _requireUnlockTimeIsAtLeastOneYearAfterSystemDeployment(
     uint256 _unlockTime
   ) internal view {
-    uint256 systemDeploymentTime = yetiToken.getDeploymentStartTime();
+    uint256 systemDeploymentTime = preonToken.getDeploymentStartTime();
     require(
       _unlockTime >= systemDeploymentTime.add(SECONDS_IN_ONE_YEAR),
       "LockupContract: unlock time must be at least one year after system deployment"

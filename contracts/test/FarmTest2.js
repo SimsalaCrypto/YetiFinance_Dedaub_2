@@ -9,7 +9,7 @@ const { assertRevert } = TestHelper;
 
 const th = testHelpers.TestHelper
 const StakedToken = artifacts.require('ERC20Mock');
-const YetiToken = artifacts.require("./YETITokenTester.sol")
+const PreonToken = artifacts.require("./PREONTokenTester.sol")
 const Farm = artifacts.require('Farm');
 const NonPayable = artifacts.require('NonPayable');
 
@@ -49,11 +49,11 @@ contract('Farm Test 2', function ([_, wallet1, wallet2, wallet3, wallet4, bounty
   const deploy = async (that) => {
     that.stakedToken = await StakedToken.new('Staked Token', 'LPT', owner, 0);
 
-    const sYETI = await NonPayable.new();
+    const sPREON = await NonPayable.new();
     const treasury = await NonPayable.new();
     const team = await NonPayable.new();
-    that.yeti = await YetiToken.new(
-      sYETI.address,
+    that.preon = await PreonToken.new(
+      sPREON.address,
       treasury.address,
       team.address
     );
@@ -62,7 +62,7 @@ contract('Farm Test 2', function ([_, wallet1, wallet2, wallet3, wallet4, bounty
     that.DURATION = new BN(7 * 24 * 60 * 60); // One week
     that.rewardRate = that.lpRewardsEntitlement.div(that.DURATION);
 
-    that.pool = await Farm.new(that.stakedToken.address, that.yeti.address);
+    that.pool = await Farm.new(that.stakedToken.address, that.preon.address);
 
     await that.stakedToken.mint(wallet1, web3.utils.toWei('1000'));
     await that.stakedToken.mint(wallet2, web3.utils.toWei('1000'));
@@ -82,7 +82,7 @@ contract('Farm Test 2', function ([_, wallet1, wallet2, wallet3, wallet4, bounty
 
 
     it('Deposit and withdraw immediately gives you 0 rewards', async function () {
-      await this.yeti.unprotectedMint(this.pool.address, this.lpRewardsEntitlement)
+      await this.preon.unprotectedMint(this.pool.address, this.lpRewardsEntitlement)
       await this.pool.notifyRewardAmount(this.lpRewardsEntitlement, this.DURATION);
 
 
@@ -101,16 +101,16 @@ contract('Farm Test 2', function ([_, wallet1, wallet2, wallet3, wallet4, bounty
       const stake2 = new BN(web3.utils.toWei('1'));
       await this.pool.stake(stake2, { from: wallet2 });
 
-      const bal1 = await this.yeti.balanceOf(wallet2);
+      const bal1 = await this.preon.balanceOf(wallet2);
       assert.equal(bal1, "0")
       await this.pool.getReward({from: wallet2})
-      const bal2 = await this.yeti.balanceOf(wallet2);
+      const bal2 = await this.preon.balanceOf(wallet2);
       assert.equal(bal2, "0")
     });
 
 
     it('Rate changes with two stakers. Confirm rewards work fine', async function () {
-      await this.yeti.unprotectedMint(this.pool.address, this.lpRewardsEntitlement)
+      await this.preon.unprotectedMint(this.pool.address, this.lpRewardsEntitlement)
       await this.pool.notifyRewardAmount(this.lpRewardsEntitlement, this.DURATION);
 
       expect(await this.pool.rewardPerToken()).to.be.bignumber.almostEqualDiv1e18('0');
@@ -125,26 +125,26 @@ contract('Farm Test 2', function ([_, wallet1, wallet2, wallet3, wallet4, bounty
 
       await time.increaseTo(stakeTime1.add(new BN("86400")));
 
-      const bal1 = await this.yeti.balanceOf(wallet1);
+      const bal1 = await this.preon.balanceOf(wallet1);
       assert.equal(bal1, "0")
       const timeStaked = (await time.latest()).sub(stakeTime1);
       await this.pool.getReward({from: wallet1})
-      const bal2 = await this.yeti.balanceOf(wallet1);
+      const bal2 = await this.preon.balanceOf(wallet1);
       const expectedReward = this.lpRewardsEntitlement.mul(timeStaked).div(this.DURATION);
 
       console.log("Bal2", bal2.toString());
       console.log(expectedReward.toString());
       th.assertIsApproximatelyEqual(bal2, expectedReward);
 
-      await this.yeti.unprotectedMint(this.pool.address, 2 * this.lpRewardsEntitlement);
+      await this.preon.unprotectedMint(this.pool.address, 2 * this.lpRewardsEntitlement);
 
       // const stake2 = new BN(web3.utils.toWei('1'));
       // await this.pool.stake(stake2, { from: wallet2 });
       //
-      // const bal1 = await this.yeti.balanceOf(wallet2);
+      // const bal1 = await this.preon.balanceOf(wallet2);
       // assert.equal(bal1, "0")
       // await this.pool.getReward({from: wallet2})
-      // const bal2 = await this.yeti.balanceOf(wallet2);
+      // const bal2 = await this.preon.balanceOf(wallet2);
       // assert.equal(bal2, "0")
     });
 

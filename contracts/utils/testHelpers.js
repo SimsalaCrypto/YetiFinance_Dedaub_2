@@ -295,7 +295,7 @@ class TestHelper {
   // --- Gas compensation calculation functions ---
 
   // Given a composite debt, returns the actual debt  - i.e. subtracts the virtual debt.
-  // Virtual debt = 50 YUSD.
+  // Virtual debt = 50 PUSD.
   static async getActualDebtFromComposite(compositeDebt, contracts) {
 
     const issuedDebt = await contracts.troveManager.getActualDebtFromComposite(compositeDebt);
@@ -303,7 +303,7 @@ class TestHelper {
     return issuedDebt
   }
 
-  // Adds the gas compensation (50 YUSD) (Why does say 50 here? - from @RoboYeti)
+  // Adds the gas compensation (50 PUSD) (Why does say 50 here? - from @RoboPreon)
   static async getCompositeDebt(contracts, debt) {
     const compositeDebt = contracts.borrowerOperations.getCompositeDebt(debt)
     return compositeDebt
@@ -326,22 +326,22 @@ class TestHelper {
   }
 
   /*
-   * given the requested YUSD amomunt in openTrove, returns the total debt
+   * given the requested PUSD amomunt in openTrove, returns the total debt
    * So, it adds the gas compensation and the borrowing fee
    */
-  static async getOpenTroveTotalDebt(contracts, yusdAmount) {
-    const fee = await contracts.troveManager.getBorrowingFee(yusdAmount)
+  static async getOpenTroveTotalDebt(contracts, pusdAmount) {
+    const fee = await contracts.troveManager.getBorrowingFee(pusdAmount)
     // console.log("Fee " + fee)
-    const compositeDebt = await this.getCompositeDebt(contracts, yusdAmount)
+    const compositeDebt = await this.getCompositeDebt(contracts, pusdAmount)
     // console.log("Composite debt " + compositeDebt)
     return compositeDebt.add(fee)
   }
 
   /*
-   * given the desired total debt, returns the YUSD amount that needs to be requested in openTrove
+   * given the desired total debt, returns the PUSD amount that needs to be requested in openTrove
    * So, it subtracts the gas compensation and then the borrowing fee
    */
-  static async getOpenTroveYUSDAmount(contracts, totalDebt) {
+  static async getOpenTrovePUSDAmount(contracts, totalDebt) {
     const actualDebt = await this.getActualDebtFromComposite(totalDebt, contracts)
     return this.getNetBorrowingAmount(contracts, actualDebt)
   }
@@ -355,9 +355,9 @@ class TestHelper {
   }
 
   // Adds the borrowing fee
-  static async getAmountWithBorrowingFee(contracts, yusdAmount) {
-    const fee = await contracts.troveManager.getBorrowingFee(yusdAmount)
-    return yusdAmount.add(fee)
+  static async getAmountWithBorrowingFee(contracts, pusdAmount) {
+    const fee = await contracts.troveManager.getBorrowingFee(pusdAmount)
+    return pusdAmount.add(fee)
   }
 
   // Adds the redemption fee
@@ -385,43 +385,43 @@ class TestHelper {
   static getEmittedRedemptionValues(redemptionTx) {
     for (let i = 0; i < redemptionTx.logs.length; i++) {
       if (redemptionTx.logs[i].event === "Redemption") {
-        const attemptedYUSDAmount = redemptionTx.logs[i].args[0]
-        const actualYUSDAmount = redemptionTx.logs[i].args[1]
-        const YUSDFee = redemptionTx.logs[i].args[2]
+        const attemptedPUSDAmount = redemptionTx.logs[i].args[0]
+        const actualPUSDAmount = redemptionTx.logs[i].args[1]
+        const PUSDFee = redemptionTx.logs[i].args[2]
         const tokensRedeemed = redemptionTx.logs[i].args[3]
         const amountsRedeemed = redemptionTx.logs[i].args[4]
 
-        return [attemptedYUSDAmount, actualYUSDAmount, YUSDFee, tokensRedeemed, amountsRedeemed]
+        return [attemptedPUSDAmount, actualPUSDAmount, PUSDFee, tokensRedeemed, amountsRedeemed]
       }
     }
     throw ("The transaction logs do not contain a redemption event")
   }
 
-  // @RoboYeti: added new functino to be use dto get multi-collateral liquidation values
+  // @RoboPreon: added new functino to be use dto get multi-collateral liquidation values
   static getEmittedLiquidationValuesMulti(liquidationTx) {
     for (let i = 0; i < liquidationTx.logs.length; i++) {
       if (liquidationTx.logs[i].event === "Liquidation") {
         const liquidatedDebt = liquidationTx.logs[i].args[0]
-        const yusdGasComp = liquidationTx.logs[i].args[1]
+        const pusdGasComp = liquidationTx.logs[i].args[1]
         const liquidatedCollTokens = liquidationTx.logs[i].args[2]
         const liquidatedCollAmounts = liquidationTx.logs[i].args[3]
         const totalCollGasCompTokens = liquidationTx.logs[i].args[4]
         const totalCollGasCompAmounts = liquidationTx.logs[i].args[5]
 
 
-        return [liquidatedDebt, yusdGasComp, liquidatedCollTokens, liquidatedCollAmounts, totalCollGasCompTokens, totalCollGasCompAmounts]
+        return [liquidatedDebt, pusdGasComp, liquidatedCollTokens, liquidatedCollAmounts, totalCollGasCompTokens, totalCollGasCompAmounts]
 
       }
     }
     throw ("The transaction logs do not contain a liquidation event")
   }
 
-  // @RoboYeti: changed this to fit one collateral-type test cases.
+  // @RoboPreon: changed this to fit one collateral-type test cases.
   static getEmittedLiquidationValues(liquidationTx, tokenIDX) {
     for (let i = 0; i < liquidationTx.logs.length; i++) {
       if (liquidationTx.logs[i].event === "Liquidation") {
         const liquidatedDebt = liquidationTx.logs[i].args[0]
-        const yusdGasComp = liquidationTx.logs[i].args[1]
+        const pusdGasComp = liquidationTx.logs[i].args[1]
         const liquidatedCollTokens = liquidationTx.logs[i].args[2]
         const liquidatedCollAmounts = liquidationTx.logs[i].args[3]
         const totalCollGasCompTokens = liquidationTx.logs[i].args[4]
@@ -473,13 +473,13 @@ class TestHelper {
     throw ("The transaction logs do not contain a liquidation event")
   }
 
-  static getYUSDFeeFromYUSDBorrowingEvent(tx) {
+  static getPUSDFeeFromPUSDBorrowingEvent(tx) {
     for (let i = 0; i < tx.logs.length; i++) {
-      if (tx.logs[i].event === "YUSDBorrowingFeePaid") {
+      if (tx.logs[i].event === "PUSDBorrowingFeePaid") {
         return (tx.logs[i].args[1]).toString()
       }
     }
-    throw ("The transaction logs do not contain an YUSDBorrowingFeePaid event")
+    throw ("The transaction logs do not contain an PUSDBorrowingFeePaid event")
   }
 
   static getEventArgByIndex(tx, eventName, argIndex) {
@@ -539,9 +539,9 @@ class TestHelper {
     const rawColl = (await contracts.troveManager.getTroveColls(account))[1][wethIDX]
     const rawDebt = (await contracts.troveManager.getTroveDebt(account))
     const pendingETHReward = (await contracts.troveManager.getPendingCollRewards(account))[1][wethIDX]
-    const pendingYUSDDebtReward = await contracts.troveManager.getPendingYUSDDebtReward(account)
+    const pendingPUSDDebtReward = await contracts.troveManager.getPendingPUSDDebtReward(account)
     const entireColl = rawColl.add(pendingETHReward)
-    const entireDebt = rawDebt.add(pendingYUSDDebtReward)
+    const entireDebt = rawDebt.add(pendingPUSDDebtReward)
 
     return { entireColl, entireDebt }
   }
@@ -564,7 +564,7 @@ class TestHelper {
     return { newColl, newDebt }
   }
 
-  static async getCollAndDebtFromWithdrawYUSD(contracts, account, amount) {
+  static async getCollAndDebtFromWithdrawPUSD(contracts, account, amount) {
     const fee = await contracts.troveManager.getBorrowingFee(amount)
     const { entireColl, entireDebt } = await this.getEntireCollAndDebt(contracts, account)
 
@@ -574,7 +574,7 @@ class TestHelper {
     return { newColl, newDebt }
   }
 
-  static async getCollAndDebtFromRepayYUSD(contracts, account, amount) {
+  static async getCollAndDebtFromRepayPUSD(contracts, account, amount) {
     const { entireColl, entireDebt } = await this.getEntireCollAndDebt(contracts, account)
 
     const newColl = entireColl
@@ -583,15 +583,15 @@ class TestHelper {
     return { newColl, newDebt }
   }
 
-  static async getCollAndDebtFromAdjustment(contracts, account, ETHChange, YUSDChange) {
+  static async getCollAndDebtFromAdjustment(contracts, account, ETHChange, PUSDChange) {
     const { entireColl, entireDebt } = await this.getEntireCollAndDebt(contracts, account)
 
     // const coll = (await contracts.troveManager.Troves(account))[1]
     // const debt = (await contracts.troveManager.Troves(account))[0]
 
-    const fee = YUSDChange.gt(this.toBN('0')) ? await contracts.troveManager.getBorrowingFee(YUSDChange) : this.toBN('0')
+    const fee = PUSDChange.gt(this.toBN('0')) ? await contracts.troveManager.getBorrowingFee(PUSDChange) : this.toBN('0')
     const newColl = entireColl.add(ETHChange)
-    const newDebt = entireDebt.add(YUSDChange).add(fee)
+    const newDebt = entireDebt.add(PUSDChange).add(fee)
 
     return { newColl, newDebt }
   }
@@ -599,53 +599,53 @@ class TestHelper {
 
   // --- BorrowerOperations gas functions ---
 
-  static async openTrove_allAccounts(accounts, contracts, ETHAmount, YUSDAmount) {
+  static async openTrove_allAccounts(accounts, contracts, ETHAmount, PUSDAmount) {
     const gasCostList = []
-    const totalDebt = await this.getOpenTroveTotalDebt(contracts, YUSDAmount)
+    const totalDebt = await this.getOpenTroveTotalDebt(contracts, PUSDAmount)
 
     for (const account of accounts) {
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, ETHAmount, totalDebt)
 
-      const tx = await contracts.borrowerOperations.openTrove(this._100pct, YUSDAmount, upperHint, lowerHint, { from: account, value: ETHAmount })
+      const tx = await contracts.borrowerOperations.openTrove(this._100pct, PUSDAmount, upperHint, lowerHint, { from: account, value: ETHAmount })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
     return this.getGasMetrics(gasCostList)
   }
 
-  static async openTrove_allAccounts_randomETH(minETH, maxETH, accounts, contracts, YUSDAmount) {
+  static async openTrove_allAccounts_randomETH(minETH, maxETH, accounts, contracts, PUSDAmount) {
     const gasCostList = []
-    const totalDebt = await this.getOpenTroveTotalDebt(contracts, YUSDAmount)
+    const totalDebt = await this.getOpenTroveTotalDebt(contracts, PUSDAmount)
 
     for (const account of accounts) {
       const randCollAmount = this.randAmountInWei(minETH, maxETH)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, randCollAmount, totalDebt)
 
-      const tx = await contracts.borrowerOperations.openTrove(this._100pct, YUSDAmount, upperHint, lowerHint, { from: account, value: randCollAmount })
+      const tx = await contracts.borrowerOperations.openTrove(this._100pct, PUSDAmount, upperHint, lowerHint, { from: account, value: randCollAmount })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
     return this.getGasMetrics(gasCostList)
   }
 
-  static async openTrove_allAccounts_randomETH_ProportionalYUSD(minETH, maxETH, accounts, contracts, proportion) {
+  static async openTrove_allAccounts_randomETH_ProportionalPUSD(minETH, maxETH, accounts, contracts, proportion) {
     const gasCostList = []
 
     for (const account of accounts) {
       const randCollAmount = this.randAmountInWei(minETH, maxETH)
-      const proportionalYUSD = (web3.utils.toBN(proportion)).mul(web3.utils.toBN(randCollAmount))
-      const totalDebt = await this.getOpenTroveTotalDebt(contracts, proportionalYUSD)
+      const proportionalPUSD = (web3.utils.toBN(proportion)).mul(web3.utils.toBN(randCollAmount))
+      const totalDebt = await this.getOpenTroveTotalDebt(contracts, proportionalPUSD)
 
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, randCollAmount, totalDebt)
 
-      const tx = await contracts.borrowerOperations.openTrove(this._100pct, proportionalYUSD, upperHint, lowerHint, { from: account, value: randCollAmount })
+      const tx = await contracts.borrowerOperations.openTrove(this._100pct, proportionalPUSD, upperHint, lowerHint, { from: account, value: randCollAmount })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
     return this.getGasMetrics(gasCostList)
   }
 
-  static async openTrove_allAccounts_randomETH_randomYUSD(minETH, maxETH, accounts, contracts, minYUSDProportion, maxYUSDProportion, logging = false) {
+  static async openTrove_allAccounts_randomETH_randomPUSD(minETH, maxETH, accounts, contracts, minPUSDProportion, maxPUSDProportion, logging = false) {
     const gasCostList = []
     const price = await contracts.priceFeedTestnet.getPrice()
     const _1e18 = web3.utils.toBN('1000000000000000000')
@@ -655,18 +655,18 @@ class TestHelper {
 
       const randCollAmount = this.randAmountInWei(minETH, maxETH)
       // console.log(`randCollAmount ${randCollAmount }`)
-      const randYUSDProportion = this.randAmountInWei(minYUSDProportion, maxYUSDProportion)
-      const proportionalYUSD = (web3.utils.toBN(randYUSDProportion)).mul(web3.utils.toBN(randCollAmount).div(_1e18))
-      const totalDebt = await this.getOpenTroveTotalDebt(contracts, proportionalYUSD)
+      const randPUSDProportion = this.randAmountInWei(minPUSDProportion, maxPUSDProportion)
+      const proportionalPUSD = (web3.utils.toBN(randPUSDProportion)).mul(web3.utils.toBN(randCollAmount).div(_1e18))
+      const totalDebt = await this.getOpenTroveTotalDebt(contracts, proportionalPUSD)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, randCollAmount, totalDebt)
 
       const feeFloor = this.dec(5, 16)
-      const tx = await contracts.borrowerOperations.openTrove(this._100pct, proportionalYUSD, upperHint, lowerHint, { from: account, value: randCollAmount })
+      const tx = await contracts.borrowerOperations.openTrove(this._100pct, proportionalPUSD, upperHint, lowerHint, { from: account, value: randCollAmount })
 
       if (logging && tx.receipt.status) {
         i++
         const ICR = await contracts.troveManager.getCurrentICR(account)
-        // console.log(`${i}. Trove opened. addr: ${this.squeezeAddr(account)} coll: ${randCollAmount} debt: ${proportionalYUSD} ICR: ${ICR}`)
+        // console.log(`${i}. Trove opened. addr: ${this.squeezeAddr(account)} coll: ${randCollAmount} debt: ${proportionalPUSD} ICR: ${ICR}`)
       }
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
@@ -674,15 +674,15 @@ class TestHelper {
     return this.getGasMetrics(gasCostList)
   }
 
-  static async openTrove_allAccounts_randomYUSD(minYUSD, maxYUSD, accounts, contracts, ETHAmount) {
+  static async openTrove_allAccounts_randomPUSD(minPUSD, maxPUSD, accounts, contracts, ETHAmount) {
     const gasCostList = []
 
     for (const account of accounts) {
-      const randYUSDAmount = this.randAmountInWei(minYUSD, maxYUSD)
-      const totalDebt = await this.getOpenTroveTotalDebt(contracts, randYUSDAmount)
+      const randPUSDAmount = this.randAmountInWei(minPUSD, maxPUSD)
+      const totalDebt = await this.getOpenTroveTotalDebt(contracts, randPUSDAmount)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, ETHAmount, totalDebt)
 
-      const tx = await contracts.borrowerOperations.openTrove(this._100pct, randYUSDAmount, upperHint, lowerHint, { from: account, value: ETHAmount })
+      const tx = await contracts.borrowerOperations.openTrove(this._100pct, randPUSDAmount, upperHint, lowerHint, { from: account, value: ETHAmount })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
@@ -700,17 +700,17 @@ class TestHelper {
     return this.getGasMetrics(gasCostList)
   }
 
-  static async openTrove_allAccounts_decreasingYUSDAmounts(accounts, contracts, ETHAmount, maxYUSDAmount) {
+  static async openTrove_allAccounts_decreasingPUSDAmounts(accounts, contracts, ETHAmount, maxPUSDAmount) {
     const gasCostList = []
 
     let i = 0
     for (const account of accounts) {
-      const YUSDAmount = (maxYUSDAmount - i).toString()
-      const YUSDAmountWei = web3.utils.toWei(YUSDAmount, 'ether')
-      const totalDebt = await this.getOpenTroveTotalDebt(contracts, YUSDAmountWei)
+      const PUSDAmount = (maxPUSDAmount - i).toString()
+      const PUSDAmountWei = web3.utils.toWei(PUSDAmount, 'ether')
+      const totalDebt = await this.getOpenTroveTotalDebt(contracts, PUSDAmountWei)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, ETHAmount, totalDebt)
 
-      const tx = await contracts.borrowerOperations.openTrove(this._100pct, YUSDAmountWei, upperHint, lowerHint, { from: account, value: ETHAmount })
+      const tx = await contracts.borrowerOperations.openTrove(this._100pct, PUSDAmountWei, upperHint, lowerHint, { from: account, value: ETHAmount })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
       i += 1
@@ -733,7 +733,7 @@ class TestHelper {
 
   static async openTrove(contracts, {
     maxFeePercentage,
-    extraYUSDAmount,
+    extraPUSDAmount,
     upperHint,
     lowerHint,
     ICR,
@@ -742,8 +742,8 @@ class TestHelper {
     extraParams
   }) {
     if (!maxFeePercentage) maxFeePercentage = this._100pct
-    if (!extraYUSDAmount) extraYUSDAmount = this.toBN(0)
-    else if (typeof extraYUSDAmount == 'string') extraYUSDAmount = this.toBN(extraYUSDAmount)
+    if (!extraPUSDAmount) extraPUSDAmount = this.toBN(0)
+    else if (typeof extraPUSDAmount == 'string') extraPUSDAmount = this.toBN(extraPUSDAmount)
     if (!upperHint) upperHint = this.ZERO_ADDRESS
     if (!lowerHint) lowerHint = this.ZERO_ADDRESS
     if (!token) token = contracts.weth
@@ -753,15 +753,15 @@ class TestHelper {
     const MIN_DEBT = (
       await this.getNetBorrowingAmount(contracts, await contracts.borrowerOperations.MIN_NET_DEBT())
     ).add(this.toBN(1)) // add 1 to avoid rounding issues for tests where trove was opening at 150%, and you can’t open the first trove under TCR 150%
-    const yusdAmount = MIN_DEBT.add(extraYUSDAmount)
+    const pusdAmount = MIN_DEBT.add(extraPUSDAmount)
 
 
     if (!ICR && !extraParams.value) ICR = this.toBN(this.dec(15, 17)) // 150%
     else if (typeof ICR == 'string') ICR = this.toBN(ICR)
 
-    // debt taken out = yusdAmount
+    // debt taken out = pusdAmount
     // totalDebt = debt taken out + fee + gas compensation
-    const totalDebt = await this.getOpenTroveTotalDebt(contracts, yusdAmount)
+    const totalDebt = await this.getOpenTroveTotalDebt(contracts, pusdAmount)
     // netDebt = totalDebt - gas compensation
     const netDebt = await this.getActualDebtFromComposite(totalDebt, contracts)
 
@@ -788,8 +788,8 @@ class TestHelper {
     const tokenMintedSuccessfully = await this.addERC20(token, account, contracts.borrowerOperations.address, collateral, { from: account })
     assert.isTrue(tokenMintedSuccessfully);
     extraParams.value = 0;
-    // console.log("YUSD Amount (minDebt + extra YUSD amount)", yusdAmount.toString())
-    tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, yusdAmount, upperHint, lowerHint, [token.address], [collateral], extraParams)
+    // console.log("PUSD Amount (minDebt + extra PUSD amount)", pusdAmount.toString())
+    tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, pusdAmount, upperHint, lowerHint, [token.address], [collateral], extraParams)
     
     // mint weth for from account (in extra params) and approve borrowerOperations to use it
     
@@ -803,7 +803,7 @@ class TestHelper {
     // // console.log("WETH APPROVED:", (approvedWETH.div(this.toBN(10 ** 18))).toNumber());
     
     return {
-      yusdAmount,
+      pusdAmount,
       netDebt,
       totalDebt,
       ICR,
@@ -855,7 +855,7 @@ class TestHelper {
     console.log(tx);
 
     return {
-      yusdAmount: "1000000",
+      pusdAmount: "1000000",
       collateral: tokenBalance,
       tx
     }
@@ -867,7 +867,7 @@ class TestHelper {
     AVAXIn,
     signer,
     maxFeePercentage,
-    extraYUSDAmount,
+    extraPUSDAmount,
     upperHint,
     lowerHint,
     ICR,
@@ -876,8 +876,8 @@ class TestHelper {
 
 
     if (!maxFeePercentage) maxFeePercentage = this._100pct
-    if (!extraYUSDAmount) extraYUSDAmount = this.toBN(0)
-    else if (typeof extraYUSDAmount == 'string') extraYUSDAmount = this.toBN(extraYUSDAmount)
+    if (!extraPUSDAmount) extraPUSDAmount = this.toBN(0)
+    else if (typeof extraPUSDAmount == 'string') extraPUSDAmount = this.toBN(extraPUSDAmount)
     if (!upperHint) upperHint = this.ZERO_ADDRESS
     if (!lowerHint) lowerHint = this.ZERO_ADDRESS
 
@@ -892,15 +892,15 @@ class TestHelper {
     const MIN_DEBT = (
       await this.getNetBorrowingAmount(contracts, await contracts.borrowerOperations.MIN_NET_DEBT())
     ).add(this.toBN(1)) // add 1 to avoid rounding issues for tests where trove was opening at 150%, and you can’t open the first trove under TCR 150%
-    const yusdAmount = MIN_DEBT.add(extraYUSDAmount)
+    const pusdAmount = MIN_DEBT.add(extraPUSDAmount)
 
 
     if (!ICR && !extraParams.value) ICR = this.toBN(this.dec(15, 17)) // 150%
     else if (typeof ICR == 'string') ICR = this.toBN(ICR)
 
-    // debt taken out = yusdAmount
+    // debt taken out = pusdAmount
     // totalDebt = debt taken out + fee + gas compensation
-    const totalDebt = await this.getOpenTroveTotalDebt(contracts, yusdAmount)
+    const totalDebt = await this.getOpenTroveTotalDebt(contracts, pusdAmount)
     // netDebt = totalDebt - gas compensation
     //const netDebt = await this.getActualDebtFromComposite(totalDebt, contracts)
 
@@ -927,10 +927,10 @@ class TestHelper {
     await WToken.approve(borrowerOperations.address, collateral, extraParams);
 
 
-    tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, yusdAmount, upperHint, lowerHint, [WToken.address], [collateral], extraParams)
+    tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, pusdAmount, upperHint, lowerHint, [WToken.address], [collateral], extraParams)
 
     return {
-      yusdAmount,
+      pusdAmount,
       totalDebt,
       ICR,
       collateral: collateral,
@@ -941,7 +941,7 @@ class TestHelper {
 
   static async openTroveWithToken(contracts, token, {
     maxFeePercentage,
-    extraYUSDAmount,
+    extraPUSDAmount,
     upperHint,
     lowerHint,
     ICR,
@@ -949,8 +949,8 @@ class TestHelper {
   }) {
 
     if (!maxFeePercentage) maxFeePercentage = this._100pct
-    if (!extraYUSDAmount) extraYUSDAmount = this.toBN(0)
-    else if (typeof extraYUSDAmount == 'string') extraYUSDAmount = this.toBN(extraYUSDAmount)
+    if (!extraPUSDAmount) extraPUSDAmount = this.toBN(0)
+    else if (typeof extraPUSDAmount == 'string') extraPUSDAmount = this.toBN(extraPUSDAmount)
     if (!upperHint) upperHint = this.ZERO_ADDRESS
     if (!lowerHint) lowerHint = this.ZERO_ADDRESS
 
@@ -959,13 +959,13 @@ class TestHelper {
     const MIN_DEBT = (
       await this.getNetBorrowingAmount(contracts, await contracts.borrowerOperations.MIN_NET_DEBT())
     ).add(this.toBN(1)) // add 1 to avoid rounding issues for tests where trove was opening at 150%, and you can’t open the first trove under TCR 150%
-    const yusdAmount = MIN_DEBT.add(extraYUSDAmount)
+    const pusdAmount = MIN_DEBT.add(extraPUSDAmount)
 
 
     if (!ICR && !extraParams.value) ICR = this.toBN(this.dec(15, 17)) // 150%
     else if (typeof ICR == 'string') ICR = this.toBN(ICR)
 
-    const totalDebt = await this.getOpenTroveTotalDebt(contracts, yusdAmount)
+    const totalDebt = await this.getOpenTroveTotalDebt(contracts, pusdAmount)
     const netDebt = await this.getActualDebtFromComposite(totalDebt, contracts)
 
     // if (ICR) {
@@ -994,9 +994,9 @@ class TestHelper {
     // await contracts.weth.approve(contracts.borrowerOperations.address, collateralAmount, extraParams);
     // const approvedWETH = await contracts.weth.allowance(account, contracts.borrowerOperations.address)
     // // console.log("WETH APPROVED:", (approvedWETH.div(this.toBN(10 ** 18))).toNumber());
-    const tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, yusdAmount, upperHint, lowerHint, [contracts.weth.address], [collateralAmount], extraParams)
+    const tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, pusdAmount, upperHint, lowerHint, [contracts.weth.address], [collateralAmount], extraParams)
     return {
-      yusdAmount,
+      pusdAmount,
       netDebt,
       totalDebt,
       ICR,
@@ -1072,15 +1072,15 @@ class TestHelper {
 
   // static async openTroveWithColls(contracts, {
   //   maxFeePercentage,
-  //   extraYUSDAmount,
+  //   extraPUSDAmount,
   //   upperHint,
   //   lowerHint,
   //   ICR,
   //   extraParams
   // }) {
   //   if (!maxFeePercentage) maxFeePercentage = this._100pct
-  //   if (!extraYUSDAmount) extraYUSDAmount = this.toBN(0)
-  //   else if (typeof extraYUSDAmount == 'string') extraYUSDAmount = this.toBN(extraYUSDAmount)
+  //   if (!extraPUSDAmount) extraPUSDAmount = this.toBN(0)
+  //   else if (typeof extraPUSDAmount == 'string') extraPUSDAmount = this.toBN(extraPUSDAmount)
   //   if (!upperHint) upperHint = this.ZERO_ADDRESS
   //   if (!lowerHint) lowerHint = this.ZERO_ADDRESS
 
@@ -1089,13 +1089,13 @@ class TestHelper {
   //   const MIN_DEBT = (
   //     await this.getNetBorrowingAmount(contracts, await contracts.borrowerOperations.MIN_NET_DEBT())
   //   ).add(this.toBN(1)) // add 1 to avoid rounding issues
-  //   const yusdAmount = MIN_DEBT.add(extraYUSDAmount)
+  //   const pusdAmount = MIN_DEBT.add(extraPUSDAmount)
 
 
   //   if (!ICR && !extraParams.value) ICR = this.toBN(this.dec(15, 17)) // 150%
   //   else if (typeof ICR == 'string') ICR = this.toBN(ICR)
 
-  //   const totalDebt = await this.getOpenTroveTotalDebt(contracts, yusdAmount)
+  //   const totalDebt = await this.getOpenTroveTotalDebt(contracts, pusdAmount)
   //   const netDebt = await this.getActualDebtFromComposite(totalDebt, contracts)
 
   //   // if (ICR) {
@@ -1114,10 +1114,10 @@ class TestHelper {
   //   // // console.log("WETH APPROVED:", (approvedWETH.div(this.toBN(10 ** 18))).toNumber());
 
   //   const tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, 
-  //     extraParams._yusdAmount, upperHint, lowerHint, extraParams._colls, extraParams._amounts, extraParams)
+  //     extraParams._pusdAmount, upperHint, lowerHint, extraParams._colls, extraParams._amounts, extraParams)
 
   //   return {
-  //     yusdAmount: extraParams._yusdAmount,
+  //     pusdAmount: extraParams._pusdAmount,
   //     netDebt,
   //     totalDebt,
   //     ICR,
@@ -1136,10 +1136,10 @@ class TestHelper {
   }
 
   // mints amounts of given colls to from and then opens trove with those colls while taking out
-  // debt of extraYUSDAmount
+  // debt of extraPUSDAmount
   static async openTroveWithColls(contracts, {
     maxFeePercentage,
-    extraYUSDAmount,
+    extraPUSDAmount,
     upperHint,
     lowerHint,
     ICR,
@@ -1149,24 +1149,24 @@ class TestHelper {
     from
   }) {
     if (!maxFeePercentage) maxFeePercentage = this._100pct
-    if (!extraYUSDAmount) extraYUSDAmount = this.toBN(0)
-    else if (typeof extraYUSDAmount == 'string') extraYUSDAmount = this.toBN(extraYUSDAmount)
+    if (!extraPUSDAmount) extraPUSDAmount = this.toBN(0)
+    else if (typeof extraPUSDAmount == 'string') extraPUSDAmount = this.toBN(extraPUSDAmount)
     if (!upperHint) upperHint = this.ZERO_ADDRESS
     if (!lowerHint) lowerHint = this.ZERO_ADDRESS
 
     const account = from
-    let yusdAmount
+    let pusdAmount
     const collsAddress = []
     const MIN_DEBT = (
       await this.getNetBorrowingAmount(contracts, await contracts.borrowerOperations.MIN_NET_DEBT())
     ).add(this.toBN(1)) // add 1 to avoid rounding issues for tests where trove was opening at 150%, and you can’t open the first trove under TCR 150%
-    yusdAmount = MIN_DEBT.add(extraYUSDAmount)
+    pusdAmount = MIN_DEBT.add(extraPUSDAmount)
 
     if (!ICR) ICR = this.toBN(this.dec(15, 17)) // 150%
     else if (typeof ICR == 'string') ICR = this.toBN(ICR)
 
     
-    const totalDebt = await this.getOpenTroveTotalDebt(contracts, yusdAmount)
+    const totalDebt = await this.getOpenTroveTotalDebt(contracts, pusdAmount)
     const netDebt = await this.getActualDebtFromComposite(totalDebt, contracts)
     for (let i = 0; i < colls.length; i++) {
       collsAddress.push(colls[i].address)
@@ -1188,13 +1188,13 @@ class TestHelper {
 
     let tx    
     
-    console.log("YUDS Amount: ", yusdAmount.toString())
-    tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, yusdAmount, upperHint, lowerHint, collsAddress, amounts, {from: from})
+    console.log("YUDS Amount: ", pusdAmount.toString())
+    tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, pusdAmount, upperHint, lowerHint, collsAddress, amounts, {from: from})
     
 
     
     return {
-      yusdAmount,
+      pusdAmount,
       netDebt,
       totalDebt,
       ICR,
@@ -1206,8 +1206,8 @@ class TestHelper {
 
   static async openTroveWithCollsOld(contracts, {
     maxFeePercentage,
-    extraYUSDAmount,
-    YUSDAmount,
+    extraPUSDAmount,
+    PUSDAmount,
     upperHint,
     lowerHint,
     colls,
@@ -1218,22 +1218,22 @@ class TestHelper {
   }) {
 
     if (!maxFeePercentage) maxFeePercentage = this._100pct
-    if (!extraYUSDAmount) extraYUSDAmount = this.toBN(0)
-    else if (typeof extraYUSDAmount == 'string') extraYUSDAmount = this.toBN(extraYUSDAmount)
+    if (!extraPUSDAmount) extraPUSDAmount = this.toBN(0)
+    else if (typeof extraPUSDAmount == 'string') extraPUSDAmount = this.toBN(extraPUSDAmount)
     if (!upperHint) upperHint = this.ZERO_ADDRESS
     if (!lowerHint) lowerHint = this.ZERO_ADDRESS
-    if (!YUSDAmount) YUSDAmount = this.toBN(0)
+    if (!PUSDAmount) PUSDAmount = this.toBN(0)
     if (!includeOne) includeOne = true
-    let yusdAmount
+    let pusdAmount
     const collsAddress = []
     const MIN_DEBT = (
       await this.getNetBorrowingAmount(contracts, await contracts.borrowerOperations.MIN_NET_DEBT())
     )
     if (includeOne) MIN_DEBT.add(this.toBN(1)) // add 1 to avoid rounding issues for tests where trove was opening at 150%, and you can’t open the first trove under TCR 150%
-    if (YUSDAmount.gt(MIN_DEBT)) yusdAmount = YUSDAmount
-    else yusdAmount = MIN_DEBT.add(extraYUSDAmount)
+    if (PUSDAmount.gt(MIN_DEBT)) pusdAmount = PUSDAmount
+    else pusdAmount = MIN_DEBT.add(extraPUSDAmount)
 
-    const totalDebt = await this.getOpenTroveTotalDebt(contracts, yusdAmount)
+    const totalDebt = await this.getOpenTroveTotalDebt(contracts, pusdAmount)
     const netDebt = await this.getActualDebtFromComposite(totalDebt, contracts)
     for (let i = 0; i < colls.length; i++) {
       collsAddress.push(colls[i].address)
@@ -1244,16 +1244,16 @@ class TestHelper {
     // else
     if (typeof ICR == 'string') ICR = this.toBN(ICR)
     if (ICR) {
-      yusdAmount = await this.getOpenTroveYUSDAmount(contracts, totalVC.mul(this.toBN(this.dec(1, 18))).div(ICR))
+      pusdAmount = await this.getOpenTrovePUSDAmount(contracts, totalVC.mul(this.toBN(this.dec(1, 18))).div(ICR))
     }
     for (let i = 0; i < colls.length; i++) {
       await this.addERC20(colls[i], from, contracts.borrowerOperations.address, amounts[i], { from: from })
     }
 
-    let tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, yusdAmount, upperHint, lowerHint, collsAddress, amounts, { from: from })
+    let tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, pusdAmount, upperHint, lowerHint, collsAddress, amounts, { from: from })
 
     return {
-      yusdAmount,
+      pusdAmount,
       netDebt,
       totalDebt,
       ICR,
@@ -1264,9 +1264,9 @@ class TestHelper {
   }
 
 
-  static async openTroveWithCollsFixedYUSD(contracts, {
+  static async openTroveWithCollsFixedPUSD(contracts, {
     maxFeePercentage,
-    extraYUSDAmount,
+    extraPUSDAmount,
     upperHint,
     lowerHint,
     ICR,
@@ -1276,24 +1276,24 @@ class TestHelper {
     from
   }) {
     if (!maxFeePercentage) maxFeePercentage = this._100pct
-    if (!extraYUSDAmount) extraYUSDAmount = this.toBN(0)
-    else if (typeof extraYUSDAmount == 'string') extraYUSDAmount = this.toBN(extraYUSDAmount)
+    if (!extraPUSDAmount) extraPUSDAmount = this.toBN(0)
+    else if (typeof extraPUSDAmount == 'string') extraPUSDAmount = this.toBN(extraPUSDAmount)
     if (!upperHint) upperHint = this.ZERO_ADDRESS
     if (!lowerHint) lowerHint = this.ZERO_ADDRESS
 
     const account = from
-    let yusdAmount
+    let pusdAmount
     const collsAddress = []
     const MIN_DEBT = (
       await this.getNetBorrowingAmount(contracts, await contracts.borrowerOperations.MIN_NET_DEBT())
     ).add(this.toBN(1)) // add 1 to avoid rounding issues for tests where trove was opening at 150%, and you can’t open the first trove under TCR 150%
-    yusdAmount = MIN_DEBT.add(extraYUSDAmount)
+    pusdAmount = MIN_DEBT.add(extraPUSDAmount)
 
     if (!ICR && !extraParams.value) ICR = this.toBN(this.dec(15, 17)) // 150%
     else if (typeof ICR == 'string') ICR = this.toBN(ICR)
 
     
-    const totalDebt = await this.getOpenTroveTotalDebt(contracts, yusdAmount)
+    const totalDebt = await this.getOpenTroveTotalDebt(contracts, pusdAmount)
     const netDebt = await this.getActualDebtFromComposite(totalDebt, contracts)
     for (let i = 0; i < colls.length; i++) {
       collsAddress.push(colls[i].address)
@@ -1320,13 +1320,13 @@ class TestHelper {
 
     
     
-    console.log("YUDS Amount: ", yusdAmount.toString())
-    tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, yusdAmount, upperHint, lowerHint, collsAddress, amounts, {from: from})
+    console.log("YUDS Amount: ", pusdAmount.toString())
+    tx = await contracts.borrowerOperations.openTrove(maxFeePercentage, pusdAmount, upperHint, lowerHint, collsAddress, amounts, {from: from})
     
 
     
     return {
-      yusdAmount,
+      pusdAmount,
       netDebt,
       totalDebt,
       ICR,
@@ -1363,22 +1363,22 @@ class TestHelper {
     return true
   }
 
-  static async mintAndApproveYUSDToken(contracts, account, addressToApprove, collateralAmount, extraParams) {
-    const preMintBalance = await contracts.yusdToken.balanceOf(account)
-    await contracts.yusdToken.unprotectedMint(account, collateralAmount)
-    const postMintBalance = await contracts.yusdToken.balanceOf(account)
+  static async mintAndApprovePUSDToken(contracts, account, addressToApprove, collateralAmount, extraParams) {
+    const preMintBalance = await contracts.pusdToken.balanceOf(account)
+    await contracts.pusdToken.unprotectedMint(account, collateralAmount)
+    const postMintBalance = await contracts.pusdToken.balanceOf(account)
 
-    await contracts.yusdToken.callInternalApprove(account, addressToApprove, collateralAmount)
-    const approvedToken = await contracts.yusdToken.allowance(account, addressToApprove)
+    await contracts.pusdToken.callInternalApprove(account, addressToApprove, collateralAmount)
+    const approvedToken = await contracts.pusdToken.allowance(account, addressToApprove)
 
     return (this.toNormalBase(postMintBalance.sub(preMintBalance)) == this.toNormalBase(collateralAmount)
     && this.toNormalBase(collateralAmount) == this.toNormalBase(approvedToken))
   }
 
-  static async adjustTrove(contracts, collsIn, amountsIn, collsOut, amountsOut, YUSDChange, 
+  static async adjustTrove(contracts, collsIn, amountsIn, collsOut, amountsOut, PUSDChange, 
     isDebtIncrease, upperHint, lowerHint, maxFeePercentage, extraParams) {
 
-      const tx = await contracts.borrowerOperations.adjustTrove(collsIn, amountsIn, collsOut, amountsOut, YUSDChange, 
+      const tx = await contracts.borrowerOperations.adjustTrove(collsIn, amountsIn, collsOut, amountsOut, PUSDChange, 
         isDebtIncrease, upperHint, lowerHint, maxFeePercentage, extraParams)
   }
 
@@ -1473,9 +1473,9 @@ class TestHelper {
     }
   }
 
-  static async withdrawYUSD(contracts, {
+  static async withdrawPUSD(contracts, {
     maxFeePercentage,
-    yusdAmount,
+    pusdAmount,
     ICR,
     upperHint,
     lowerHint,
@@ -1485,7 +1485,7 @@ class TestHelper {
     if (!upperHint) upperHint = this.ZERO_ADDRESS
     if (!lowerHint) lowerHint = this.ZERO_ADDRESS
 
-    assert(!(yusdAmount && ICR) && (yusdAmount || ICR), "Specify either yusd amount or target ICR, but not both")
+    assert(!(pusdAmount && ICR) && (pusdAmount || ICR), "Specify either pusd amount or target ICR, but not both")
 
     let increasedTotalDebt
     if (ICR) {
@@ -1504,43 +1504,43 @@ class TestHelper {
 
       assert(targetDebt > debt, "ICR is already greater than or equal to target")
       increasedTotalDebt = targetDebt.sub(debt)
-      yusdAmount = await this.getNetBorrowingAmount(contracts, increasedTotalDebt)
+      pusdAmount = await this.getNetBorrowingAmount(contracts, increasedTotalDebt)
     } else {
-      increasedTotalDebt = await this.getAmountWithBorrowingFee(contracts, yusdAmount)
+      increasedTotalDebt = await this.getAmountWithBorrowingFee(contracts, pusdAmount)
     }
 
-    await contracts.borrowerOperations.withdrawYUSD(maxFeePercentage, yusdAmount, upperHint, lowerHint, extraParams)
+    await contracts.borrowerOperations.withdrawPUSD(maxFeePercentage, pusdAmount, upperHint, lowerHint, extraParams)
 
     return {
-      yusdAmount,
+      pusdAmount,
       increasedTotalDebt
     }
   }
 
-  // static async adjustTrove_allAccounts(accounts, contracts, ETHAmount, YUSDAmount) {
+  // static async adjustTrove_allAccounts(accounts, contracts, ETHAmount, PUSDAmount) {
   //   const gasCostList = []
   //
   //   for (const account of accounts) {
   //     let tx;
   //
   //     let ETHChangeBN = this.toBN(ETHAmount)
-  //     let YUSDChangeBN = this.toBN(YUSDAmount)
+  //     let PUSDChangeBN = this.toBN(PUSDAmount)
   //
-  //     const { newColl, newDebt } = await this.getCollAndDebtFromAdjustment(contracts, account, ETHChangeBN, YUSDChangeBN)
+  //     const { newColl, newDebt } = await this.getCollAndDebtFromAdjustment(contracts, account, ETHChangeBN, PUSDChangeBN)
   //     const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, newColl, newDebt)
   //
   //     const zero = this.toBN('0')
   //
-  //     let isDebtIncrease = YUSDChangeBN.gt(zero)
-  //     YUSDChangeBN = YUSDChangeBN.abs()
+  //     let isDebtIncrease = PUSDChangeBN.gt(zero)
+  //     PUSDChangeBN = PUSDChangeBN.abs()
   //
   //     // Add ETH to trove
   //     if (ETHChangeBN.gt(zero)) {
-  //       tx = await contracts.borrowerOperations.adjustTrove(this._100pct, 0, YUSDChangeBN, isDebtIncrease, upperHint, lowerHint, { from: account, value: ETHChangeBN })
+  //       tx = await contracts.borrowerOperations.adjustTrove(this._100pct, 0, PUSDChangeBN, isDebtIncrease, upperHint, lowerHint, { from: account, value: ETHChangeBN })
   //       // Withdraw ETH from trove
   //     } else if (ETHChangeBN.lt(zero)) {
   //       ETHChangeBN = ETHChangeBN.neg()
-  //       tx = await contracts.borrowerOperations.adjustTrove(this._100pct, ETHChangeBN, YUSDChangeBN, isDebtIncrease, upperHint, lowerHint, { from: account })
+  //       tx = await contracts.borrowerOperations.adjustTrove(this._100pct, ETHChangeBN, PUSDChangeBN, isDebtIncrease, upperHint, lowerHint, { from: account })
   //     }
   //
   //     const gas = this.gasUsed(tx)
@@ -1549,30 +1549,30 @@ class TestHelper {
   //   return this.getGasMetrics(gasCostList)
   // }
 
-  static async adjustTrove_allAccounts_randomAmount(accounts, contracts, ETHMin, ETHMax, YUSDMin, YUSDMax) {
+  static async adjustTrove_allAccounts_randomAmount(accounts, contracts, ETHMin, ETHMax, PUSDMin, PUSDMax) {
     const gasCostList = []
 
     for (const account of accounts) {
       let tx;
 
       let ETHChangeBN = this.toBN(this.randAmountInWei(ETHMin, ETHMax))
-      let YUSDChangeBN = this.toBN(this.randAmountInWei(YUSDMin, YUSDMax))
+      let PUSDChangeBN = this.toBN(this.randAmountInWei(PUSDMin, PUSDMax))
 
-      const { newColl, newDebt } = await this.getCollAndDebtFromAdjustment(contracts, account, ETHChangeBN, YUSDChangeBN)
+      const { newColl, newDebt } = await this.getCollAndDebtFromAdjustment(contracts, account, ETHChangeBN, PUSDChangeBN)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, newColl, newDebt)
 
       const zero = this.toBN('0')
 
-      let isDebtIncrease = YUSDChangeBN.gt(zero)
-      YUSDChangeBN = YUSDChangeBN.abs()
+      let isDebtIncrease = PUSDChangeBN.gt(zero)
+      PUSDChangeBN = PUSDChangeBN.abs()
 
       // Add ETH to trove
       if (ETHChangeBN.gt(zero)) {
-        tx = await contracts.borrowerOperations.adjustTrove(this._100pct, 0, YUSDChangeBN, isDebtIncrease, upperHint, lowerHint, { from: account, value: ETHChangeBN })
+        tx = await contracts.borrowerOperations.adjustTrove(this._100pct, 0, PUSDChangeBN, isDebtIncrease, upperHint, lowerHint, { from: account, value: ETHChangeBN })
         // Withdraw ETH from trove
       } else if (ETHChangeBN.lt(zero)) {
         ETHChangeBN = ETHChangeBN.neg()
-        tx = await contracts.borrowerOperations.adjustTrove(this._100pct, ETHChangeBN, YUSDChangeBN, isDebtIncrease, upperHint, lowerHint, { from: account })
+        tx = await contracts.borrowerOperations.adjustTrove(this._100pct, ETHChangeBN, PUSDChangeBN, isDebtIncrease, upperHint, lowerHint, { from: account })
       }
 
       const gas = this.gasUsed(tx)
@@ -1581,34 +1581,34 @@ class TestHelper {
     return this.getGasMetrics(gasCostList)
   }
 
-  static async adjustTrove_allAccounts_randomAmount(accounts, contracts, ETHMin, ETHMax, YUSDMin, YUSDMax) {
+  static async adjustTrove_allAccounts_randomAmount(accounts, contracts, ETHMin, ETHMax, PUSDMin, PUSDMax) {
     const gasCostList = []
 
     for (const account of accounts) {
       let tx;
 
       let ETHChangeBN = this.toBN(this.randAmountInWei(ETHMin, ETHMax))
-      let YUSDChangeBN = this.toBN(this.randAmountInWei(YUSDMin, YUSDMax))
+      let PUSDChangeBN = this.toBN(this.randAmountInWei(PUSDMin, PUSDMax))
 
-      const { newColl, newDebt } = await this.getCollAndDebtFromAdjustment(contracts, account, ETHChangeBN, YUSDChangeBN)
+      const { newColl, newDebt } = await this.getCollAndDebtFromAdjustment(contracts, account, ETHChangeBN, PUSDChangeBN)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, newColl, newDebt)
 
       const zero = this.toBN('0')
 
-      let isDebtIncrease = YUSDChangeBN.gt(zero)
-      YUSDChangeBN = YUSDChangeBN.abs()
+      let isDebtIncrease = PUSDChangeBN.gt(zero)
+      PUSDChangeBN = PUSDChangeBN.abs()
 
       // Add ETH to trove
       if (ETHChangeBN.gt(zero)) {
-        tx = await contracts.borrowerOperations.adjustTrove(this._100pct, 0, YUSDChangeBN, isDebtIncrease, upperHint, lowerHint, { from: account, value: ETHChangeBN })
+        tx = await contracts.borrowerOperations.adjustTrove(this._100pct, 0, PUSDChangeBN, isDebtIncrease, upperHint, lowerHint, { from: account, value: ETHChangeBN })
         // Withdraw ETH from trove
       } else if (ETHChangeBN.lt(zero)) {
         ETHChangeBN = ETHChangeBN.neg()
-        tx = await contracts.borrowerOperations.adjustTrove(this._100pct, ETHChangeBN, YUSDChangeBN, isDebtIncrease, lowerHint, upperHint, { from: account })
+        tx = await contracts.borrowerOperations.adjustTrove(this._100pct, ETHChangeBN, PUSDChangeBN, isDebtIncrease, lowerHint, upperHint, { from: account })
       }
 
       const gas = this.gasUsed(tx)
-      // console.log(`ETH change: ${ETHChangeBN},  YUSDChange: ${YUSDChangeBN}, gas: ${gas} `)
+      // console.log(`ETH change: ${ETHChangeBN},  PUSDChange: ${PUSDChangeBN}, gas: ${gas} `)
 
       gasCostList.push(gas)
     }
@@ -1676,60 +1676,60 @@ class TestHelper {
     return this.getGasMetrics(gasCostList)
   }
 
-  static async withdrawYUSD_allAccounts(accounts, contracts, amount) {
+  static async withdrawPUSD_allAccounts(accounts, contracts, amount) {
     const gasCostList = []
 
     for (const account of accounts) {
-      const { newColl, newDebt } = await this.getCollAndDebtFromWithdrawYUSD(contracts, account, amount)
+      const { newColl, newDebt } = await this.getCollAndDebtFromWithdrawPUSD(contracts, account, amount)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, newColl, newDebt)
 
-      const tx = await contracts.borrowerOperations.withdrawYUSD(this._100pct, amount, upperHint, lowerHint, { from: account })
+      const tx = await contracts.borrowerOperations.withdrawPUSD(this._100pct, amount, upperHint, lowerHint, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
     return this.getGasMetrics(gasCostList)
   }
 
-  static async withdrawYUSD_allAccounts_randomAmount(min, max, accounts, contracts) {
+  static async withdrawPUSD_allAccounts_randomAmount(min, max, accounts, contracts) {
     const gasCostList = []
 
     for (const account of accounts) {
-      const randYUSDAmount = this.randAmountInWei(min, max)
+      const randPUSDAmount = this.randAmountInWei(min, max)
 
-      const { newColl, newDebt } = await this.getCollAndDebtFromWithdrawYUSD(contracts, account, randYUSDAmount)
+      const { newColl, newDebt } = await this.getCollAndDebtFromWithdrawPUSD(contracts, account, randPUSDAmount)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, newColl, newDebt)
 
-      const tx = await contracts.borrowerOperations.withdrawYUSD(this._100pct, randYUSDAmount, upperHint, lowerHint, { from: account })
+      const tx = await contracts.borrowerOperations.withdrawPUSD(this._100pct, randPUSDAmount, upperHint, lowerHint, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
     return this.getGasMetrics(gasCostList)
   }
 
-  static async repayYUSD_allAccounts(accounts, contracts, amount) {
+  static async repayPUSD_allAccounts(accounts, contracts, amount) {
     const gasCostList = []
 
     for (const account of accounts) {
-      const { newColl, newDebt } = await this.getCollAndDebtFromRepayYUSD(contracts, account, amount)
+      const { newColl, newDebt } = await this.getCollAndDebtFromRepayPUSD(contracts, account, amount)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, newColl, newDebt)
 
-      const tx = await contracts.borrowerOperations.repayYUSD(amount, upperHint, lowerHint, { from: account })
+      const tx = await contracts.borrowerOperations.repayPUSD(amount, upperHint, lowerHint, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
     return this.getGasMetrics(gasCostList)
   }
 
-  static async repayYUSD_allAccounts_randomAmount(min, max, accounts, contracts) {
+  static async repayPUSD_allAccounts_randomAmount(min, max, accounts, contracts) {
     const gasCostList = []
 
     for (const account of accounts) {
-      const randYUSDAmount = this.randAmountInWei(min, max)
+      const randPUSDAmount = this.randAmountInWei(min, max)
 
-      const { newColl, newDebt } = await this.getCollAndDebtFromRepayYUSD(contracts, account, randYUSDAmount)
+      const { newColl, newDebt } = await this.getCollAndDebtFromRepayPUSD(contracts, account, randPUSDAmount)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, newColl, newDebt)
 
-      const tx = await contracts.borrowerOperations.repayYUSD(randYUSDAmount, upperHint, lowerHint, { from: account })
+      const tx = await contracts.borrowerOperations.repayPUSD(randPUSDAmount, upperHint, lowerHint, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
@@ -1750,16 +1750,16 @@ class TestHelper {
 
   // --- Redemption functions ---
 
-  static async redeemCollateral(redeemer, contracts, YUSDAmount, maxFee = this._100pct) {
+  static async redeemCollateral(redeemer, contracts, PUSDAmount, maxFee = this._100pct) {
     const price = await contracts.priceFeedETH.getPrice()
-    const tx = await this.performRedemptionTx(redeemer, price, contracts, YUSDAmount, maxFee)
+    const tx = await this.performRedemptionTx(redeemer, price, contracts, PUSDAmount, maxFee)
     const gas = await this.gasUsed(tx)
     return gas
   }
 
-  static async redeemCollateralAndGetTxObject(redeemer, contracts, YUSDAmount, maxFee = this._100pct) {
+  static async redeemCollateralAndGetTxObject(redeemer, contracts, PUSDAmount, maxFee = this._100pct) {
     const price = await contracts.priceFeedETH.getPrice()
-    const tx = await this.performRedemptionTx(redeemer, price, contracts, YUSDAmount, maxFee)
+    const tx = await this.performRedemptionTx(redeemer, price, contracts, PUSDAmount, maxFee)
     return tx
   }
 
@@ -1768,27 +1768,27 @@ class TestHelper {
     const price = await contracts.priceFeedTestnet.getPrice()
 
     for (const redeemer of accounts) {
-      const randYUSDAmount = this.randAmountInWei(min, max)
+      const randPUSDAmount = this.randAmountInWei(min, max)
 
-      await this.performRedemptionTx(redeemer, price, contracts, randYUSDAmount)
+      await this.performRedemptionTx(redeemer, price, contracts, randPUSDAmount)
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
     return this.getGasMetrics(gasCostList)
   }
 
-  static async performRedemptionTx(redeemer, price, contracts, YUSDAmount, maxFee = 0, YUSDMaxFee = 0, maxIterations = 0) {
-    var finalYUSDAmount = this.toBN(0)
-    var finalYUSDFeeAmount = this.toBN(0)
-    if (YUSDMaxFee == 0) {
-      finalYUSDAmount = await this.estimateYUSDEligible(contracts, YUSDAmount)
-      finalYUSDFeeAmount = this.toBN(YUSDAmount).sub(finalYUSDAmount);
+  static async performRedemptionTx(redeemer, price, contracts, PUSDAmount, maxFee = 0, PUSDMaxFee = 0, maxIterations = 0) {
+    var finalPUSDAmount = this.toBN(0)
+    var finalPUSDFeeAmount = this.toBN(0)
+    if (PUSDMaxFee == 0) {
+      finalPUSDAmount = await this.estimatePUSDEligible(contracts, PUSDAmount)
+      finalPUSDFeeAmount = this.toBN(PUSDAmount).sub(finalPUSDAmount);
     } else {
-      finalYUSDAmount = YUSDAmount
-      finalYUSDFeeAmount = await this.estimateRedemptionFee(contracts, this.toBN(YUSDAmount))
+      finalPUSDAmount = PUSDAmount
+      finalPUSDFeeAmount = await this.estimateRedemptionFee(contracts, this.toBN(PUSDAmount))
     }
-    // TODO Ensure max fee is not greater than the amount of YUSD fee calculated
-    const redemptionhint = await contracts.hintHelpers.getRedemptionHints(finalYUSDAmount, 0)
+    // TODO Ensure max fee is not greater than the amount of PUSD fee calculated
+    const redemptionhint = await contracts.hintHelpers.getRedemptionHints(finalPUSDAmount, 0)
     const firstRedemptionHint = redemptionhint[0]
     const partialRedemptionNewICR = redemptionhint[1]
     const {
@@ -1800,14 +1800,14 @@ class TestHelper {
       approxPartialRedemptionHint,
       approxPartialRedemptionHint))
 
-    finalYUSDAmount = this.toBN(finalYUSDAmount);
-    const totalYUSD_ToPullIn = this.toBN(1000000).mul(finalYUSDAmount.add(finalYUSDFeeAmount));
-    console.log("TO Pull IN", totalYUSD_ToPullIn.toString());
+    finalPUSDAmount = this.toBN(finalPUSDAmount);
+    const totalPUSD_ToPullIn = this.toBN(1000000).mul(finalPUSDAmount.add(finalPUSDFeeAmount));
+    console.log("TO Pull IN", totalPUSD_ToPullIn.toString());
 
-    await contracts.yusdToken.approve(contracts.troveManagerRedemptions.address, totalYUSD_ToPullIn, {from: redeemer});
+    await contracts.pusdToken.approve(contracts.troveManagerRedemptions.address, totalPUSD_ToPullIn, {from: redeemer});
 
-    const tx = await contracts.troveManager.redeemCollateral(finalYUSDAmount,
-      finalYUSDFeeAmount,
+    const tx = await contracts.troveManager.redeemCollateral(finalPUSDAmount,
+      finalPUSDFeeAmount,
       firstRedemptionHint,
       exactPartialRedemptionHint[0],
       exactPartialRedemptionHint[1],
@@ -1819,13 +1819,13 @@ class TestHelper {
     return tx
   }
   
-  static async performRedemptionWithMaxFeeAmount(redeemer, contracts, YUSDAmount, YUSDMaxFee, maxIterations = 0) {
+  static async performRedemptionWithMaxFeeAmount(redeemer, contracts, PUSDAmount, PUSDMaxFee, maxIterations = 0) {
 
-    const finalYUSDAmount = YUSDAmount
-    const finalYUSDFeeAmount = YUSDMaxFee
-    // TODO Ensure max fee is not greater than the amount of YUSD fee calculated
+    const finalPUSDAmount = PUSDAmount
+    const finalPUSDFeeAmount = PUSDMaxFee
+    // TODO Ensure max fee is not greater than the amount of PUSD fee calculated
 
-    const redemptionhint = await contracts.hintHelpers.getRedemptionHints(finalYUSDAmount, 0)
+    const redemptionhint = await contracts.hintHelpers.getRedemptionHints(finalPUSDAmount, 0)
 
     const firstRedemptionHint = redemptionhint[0]
     const partialRedemptionNewICR = redemptionhint[1]
@@ -1840,13 +1840,13 @@ class TestHelper {
       approxPartialRedemptionHint,
       approxPartialRedemptionHint))
 
-    const totalYUSD_ToPullIn = this.toBN(1000000).mul(finalYUSDAmount.add(finalYUSDFeeAmount));
-    console.log("TO Pull IN", totalYUSD_ToPullIn.toString());
+    const totalPUSD_ToPullIn = this.toBN(1000000).mul(finalPUSDAmount.add(finalPUSDFeeAmount));
+    console.log("TO Pull IN", totalPUSD_ToPullIn.toString());
 
-    await contracts.yusdToken.approve(contracts.troveManagerRedemptions.address, totalYUSD_ToPullIn, {from: redeemer});
+    await contracts.pusdToken.approve(contracts.troveManagerRedemptions.address, totalPUSD_ToPullIn, {from: redeemer});
 
-    const tx = await contracts.troveManager.redeemCollateral(finalYUSDAmount,
-      finalYUSDFeeAmount,
+    const tx = await contracts.troveManager.redeemCollateral(finalPUSDAmount,
+      finalPUSDFeeAmount,
       firstRedemptionHint,
       exactPartialRedemptionHint[0],
       exactPartialRedemptionHint[1],
@@ -1859,18 +1859,18 @@ class TestHelper {
     return tx
   }
 
-  static async estimateYUSDEligible(contracts, YUSDAmount) {
-    const totalYUSDSupply = await contracts.troveManagerRedemptions.getEntireSystemDebt(); // S
+  static async estimatePUSDEligible(contracts, PUSDAmount) {
+    const totalPUSDSupply = await contracts.troveManagerRedemptions.getEntireSystemDebt(); // S
     const decayedBaseRate = await contracts.troveManager.calcDecayedBaseRate(); // BR
     const squareTerm = (this.toBN(this.dec(1005, 15)).add(decayedBaseRate)) // BR + .5%
     const sqrtTerm = squareTerm.mul(squareTerm)//.div(this.toBN(this.dec(1,18))) // Square term squared, over the precision
-    const sqrtTerm2 = ((this.toBN(this.dec(2, 0))).mul(this.toBN(YUSDAmount))).mul(this.toBN(this.dec(1, 36))).div(totalYUSDSupply)
+    const sqrtTerm2 = ((this.toBN(this.dec(2, 0))).mul(this.toBN(PUSDAmount))).mul(this.toBN(this.dec(1, 36))).div(totalPUSDSupply)
     const finalSqrtTerm = this.sqrt((sqrtTerm.add(sqrtTerm2)).mul(this.toBN(this.dec(1, 18))))//.div(this.toBN(this.dec(1,9)))
 
-    const finalYUSDAmount = totalYUSDSupply.mul(finalSqrtTerm.sub(squareTerm.mul(this.toBN(this.dec(1, 9))))).div(this.toBN(this.dec(1, 27)))
-    // console.log("FINAL YUDS AMOUNT : " + finalYUSDAmount)
-    // console.log("FINAL YUSD FEE : ", this.toBN(YUSDAmount).sub(finalYUSDAmount).toString())
-    return finalYUSDAmount
+    const finalPUSDAmount = totalPUSDSupply.mul(finalSqrtTerm.sub(squareTerm.mul(this.toBN(this.dec(1, 9))))).div(this.toBN(this.dec(1, 27)))
+    // console.log("FINAL YUDS AMOUNT : " + finalPUSDAmount)
+    // console.log("FINAL PUSD FEE : ", this.toBN(PUSDAmount).sub(finalPUSDAmount).toString())
+    return finalPUSDAmount
   }
 
   // Using babylonian estimation of the square root for big numbers
@@ -1884,23 +1884,23 @@ class TestHelper {
     return y
   }
 
-  static async estimateRedemptionFee(contracts, YUSDAmount) {
-    const estimateUpdatedBaseRate = await this.estimateUpdatedBaseRateFromRedemption(contracts, YUSDAmount)
+  static async estimateRedemptionFee(contracts, PUSDAmount) {
+    const estimateUpdatedBaseRate = await this.estimateUpdatedBaseRateFromRedemption(contracts, PUSDAmount)
     // console.log("ESTIMATED UDPATED BSE RATE " + estimateUpdatedBaseRate.toString())
-    return (this.toBN(estimateUpdatedBaseRate).add(this.toBN(this.dec(5, 15)))).mul(YUSDAmount).div(this.toBN(this.dec(1, 18)))
+    return (this.toBN(estimateUpdatedBaseRate).add(this.toBN(this.dec(5, 15)))).mul(PUSDAmount).div(this.toBN(this.dec(1, 18)))
   }
 
-  static async estimateUpdatedBaseRateFromRedemption(contracts, YUSDAmount) {
-    const YUSDSupplyAtStart = await contracts.troveManagerRedemptions.getEntireSystemDebt();
+  static async estimateUpdatedBaseRateFromRedemption(contracts, PUSDAmount) {
+    const PUSDSupplyAtStart = await contracts.troveManagerRedemptions.getEntireSystemDebt();
     const decayedBaseRate = await contracts.troveManager.calcDecayedBaseRate();
 
-    /* Convert the drawn ETH back to YUSD at face value rate (1 YUSD:1 USD), in order to get
+    /* Convert the drawn ETH back to PUSD at face value rate (1 PUSD:1 USD), in order to get
     * the fraction of total supply that was redeemed at face value. */
-    const redeemedYUSDFraction = YUSDAmount.mul(this.toBN(this.dec(1, 18))).div(YUSDSupplyAtStart);
+    const redeemedPUSDFraction = PUSDAmount.mul(this.toBN(this.dec(1, 18))).div(PUSDSupplyAtStart);
     const BETA = 2
-    const newBaseRate = decayedBaseRate.add(redeemedYUSDFraction.div(this.toBN(this.dec(BETA, 0))));
-    // console.log("YUSDSUPPLY AT START ", YUSDSupplyAtStart.toString())
-    // console.log("REDEEMED YUSD FRACTION " + redeemedYUSDFraction.toString())
+    const newBaseRate = decayedBaseRate.add(redeemedPUSDFraction.div(this.toBN(this.dec(BETA, 0))));
+    // console.log("PUSDSUPPLY AT START ", PUSDSupplyAtStart.toString())
+    // console.log("REDEEMED PUSD FRACTION " + redeemedPUSDFraction.toString())
     // console.log("NEW BASE RATE ", newBaseRate.toString())
     return Math.min(newBaseRate, this._100pct); // cap baseRate at a maximum of 100%
 
@@ -1935,8 +1935,8 @@ class TestHelper {
   static async provideToSP_allAccounts_randomAmount(min, max, accounts, stabilityPool) {
     const gasCostList = []
     for (const account of accounts) {
-      const randomYUSDAmount = this.randAmountInWei(min, max)
-      const tx = await stabilityPool.provideToSP(randomYUSDAmount, this.ZERO_ADDRESS, { from: account })
+      const randomPUSDAmount = this.randAmountInWei(min, max)
+      const tx = await stabilityPool.provideToSP(randomPUSDAmount, this.ZERO_ADDRESS, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
@@ -1956,8 +1956,8 @@ class TestHelper {
   static async withdrawFromSP_allAccounts_randomAmount(min, max, accounts, stabilityPool) {
     const gasCostList = []
     for (const account of accounts) {
-      const randomYUSDAmount = this.randAmountInWei(min, max)
-      const tx = await stabilityPool.withdrawFromSP(randomYUSDAmount, { from: account })
+      const randomPUSDAmount = this.randAmountInWei(min, max)
+      const tx = await stabilityPool.withdrawFromSP(randomPUSDAmount, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
@@ -2043,60 +2043,60 @@ class TestHelper {
     return this.getGasMetrics(gasCostList)
   }
 
-  static async withdrawYUSD_allAccounts(accounts, contracts, amount) {
+  static async withdrawPUSD_allAccounts(accounts, contracts, amount) {
     const gasCostList = []
 
     for (const account of accounts) {
-      const { newColl, newDebt } = await this.getCollAndDebtFromWithdrawYUSD(contracts, account, amount)
+      const { newColl, newDebt } = await this.getCollAndDebtFromWithdrawPUSD(contracts, account, amount)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, newColl, newDebt)
 
-      const tx = await contracts.borrowerOperations.withdrawYUSD(this._100pct, amount, upperHint, lowerHint, { from: account })
+      const tx = await contracts.borrowerOperations.withdrawPUSD(this._100pct, amount, upperHint, lowerHint, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
     return this.getGasMetrics(gasCostList)
   }
 
-  static async withdrawYUSD_allAccounts_randomAmount(min, max, accounts, contracts) {
+  static async withdrawPUSD_allAccounts_randomAmount(min, max, accounts, contracts) {
     const gasCostList = []
 
     for (const account of accounts) {
-      const randYUSDAmount = this.randAmountInWei(min, max)
+      const randPUSDAmount = this.randAmountInWei(min, max)
 
-      const { newColl, newDebt } = await this.getCollAndDebtFromWithdrawYUSD(contracts, account, randYUSDAmount)
+      const { newColl, newDebt } = await this.getCollAndDebtFromWithdrawPUSD(contracts, account, randPUSDAmount)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, newColl, newDebt)
 
-      const tx = await contracts.borrowerOperations.withdrawYUSD(this._100pct, randYUSDAmount, upperHint, lowerHint, { from: account })
+      const tx = await contracts.borrowerOperations.withdrawPUSD(this._100pct, randPUSDAmount, upperHint, lowerHint, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
     return this.getGasMetrics(gasCostList)
   }
 
-  static async repayYUSD_allAccounts(accounts, contracts, amount) {
+  static async repayPUSD_allAccounts(accounts, contracts, amount) {
     const gasCostList = []
 
     for (const account of accounts) {
-      const { newColl, newDebt } = await this.getCollAndDebtFromRepayYUSD(contracts, account, amount)
+      const { newColl, newDebt } = await this.getCollAndDebtFromRepayPUSD(contracts, account, amount)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, newColl, newDebt)
 
-      const tx = await contracts.borrowerOperations.repayYUSD(amount, upperHint, lowerHint, { from: account })
+      const tx = await contracts.borrowerOperations.repayPUSD(amount, upperHint, lowerHint, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
     return this.getGasMetrics(gasCostList)
   }
 
-  static async repayYUSD_allAccounts_randomAmount(min, max, accounts, contracts) {
+  static async repayPUSD_allAccounts_randomAmount(min, max, accounts, contracts) {
     const gasCostList = []
 
     for (const account of accounts) {
-      const randYUSDAmount = this.randAmountInWei(min, max)
+      const randPUSDAmount = this.randAmountInWei(min, max)
 
-      const { newColl, newDebt } = await this.getCollAndDebtFromRepayYUSD(contracts, account, randYUSDAmount)
+      const { newColl, newDebt } = await this.getCollAndDebtFromRepayPUSD(contracts, account, randPUSDAmount)
       const { upperHint, lowerHint } = await this.getBorrowerOpsListHint(contracts, newColl, newDebt)
 
-      const tx = await contracts.borrowerOperations.repayYUSD(randYUSDAmount, upperHint, lowerHint, { from: account })
+      const tx = await contracts.borrowerOperations.repayPUSD(randPUSDAmount, upperHint, lowerHint, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
@@ -2117,16 +2117,16 @@ class TestHelper {
 
   // --- Redemption functions ---
 
-  static async redeemCollateral(redeemer, contracts, YUSDAmount, maxFee = this._100pct) {
+  static async redeemCollateral(redeemer, contracts, PUSDAmount, maxFee = this._100pct) {
     const price = await contracts.priceFeedETH.getPrice()
-    const tx = await this.performRedemptionTx(redeemer, price, contracts, YUSDAmount, maxFee)
+    const tx = await this.performRedemptionTx(redeemer, price, contracts, PUSDAmount, maxFee)
     const gas = await this.gasUsed(tx)
     return gas
   }
 
-  static async redeemCollateralAndGetTxObject(redeemer, contracts, YUSDAmount, maxFee = this._100pct) {
+  static async redeemCollateralAndGetTxObject(redeemer, contracts, PUSDAmount, maxFee = this._100pct) {
     const price = await contracts.priceFeedETH.getPrice()
-    const tx = await this.performRedemptionTx(redeemer, price, contracts, YUSDAmount, maxFee)
+    const tx = await this.performRedemptionTx(redeemer, price, contracts, PUSDAmount, maxFee)
     return tx
   }
 
@@ -2135,27 +2135,27 @@ class TestHelper {
     const price = await contracts.priceFeedTestnet.getPrice()
 
     for (const redeemer of accounts) {
-      const randYUSDAmount = this.randAmountInWei(min, max)
+      const randPUSDAmount = this.randAmountInWei(min, max)
 
-      await this.performRedemptionTx(redeemer, price, contracts, randYUSDAmount)
+      await this.performRedemptionTx(redeemer, price, contracts, randPUSDAmount)
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
     return this.getGasMetrics(gasCostList)
   }
 
-  static async performRedemptionTx(redeemer, price, contracts, YUSDAmount, maxFee = 0, YUSDMaxFee = 0, maxIterations = 0) {
-    var finalYUSDAmount = this.toBN(0)
-    var finalYUSDFeeAmount = this.toBN(0)
-    if (YUSDMaxFee == 0) {
-      finalYUSDAmount = await this.estimateYUSDEligible(contracts, YUSDAmount)
-      finalYUSDFeeAmount = this.toBN(YUSDAmount).sub(finalYUSDAmount);
+  static async performRedemptionTx(redeemer, price, contracts, PUSDAmount, maxFee = 0, PUSDMaxFee = 0, maxIterations = 0) {
+    var finalPUSDAmount = this.toBN(0)
+    var finalPUSDFeeAmount = this.toBN(0)
+    if (PUSDMaxFee == 0) {
+      finalPUSDAmount = await this.estimatePUSDEligible(contracts, PUSDAmount)
+      finalPUSDFeeAmount = this.toBN(PUSDAmount).sub(finalPUSDAmount);
     } else {
-      finalYUSDAmount = YUSDAmount
-      finalYUSDFeeAmount = await this.estimateRedemptionFee(contracts, this.toBN(YUSDAmount))
+      finalPUSDAmount = PUSDAmount
+      finalPUSDFeeAmount = await this.estimateRedemptionFee(contracts, this.toBN(PUSDAmount))
     }
-    // TODO Ensure max fee is not greater than the amount of YUSD fee calculated
-    const redemptionhint = await contracts.hintHelpers.getRedemptionHints(finalYUSDAmount, 0)
+    // TODO Ensure max fee is not greater than the amount of PUSD fee calculated
+    const redemptionhint = await contracts.hintHelpers.getRedemptionHints(finalPUSDAmount, 0)
     const firstRedemptionHint = redemptionhint[0]
     const partialRedemptionNewICR = redemptionhint[1]
     const {
@@ -2167,14 +2167,14 @@ class TestHelper {
       approxPartialRedemptionHint,
       approxPartialRedemptionHint))
 
-    finalYUSDAmount = this.toBN(finalYUSDAmount);
-    const totalYUSD_ToPullIn = this.toBN(1000000).mul(finalYUSDAmount.add(finalYUSDFeeAmount));
-    console.log("TO Pull IN", totalYUSD_ToPullIn.toString());
+    finalPUSDAmount = this.toBN(finalPUSDAmount);
+    const totalPUSD_ToPullIn = this.toBN(1000000).mul(finalPUSDAmount.add(finalPUSDFeeAmount));
+    console.log("TO Pull IN", totalPUSD_ToPullIn.toString());
 
-    await contracts.yusdToken.approve(contracts.troveManagerRedemptions.address, totalYUSD_ToPullIn, {from: redeemer});
+    await contracts.pusdToken.approve(contracts.troveManagerRedemptions.address, totalPUSD_ToPullIn, {from: redeemer});
 
-    const tx = await contracts.troveManager.redeemCollateral(finalYUSDAmount,
-      finalYUSDFeeAmount,
+    const tx = await contracts.troveManager.redeemCollateral(finalPUSDAmount,
+      finalPUSDFeeAmount,
       firstRedemptionHint,
       exactPartialRedemptionHint[0],
       exactPartialRedemptionHint[1],
@@ -2186,13 +2186,13 @@ class TestHelper {
     return tx
   }
 
-  static async performRedemptionWithMaxFeeAmount(redeemer, contracts, YUSDAmount, YUSDMaxFee, maxIterations = 0) {
+  static async performRedemptionWithMaxFeeAmount(redeemer, contracts, PUSDAmount, PUSDMaxFee, maxIterations = 0) {
 
-    const finalYUSDAmount = YUSDAmount
-    const finalYUSDFeeAmount = YUSDMaxFee
-    // TODO Ensure max fee is not greater than the amount of YUSD fee calculated
+    const finalPUSDAmount = PUSDAmount
+    const finalPUSDFeeAmount = PUSDMaxFee
+    // TODO Ensure max fee is not greater than the amount of PUSD fee calculated
 
-    const redemptionhint = await contracts.hintHelpers.getRedemptionHints(finalYUSDAmount, 0)
+    const redemptionhint = await contracts.hintHelpers.getRedemptionHints(finalPUSDAmount, 0)
 
     const firstRedemptionHint = redemptionhint[0]
     const partialRedemptionNewICR = redemptionhint[1]
@@ -2207,13 +2207,13 @@ class TestHelper {
       approxPartialRedemptionHint,
       approxPartialRedemptionHint))
 
-    const totalYUSD_ToPullIn = this.toBN(1000000).mul(finalYUSDAmount.add(finalYUSDFeeAmount));
-    console.log("TO Pull IN", totalYUSD_ToPullIn.toString());
+    const totalPUSD_ToPullIn = this.toBN(1000000).mul(finalPUSDAmount.add(finalPUSDFeeAmount));
+    console.log("TO Pull IN", totalPUSD_ToPullIn.toString());
 
-    await contracts.yusdToken.approve(contracts.troveManagerRedemptions.address, totalYUSD_ToPullIn, {from: redeemer});
+    await contracts.pusdToken.approve(contracts.troveManagerRedemptions.address, totalPUSD_ToPullIn, {from: redeemer});
 
-    const tx = await contracts.troveManager.redeemCollateral(finalYUSDAmount,
-      finalYUSDFeeAmount,
+    const tx = await contracts.troveManager.redeemCollateral(finalPUSDAmount,
+      finalPUSDFeeAmount,
       firstRedemptionHint,
       exactPartialRedemptionHint[0],
       exactPartialRedemptionHint[1],
@@ -2226,18 +2226,18 @@ class TestHelper {
     return tx
   }
 
-  static async estimateYUSDEligible(contracts, YUSDAmount) {
-    const totalYUSDSupply = await contracts.troveManagerRedemptions.getEntireSystemDebt(); // S
+  static async estimatePUSDEligible(contracts, PUSDAmount) {
+    const totalPUSDSupply = await contracts.troveManagerRedemptions.getEntireSystemDebt(); // S
     const decayedBaseRate = await contracts.troveManager.calcDecayedBaseRate(); // BR
     const squareTerm = (this.toBN(this.dec(1005, 15)).add(decayedBaseRate)) // BR + .5%
     const sqrtTerm = squareTerm.mul(squareTerm)//.div(this.toBN(this.dec(1,18))) // Square term squared, over the precision
-    const sqrtTerm2 = ((this.toBN(this.dec(2, 0))).mul(this.toBN(YUSDAmount))).mul(this.toBN(this.dec(1, 36))).div(totalYUSDSupply)
+    const sqrtTerm2 = ((this.toBN(this.dec(2, 0))).mul(this.toBN(PUSDAmount))).mul(this.toBN(this.dec(1, 36))).div(totalPUSDSupply)
     const finalSqrtTerm = this.sqrt((sqrtTerm.add(sqrtTerm2)).mul(this.toBN(this.dec(1, 18))))//.div(this.toBN(this.dec(1,9)))
 
-    const finalYUSDAmount = totalYUSDSupply.mul(finalSqrtTerm.sub(squareTerm.mul(this.toBN(this.dec(1, 9))))).div(this.toBN(this.dec(1, 27)))
-    // console.log("FINAL YUDS AMOUNT : " + finalYUSDAmount)
-    // console.log("FINAL YUSD FEE : ", this.toBN(YUSDAmount).sub(finalYUSDAmount).toString())
-    return finalYUSDAmount
+    const finalPUSDAmount = totalPUSDSupply.mul(finalSqrtTerm.sub(squareTerm.mul(this.toBN(this.dec(1, 9))))).div(this.toBN(this.dec(1, 27)))
+    // console.log("FINAL YUDS AMOUNT : " + finalPUSDAmount)
+    // console.log("FINAL PUSD FEE : ", this.toBN(PUSDAmount).sub(finalPUSDAmount).toString())
+    return finalPUSDAmount
   }
 
   // Using babylonian estimation of the square root for big numbers
@@ -2251,23 +2251,23 @@ class TestHelper {
     return y
   }
 
-  static async estimateRedemptionFee(contracts, YUSDAmount) {
-    const estimateUpdatedBaseRate = await this.estimateUpdatedBaseRateFromRedemption(contracts, YUSDAmount)
+  static async estimateRedemptionFee(contracts, PUSDAmount) {
+    const estimateUpdatedBaseRate = await this.estimateUpdatedBaseRateFromRedemption(contracts, PUSDAmount)
     // console.log("ESTIMATED UDPATED BSE RATE " + estimateUpdatedBaseRate.toString())
-    return (this.toBN(estimateUpdatedBaseRate).add(this.toBN(this.dec(5, 15)))).mul(YUSDAmount).div(this.toBN(this.dec(1, 18)))
+    return (this.toBN(estimateUpdatedBaseRate).add(this.toBN(this.dec(5, 15)))).mul(PUSDAmount).div(this.toBN(this.dec(1, 18)))
   }
 
-  static async estimateUpdatedBaseRateFromRedemption(contracts, YUSDAmount) {
-    const YUSDSupplyAtStart = await contracts.troveManagerRedemptions.getEntireSystemDebt();
+  static async estimateUpdatedBaseRateFromRedemption(contracts, PUSDAmount) {
+    const PUSDSupplyAtStart = await contracts.troveManagerRedemptions.getEntireSystemDebt();
     const decayedBaseRate = await contracts.troveManager.calcDecayedBaseRate();
 
-    /* Convert the drawn ETH back to YUSD at face value rate (1 YUSD:1 USD), in order to get
+    /* Convert the drawn ETH back to PUSD at face value rate (1 PUSD:1 USD), in order to get
     * the fraction of total supply that was redeemed at face value. */
-    const redeemedYUSDFraction = YUSDAmount.mul(this.toBN(this.dec(1, 18))).div(YUSDSupplyAtStart);
+    const redeemedPUSDFraction = PUSDAmount.mul(this.toBN(this.dec(1, 18))).div(PUSDSupplyAtStart);
     const BETA = 2
-    const newBaseRate = decayedBaseRate.add(redeemedYUSDFraction.div(this.toBN(this.dec(BETA, 0))));
-    // console.log("YUSDSUPPLY AT START ", YUSDSupplyAtStart.toString())
-    // console.log("REDEEMED YUSD FRACTION " + redeemedYUSDFraction.toString())
+    const newBaseRate = decayedBaseRate.add(redeemedPUSDFraction.div(this.toBN(this.dec(BETA, 0))));
+    // console.log("PUSDSUPPLY AT START ", PUSDSupplyAtStart.toString())
+    // console.log("REDEEMED PUSD FRACTION " + redeemedPUSDFraction.toString())
     // console.log("NEW BASE RATE ", newBaseRate.toString())
     return Math.min(newBaseRate, this._100pct); // cap baseRate at a maximum of 100%
 
@@ -2302,8 +2302,8 @@ class TestHelper {
   static async provideToSP_allAccounts_randomAmount(min, max, accounts, stabilityPool) {
     const gasCostList = []
     for (const account of accounts) {
-      const randomYUSDAmount = this.randAmountInWei(min, max)
-      const tx = await stabilityPool.provideToSP(randomYUSDAmount, this.ZERO_ADDRESS, { from: account })
+      const randomPUSDAmount = this.randAmountInWei(min, max)
+      const tx = await stabilityPool.provideToSP(randomPUSDAmount, this.ZERO_ADDRESS, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }
@@ -2323,8 +2323,8 @@ class TestHelper {
   static async withdrawFromSP_allAccounts_randomAmount(min, max, accounts, stabilityPool) {
     const gasCostList = []
     for (const account of accounts) {
-      const randomYUSDAmount = this.randAmountInWei(min, max)
-      const tx = await stabilityPool.withdrawFromSP(randomYUSDAmount, { from: account })
+      const randomPUSDAmount = this.randAmountInWei(min, max)
+      const tx = await stabilityPool.withdrawFromSP(randomPUSDAmount, { from: account })
       const gas = this.gasUsed(tx)
       gasCostList.push(gas)
     }

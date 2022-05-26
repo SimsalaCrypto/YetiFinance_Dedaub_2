@@ -5,24 +5,24 @@ pragma solidity 0.6.11;
 import "../TroveManager.sol";
 import "../BorrowerOperations.sol";
 import "../StabilityPool.sol";
-import "../YUSDToken.sol";
+import "../PUSDToken.sol";
 
 contract EchidnaProxy {
   TroveManager troveManager;
   BorrowerOperations borrowerOperations;
   StabilityPool stabilityPool;
-  YUSDToken yusdToken;
+  PUSDToken pusdToken;
 
   constructor(
     TroveManager _troveManager,
     BorrowerOperations _borrowerOperations,
     StabilityPool _stabilityPool,
-    YUSDToken _yusdToken
+    PUSDToken _pusdToken
   ) public {
     troveManager = _troveManager;
     borrowerOperations = _borrowerOperations;
     stabilityPool = _stabilityPool;
-    yusdToken = _yusdToken;
+    pusdToken = _pusdToken;
   }
 
   receive() external payable {
@@ -37,7 +37,7 @@ contract EchidnaProxy {
 
   function liquidateTrovesPrx(uint256 _n) external {
     // pass
-    // @KingYeti: we no longer have this function
+    // @KingPreon: we no longer have this function
     //        troveManager.liquidateTroves(_n);
   }
 
@@ -46,8 +46,8 @@ contract EchidnaProxy {
   }
 
   function redeemCollateralPrx(
-    uint256 _YUSDAmount,
-    uint256 _YUSDMaxFee,
+    uint256 _PUSDAmount,
+    uint256 _PUSDMaxFee,
     address _firstRedemptionHint,
     address _upperPartialRedemptionHint,
     address _lowerPartialRedemptionHint,
@@ -55,8 +55,8 @@ contract EchidnaProxy {
     uint256 _maxIterations // uint _maxFee
   ) external {
     troveManager.redeemCollateral(
-      _YUSDAmount,
-      _YUSDMaxFee,
+      _PUSDAmount,
+      _PUSDMaxFee,
       _firstRedemptionHint,
       _upperPartialRedemptionHint,
       _lowerPartialRedemptionHint,
@@ -66,10 +66,10 @@ contract EchidnaProxy {
   }
 
   // Borrower Operations
-  // @KingYeti: changed parameters
+  // @KingPreon: changed parameters
   function openTrovePrx(
     uint256 _maxFeePercentage,
-    uint256 _YUSDAmount,
+    uint256 _PUSDAmount,
     address _upperHint,
     address _lowerHint,
     address[] memory _colls,
@@ -77,7 +77,7 @@ contract EchidnaProxy {
   ) external payable {
     borrowerOperations.openTrove(
       _maxFeePercentage,
-      _YUSDAmount,
+      _PUSDAmount,
       _upperHint,
       _lowerHint,
       _colls,
@@ -85,7 +85,7 @@ contract EchidnaProxy {
     );
   }
 
-  // @KingYeti: changed params
+  // @KingPreon: changed params
   function addCollPrx(
     address[] memory _collsIn,
     uint256[] memory _amountsIn,
@@ -116,21 +116,21 @@ contract EchidnaProxy {
     );
   }
 
-  function withdrawYUSDPrx(
+  function withdrawPUSDPrx(
     uint256 _amount,
     address _upperHint,
     address _lowerHint,
     uint256 _maxFee
   ) external {
-    borrowerOperations.withdrawYUSD(_maxFee, _amount, _upperHint, _lowerHint);
+    borrowerOperations.withdrawPUSD(_maxFee, _amount, _upperHint, _lowerHint);
   }
 
-  function repayYUSDPrx(
+  function repayPUSDPrx(
     uint256 _amount,
     address _upperHint,
     address _lowerHint
   ) external {
-    borrowerOperations.repayYUSD(_amount, _upperHint, _lowerHint);
+    borrowerOperations.repayPUSD(_amount, _upperHint, _lowerHint);
   }
 
   function closeTrovePrx() external {
@@ -142,7 +142,7 @@ contract EchidnaProxy {
     uint256[] memory _amountsIn,
     address[] memory _collsOut,
     uint256[] memory _amountsOut,
-    uint256 _YUSDChange,
+    uint256 _PUSDChange,
     bool _isDebtIncrease,
     address _upperHint,
     address _lowerHint,
@@ -153,7 +153,7 @@ contract EchidnaProxy {
       _amountsIn,
       _collsOut,
       _amountsOut,
-      _YUSDChange,
+      _PUSDChange,
       _isDebtIncrease,
       _upperHint,
       _lowerHint,
@@ -170,17 +170,17 @@ contract EchidnaProxy {
     stabilityPool.withdrawFromSP(_amount);
   }
 
-  // YUSD Token
+  // PUSD Token
 
   function transferPrx(address recipient, uint256 amount)
     external
     returns (bool)
   {
-    return yusdToken.transfer(recipient, amount);
+    return pusdToken.transfer(recipient, amount);
   }
 
   function approvePrx(address spender, uint256 amount) external returns (bool) {
-    return yusdToken.increaseAllowance(spender, amount);
+    return pusdToken.increaseAllowance(spender, amount);
   }
 
   function transferFromPrx(
@@ -188,21 +188,21 @@ contract EchidnaProxy {
     address recipient,
     uint256 amount
   ) external returns (bool) {
-    return yusdToken.transferFrom(sender, recipient, amount);
+    return pusdToken.transferFrom(sender, recipient, amount);
   }
 
   function increaseAllowancePrx(address spender, uint256 addedValue)
     external
     returns (bool)
   {
-    require(yusdToken.approve(spender, 0));
-    return yusdToken.increaseAllowance(spender, addedValue);
+    require(pusdToken.approve(spender, 0));
+    return pusdToken.increaseAllowance(spender, addedValue);
   }
 
   function decreaseAllowancePrx(address spender, uint256 subtractedValue)
     external
     returns (bool)
   {
-    return yusdToken.decreaseAllowance(spender, subtractedValue);
+    return pusdToken.decreaseAllowance(spender, subtractedValue);
   }
 }

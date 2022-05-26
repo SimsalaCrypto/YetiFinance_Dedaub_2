@@ -1,4 +1,4 @@
-// Testing YETI token ERC2612 functionality works as well as TeamAllocation.sol and FirstTreasury.sol
+// Testing PREON token ERC2612 functionality works as well as TeamAllocation.sol and FirstTreasury.sol
 
 const deploymentHelper = require("../utils/deploymentHelpers.js")
 const testHelpers = require("../utils/testHelpers.js")
@@ -7,19 +7,19 @@ const th = testHelpers.TestHelper
 const dec = th.dec
 const toBN = th.toBN
 
-contract('YetiDeploymentTest', async accounts => {
-  const [x, RoboYeti, Talent, LilYeti, sYETI ] = accounts;
+contract('PreonDeploymentTest', async accounts => {
+  const [x, RoboPreon, Talent, LilPreon, sPREON ] = accounts;
 
-  let YETI;
+  let PREON;
   let Treasury;
   let TeamAlloc;
   let multisig
 
   const testCorpus = ({ withProxy = false }) => {
     beforeEach(async () => {
-      const contracts = await deploymentHelper.deployYETIRightNow(sYETI);
-      YETI = contracts.yetiToken;
-      Treasury = contracts.yetiFinanceTreasury;
+      const contracts = await deploymentHelper.deployPREONRightNow(sPREON);
+      PREON = contracts.preonToken;
+      Treasury = contracts.preonFinanceTreasury;
       TeamAlloc = contracts.teamAllocation;
 
       let TreasuryTeamWallet = await Treasury.getTeamWallet();
@@ -28,39 +28,39 @@ contract('YetiDeploymentTest', async accounts => {
       assert.equal(TreasuryTeamWallet.toString(), TeamAllocTeamWallet.toString())
 
       multisig = TreasuryTeamWallet;
-      await contracts.teamAllocation.setYetiAddress(YETI.address, {from: multisig});
+      await contracts.teamAllocation.setPreonAddress(PREON.address, {from: multisig});
     })
 
     it("Check all init balances are correct", async () => {
-      let bal = await YETI.balanceOf(RoboYeti);
+      let bal = await PREON.balanceOf(RoboPreon);
       assert.equal(bal.toString(), "0");
 
-      bal = await YETI.balanceOf(Talent);
+      bal = await PREON.balanceOf(Talent);
       assert.equal(bal.toString(), "0");
 
-      bal = await YETI.balanceOf(LilYeti);
+      bal = await PREON.balanceOf(LilPreon);
       assert.equal(bal.toString(), "0");
 
-      bal = await YETI.balanceOf(Treasury.address)
+      bal = await PREON.balanceOf(Treasury.address)
       console.log("Treasury", bal.toString())
       assert.equal(bal.toString(), toBN(dec(365, 24)).toString());
 
-      bal = await YETI.balanceOf(TeamAlloc.address)
+      bal = await PREON.balanceOf(TeamAlloc.address)
       console.log("Team", bal.toString())
       assert.equal(bal.toString(), toBN(dec(135, 24)).toString());
     })
 
     it("sendAllocatedTokens() Works correctly", async () => {
-      await TeamAlloc.sendAllocatedYETI();
+      await TeamAlloc.sendAllocatedPREON();
 
       let team = [
-        ("0x5Ed80B5C5e8A34D5E60572C022483Dc234Aea5Bb"), // RoboYeti
+        ("0x5Ed80B5C5e8A34D5E60572C022483Dc234Aea5Bb"), // RoboPreon
         ("0x02B11CdD34Ca73358c162C6B50f8eCe40a63F67F"), // 0xTalent
-        ("0x95F58372A6e4b1B6D571e638E4f0aaFb4B0D895d"), // Lil Yeti
-        ("0xE4147a2B5bAc2D1B9FA23a1C0D477700Af590280"), // Festive Yeti
-        ("0x7Cd7D566ad0AD1903dfE680e4a1696814734eC28"), // Aces Yeti
-        ("0x7eFCCB1dE156b0ee337fD22567ae60c660dc265E"), // Yeti Player One
-        ("0xFB2B6fe35470CE08721cdfC84a61A6aa814262E7")  // Yung Yeti
+        ("0x95F58372A6e4b1B6D571e638E4f0aaFb4B0D895d"), // Lil Preon
+        ("0xE4147a2B5bAc2D1B9FA23a1C0D477700Af590280"), // Festive Preon
+        ("0x7Cd7D566ad0AD1903dfE680e4a1696814734eC28"), // Aces Preon
+        ("0x7eFCCB1dE156b0ee337fD22567ae60c660dc265E"), // Preon Player One
+        ("0xFB2B6fe35470CE08721cdfC84a61A6aa814262E7")  // Yung Preon
       ];
 
       const _94_5_thousand = 94500;
@@ -78,7 +78,7 @@ contract('YetiDeploymentTest', async accounts => {
       for (let i = 0; i < 7; i++) {
         console.log(team[i].toString());
         console.log(allocations[i].toString());
-        let bal = await YETI.balanceOf(team[i]);
+        let bal = await PREON.balanceOf(team[i]);
         assert.equal(bal.toString(), allocations[i].toString());
       }
     })
@@ -86,22 +86,22 @@ contract('YetiDeploymentTest', async accounts => {
     it("Update Team checks Work", async () => {
       await TeamAlloc.updateTeamAddress(multisig, {from: multisig});
 
-      await th.assertRevert(TeamAlloc.updateTeamAddress(multisig, {from: RoboYeti}));
+      await th.assertRevert(TeamAlloc.updateTeamAddress(multisig, {from: RoboPreon}));
 
-      await TeamAlloc.updateTeamAddress(RoboYeti, {from: multisig});
+      await TeamAlloc.updateTeamAddress(RoboPreon, {from: multisig});
       await th.assertRevert(TeamAlloc.updateTeamAddress(multisig, {from: multisig}));
-      await TeamAlloc.updateTeamAddress(RoboYeti, {from: RoboYeti});
+      await TeamAlloc.updateTeamAddress(RoboPreon, {from: RoboPreon});
       await th.assertRevert(TeamAlloc.updateTeamAddress(multisig, {from: multisig}));
     })
 
     it("Send Unallocated Checks Work", async () => {
-      await th.assertRevert(TeamAlloc.sendUnallocatedYETI(multisig, "200", {from: multisig}));
+      await th.assertRevert(TeamAlloc.sendUnallocatedPREON(multisig, "200", {from: multisig}));
     })
 
     it("Treasury Transfer sendToken() works and errors properly", async () => {
-      th.assertRevert(Treasury.sendToken(YETI.address, RoboYeti, dec(300, 20).toString(), {from: RoboYeti}));
-      await Treasury.sendToken(YETI.address, RoboYeti, dec(300, 20).toString(), {from: multisig});
-      let bal = await YETI.balanceOf(RoboYeti);
+      th.assertRevert(Treasury.sendToken(PREON.address, RoboPreon, dec(300, 20).toString(), {from: RoboPreon}));
+      await Treasury.sendToken(PREON.address, RoboPreon, dec(300, 20).toString(), {from: multisig});
+      let bal = await PREON.balanceOf(RoboPreon);
       assert.equal(bal.toString(), dec(300, 20).toString());
     })
 

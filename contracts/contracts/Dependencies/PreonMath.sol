@@ -4,7 +4,7 @@ pragma solidity 0.6.11;
 
 import "./SafeMath.sol";
 
-library YetiMath {
+library PreonMath {
   using SafeMath for uint256;
 
   uint256 internal constant DECIMAL_PRECISION = 1e18;

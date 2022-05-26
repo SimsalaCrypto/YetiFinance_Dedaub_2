@@ -1,8 +1,8 @@
 const { artifacts, ethers, assert } = require("hardhat")
 const deploymentHelper = require("../utils/deploymentHelpers.js")
 const testHelpers = require("../utils/testHelpers.js")
-const YUSDTokenTester = artifacts.require("./YUSDTokenTester.sol")
-const YetiTokenTester = artifacts.require("./YETITokenTester.sol")
+const PUSDTokenTester = artifacts.require("./PUSDTokenTester.sol")
+const PreonTokenTester = artifacts.require("./PREONTokenTester.sol")
 let joeRouter
 let joeZap
 
@@ -17,17 +17,17 @@ const getDifference = th.getDifference
 const assertRevert = th.assertRevert
 const mv = testHelpers.MoneyValues
 
-const YUSDToken = artifacts.require("YUSDToken")
-const YetiToken = artifacts.require("YETIToken")
-const sYETIToken = artifacts.require("./sYETIToken.sol")
-const sYETITokenTester = artifacts.require("./sYETITokenTester.sol")
+const PUSDToken = artifacts.require("PUSDToken")
+const PreonToken = artifacts.require("PREONToken")
+const sPREONToken = artifacts.require("./sPREONToken.sol")
+const sPREONTokenTester = artifacts.require("./sPREONTokenTester.sol")
 
 console.log("")
 console.log("All tests will fail if mainnet not forked in hardhat.config.js")
 console.log("Also may need to change hardhat.config.js file in the hardhat section under networks to enable forking ")
 console.log("")
 
-contract('sYETI Token Buyback Teset', async accounts => {
+contract('sPREON Token Buyback Teset', async accounts => {
 
   const [
     owner,
@@ -38,325 +38,325 @@ contract('sYETI Token Buyback Teset', async accounts => {
   const [bountyAddress, lpRewardsAddress, multisig] = [defaulter_1, defaulter_2, defaulter_3]
 
 
-  let yusdToken
-  let yetiToken
-  let sYetiToken
+  let pusdToken
+  let preonToken
+  let sPreonToken
 
   let contracts
 
   beforeEach(async () => {
     contracts = await deploymentHelper.deployLiquityCore()
-    contracts.yusdToken = await YUSDTokenTester.new(
+    contracts.pusdToken = await PUSDTokenTester.new(
       contracts.troveManager.address,
       contracts.troveManagerLiquidations.address,
       contracts.troveManagerRedemptions.address,
       contracts.stabilityPool.address,
       contracts.borrowerOperations.address
     )
-    const YETIContracts = await deploymentHelper.deployYETITesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
+    const PREONContracts = await deploymentHelper.deployPREONTesterContractsHardhat(bountyAddress, lpRewardsAddress, multisig)
 
     joeRouter = new ethers.Contract("0x60aE616a2155Ee3d9A68541Ba4544862310933d4", abi = routerABI, signer = await hre.ethers.getSigner(harry));
     joeZap = new ethers.Contract("0x2C7B8e971c704371772eDaf16e0dB381A8D02027", abi = zapABI, signer = await hre.ethers.getSigner(harry));
 
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
 
-    yusdToken = contracts.yusdToken
-    sYetiToken = YETIContracts.sYETI
-    yetiToken = YETIContracts.yetiToken
+    pusdToken = contracts.pusdToken
+    sPreonToken = PREONContracts.sPREON
+    preonToken = PREONContracts.preonToken
 
-    await yetiToken.unprotectedMint(harry, dec(100000, 18))
-    await yusdToken.unprotectedMint(harry, dec(1000000, 18));
-    console.log("pre yeti, yusd", (await yetiToken.balanceOf(harry)).toString(), (await yusdToken.balanceOf(harry)).toString())
-    await yusdToken.approve(joeRouter.address, dec(1000000, 18), { from: harry })
-    await yetiToken.approve(joeRouter.address, dec(1000000, 18), { from: harry })
-    await joeRouter.addLiquidity(yusdToken.address, yetiToken.address, dec(100000, 18), dec(10000, 18), 0, 0, harry, 1737113033, { from: harry })
+    await preonToken.unprotectedMint(harry, dec(100000, 18))
+    await pusdToken.unprotectedMint(harry, dec(1000000, 18));
+    console.log("pre preon, pusd", (await preonToken.balanceOf(harry)).toString(), (await pusdToken.balanceOf(harry)).toString())
+    await pusdToken.approve(joeRouter.address, dec(1000000, 18), { from: harry })
+    await preonToken.approve(joeRouter.address, dec(1000000, 18), { from: harry })
+    await joeRouter.addLiquidity(pusdToken.address, preonToken.address, dec(100000, 18), dec(10000, 18), 0, 0, harry, 1737113033, { from: harry })
 
-    console.log("post yeti/yusd", (await yetiToken.balanceOf(harry)).toString(), (await yusdToken.balanceOf(harry)).toString())
+    console.log("post preon/pusd", (await preonToken.balanceOf(harry)).toString(), (await pusdToken.balanceOf(harry)).toString())
   })
 
   it("buyBack(): Reverts if buyback window not met", async () => {
-    await sYetiToken.setTransferRatio(dec(1, 16));
-    await yetiToken.unprotectedMint(alice, toBN(dec(200, 17)))
+    await sPreonToken.setTransferRatio(dec(1, 16));
+    await preonToken.unprotectedMint(alice, toBN(dec(200, 17)))
 
-    // Alice should get 120 sYETI Tokens at ratio of 1. 
-    await yetiToken.approve(sYetiToken.address, toBN(dec(200, 17)), { from: alice })
-    await sYetiToken.mint(toBN(dec(120, 17)), { from: alice })
+    // Alice should get 120 sPREON Tokens at ratio of 1. 
+    await preonToken.approve(sPreonToken.address, toBN(dec(200, 17)), { from: alice })
+    await sPreonToken.mint(toBN(dec(120, 17)), { from: alice })
 
     // Check balance
-    assert.equal(toBN(dec(120, 17)).toString(), (await sYetiToken.balanceOf(alice)).toString())
-    assert.equal(toBN(dec(80, 17)).toString(), (await yetiToken.balanceOf(alice)).toString())
-    let yusdToken = contracts.yusdToken
+    assert.equal(toBN(dec(120, 17)).toString(), (await sPreonToken.balanceOf(alice)).toString())
+    assert.equal(toBN(dec(80, 17)).toString(), (await preonToken.balanceOf(alice)).toString())
+    let pusdToken = contracts.pusdToken
 
     const amountToBuyback = toBN(dec(100, 18))
-    await yusdToken.unprotectedMint(sYetiToken.address, amountToBuyback)
+    await pusdToken.unprotectedMint(sPreonToken.address, amountToBuyback)
 
-    let initialYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let initialYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("pre balances yusd/yeti", initialYUSD.toString(), initialYETI.toString())
+    let initialPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let initialPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("pre balances pusd/preon", initialPUSD.toString(), initialPREON.toString())
     
-    await sYetiToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [yusdToken.address, yetiToken.address])
+    await sPreonToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [pusdToken.address, preonToken.address])
 
     // Increase time not equal to 69 hours
     await ethers.provider.send('evm_increaseTime', [22000]);
     await ethers.provider.send('evm_mine');
-    await yusdToken.unprotectedMint(sYetiToken.address, amountToBuyback)
+    await pusdToken.unprotectedMint(sPreonToken.address, amountToBuyback)
     await th.assertRevert(
-      sYetiToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [yusdToken.address, yetiToken.address]),
+      sPreonToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [pusdToken.address, preonToken.address]),
       "Buyback time less than 69 hours"
     )
   })
 
   it("rebase(): Reverts if rebase window not met", async () => {
-    await sYetiToken.setTransferRatio(dec(1, 16))
-    await yetiToken.unprotectedMint(alice, toBN(dec(200, 17)))
+    await sPreonToken.setTransferRatio(dec(1, 16))
+    await preonToken.unprotectedMint(alice, toBN(dec(200, 17)))
 
-    // Alice should get 120 sYETI Tokens at ratio of 1. 
-    await yetiToken.approve(sYetiToken.address, toBN(dec(200, 17)), { from: alice })
-    await sYetiToken.mint(toBN(dec(120, 17)), { from: alice })
+    // Alice should get 120 sPREON Tokens at ratio of 1. 
+    await preonToken.approve(sPreonToken.address, toBN(dec(200, 17)), { from: alice })
+    await sPreonToken.mint(toBN(dec(120, 17)), { from: alice })
 
     // Check balance
-    assert.equal(toBN(dec(120, 17)).toString(), (await sYetiToken.balanceOf(alice)).toString())
-    assert.equal(toBN(dec(80, 17)).toString(), (await yetiToken.balanceOf(alice)).toString())
-    let yusdToken = contracts.yusdToken
+    assert.equal(toBN(dec(120, 17)).toString(), (await sPreonToken.balanceOf(alice)).toString())
+    assert.equal(toBN(dec(80, 17)).toString(), (await preonToken.balanceOf(alice)).toString())
+    let pusdToken = contracts.pusdToken
 
     const amountToBuyback = toBN(dec(100, 18))
-    await yusdToken.unprotectedMint(sYetiToken.address, amountToBuyback)
+    await pusdToken.unprotectedMint(sPreonToken.address, amountToBuyback)
 
-    let initialYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let initialYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("pre balances yusd/yeti", initialYUSD.toString(), initialYETI.toString())
+    let initialPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let initialPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("pre balances pusd/preon", initialPUSD.toString(), initialPREON.toString())
     
-    await sYetiToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [yusdToken.address, yetiToken.address])
-    await sYetiToken.rebase()
+    await sPreonToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [pusdToken.address, preonToken.address])
+    await sPreonToken.rebase()
     // Increase time not equal to 8 hours
     await ethers.provider.send('evm_increaseTime', [2200]);
     await ethers.provider.send('evm_mine');
     await th.assertRevert(
-      sYetiToken.rebase(),      
+      sPreonToken.rebase(),      
       "Buyback time less than 8 hours"
     )
   })
 
-  it("simple sYETI token buyback", async () => {
-    await yetiToken.unprotectedMint(alice, toBN(dec(200, 17)))
+  it("simple sPREON token buyback", async () => {
+    await preonToken.unprotectedMint(alice, toBN(dec(200, 17)))
 
-    await yetiToken.approve(sYetiToken.address, toBN(dec(200, 17)), { from: alice })
-    await sYetiToken.mint(toBN(dec(120, 17)), { from: alice })
-
-    // Check balance
-    assert.equal(toBN(dec(120, 17)).toString(), (await sYetiToken.balanceOf(alice)).toString())
-    assert.equal(toBN(dec(80, 17)).toString(), (await yetiToken.balanceOf(alice)).toString())
-    let yusdToken = contracts.yusdToken
-    await yusdToken.unprotectedMint(sYetiToken.address, dec(100, 18))
-
-
-    let initialYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let initialYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("pre balances yusd/yeti", initialYUSD.toString(), initialYETI.toString())
-    await sYetiToken.buyBack(joeRouter.address, dec(100, 18), dec(9, 18), [yusdToken.address, yetiToken.address])
-    let finalYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let finalYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("Final balances yusd/yeti", finalYUSD.toString(), finalYETI.toString())
-    assert.equal(initialYUSD - finalYUSD, dec(100, 18))
-    assert(finalYETI - initialYETI >= dec(9, 18))
-  })
-
-  it("sYETI token buyback no stakers", async () => {
-
-    let yusdToken = contracts.yusdToken
-    await yusdToken.unprotectedMint(sYetiToken.address, dec(100, 18))
-
-
-    let initialYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let initialYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("pre balances yusd/yeti", initialYUSD.toString(), initialYETI.toString())
-    await sYetiToken.buyBack(joeRouter.address, dec(100, 18), dec(9, 18), [yusdToken.address, yetiToken.address])
-    let finalYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let finalYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("Final balances yusd/yeti", finalYUSD.toString(), finalYETI.toString())
-    assert.equal(initialYUSD - finalYUSD, dec(100, 18))
-    assert(finalYETI - initialYETI >= dec(9, 18))
-  })
-
-  it("simple sYETI token buyback N burn, with 100% transfer ratio. ", async () => {
-    await sYetiToken.setTransferRatio(dec(1, 18))
-    await yetiToken.unprotectedMint(alice, toBN(dec(200, 17)))
-
-    // Alice should get 120 sYETI Tokens at ratio of 1. 
-    await yetiToken.approve(sYetiToken.address, toBN(dec(200, 17)), { from: alice })
-    await sYetiToken.mint(toBN(dec(120, 17)), { from: alice })
-    console.log("Value before ", (await sYetiToken.balanceOf(alice)).toString())
+    await preonToken.approve(sPreonToken.address, toBN(dec(200, 17)), { from: alice })
+    await sPreonToken.mint(toBN(dec(120, 17)), { from: alice })
 
     // Check balance
-    assert.equal(toBN(dec(120, 17)).toString(), (await sYetiToken.balanceOf(alice)).toString())
-    assert.equal(toBN(dec(80, 17)).toString(), (await yetiToken.balanceOf(alice)).toString())
-    let yusdToken = contracts.yusdToken
+    assert.equal(toBN(dec(120, 17)).toString(), (await sPreonToken.balanceOf(alice)).toString())
+    assert.equal(toBN(dec(80, 17)).toString(), (await preonToken.balanceOf(alice)).toString())
+    let pusdToken = contracts.pusdToken
+    await pusdToken.unprotectedMint(sPreonToken.address, dec(100, 18))
+
+
+    let initialPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let initialPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("pre balances pusd/preon", initialPUSD.toString(), initialPREON.toString())
+    await sPreonToken.buyBack(joeRouter.address, dec(100, 18), dec(9, 18), [pusdToken.address, preonToken.address])
+    let finalPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let finalPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("Final balances pusd/preon", finalPUSD.toString(), finalPREON.toString())
+    assert.equal(initialPUSD - finalPUSD, dec(100, 18))
+    assert(finalPREON - initialPREON >= dec(9, 18))
+  })
+
+  it("sPREON token buyback no stakers", async () => {
+
+    let pusdToken = contracts.pusdToken
+    await pusdToken.unprotectedMint(sPreonToken.address, dec(100, 18))
+
+
+    let initialPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let initialPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("pre balances pusd/preon", initialPUSD.toString(), initialPREON.toString())
+    await sPreonToken.buyBack(joeRouter.address, dec(100, 18), dec(9, 18), [pusdToken.address, preonToken.address])
+    let finalPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let finalPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("Final balances pusd/preon", finalPUSD.toString(), finalPREON.toString())
+    assert.equal(initialPUSD - finalPUSD, dec(100, 18))
+    assert(finalPREON - initialPREON >= dec(9, 18))
+  })
+
+  it("simple sPREON token buyback N burn, with 100% transfer ratio. ", async () => {
+    await sPreonToken.setTransferRatio(dec(1, 18))
+    await preonToken.unprotectedMint(alice, toBN(dec(200, 17)))
+
+    // Alice should get 120 sPREON Tokens at ratio of 1. 
+    await preonToken.approve(sPreonToken.address, toBN(dec(200, 17)), { from: alice })
+    await sPreonToken.mint(toBN(dec(120, 17)), { from: alice })
+    console.log("Value before ", (await sPreonToken.balanceOf(alice)).toString())
+
+    // Check balance
+    assert.equal(toBN(dec(120, 17)).toString(), (await sPreonToken.balanceOf(alice)).toString())
+    assert.equal(toBN(dec(80, 17)).toString(), (await preonToken.balanceOf(alice)).toString())
+    let pusdToken = contracts.pusdToken
 
     const amountToBuyback = toBN(dec(100, 18))
-    await yusdToken.unprotectedMint(sYetiToken.address, amountToBuyback)
+    await pusdToken.unprotectedMint(sPreonToken.address, amountToBuyback)
 
 
-    let initialYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let initialYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("pre balances yusd/yeti", initialYUSD.toString(), initialYETI.toString())
+    let initialPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let initialPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("pre balances pusd/preon", initialPUSD.toString(), initialPREON.toString())
     
-    await sYetiToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [yusdToken.address, yetiToken.address])
+    await sPreonToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [pusdToken.address, preonToken.address])
 
-    const lastBuyBackPrice = await sYetiToken.lastBuybackPrice();
+    const lastBuyBackPrice = await sPreonToken.lastBuybackPrice();
     console.log("Last buyback price", lastBuyBackPrice.toString())
     const valueAddedThroughBuyback = amountToBuyback.div(lastBuyBackPrice)
 
-    let finalYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let finalYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("Final balances yusd/yeti", finalYUSD.toString(), finalYETI.toString())
-    assert.equal(initialYUSD - finalYUSD, dec(100, 18))
-    assert(finalYETI - initialYETI >= dec(9, 18))
+    let finalPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let finalPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("Final balances pusd/preon", finalPUSD.toString(), finalPREON.toString())
+    assert.equal(initialPUSD - finalPUSD, dec(100, 18))
+    assert(finalPREON - initialPREON >= dec(9, 18))
     // Fastforward time 69 hours
     await ethers.provider.send('evm_increaseTime', [252000]);
     await ethers.provider.send('evm_mine');
-    let alicePreYETI = await yetiToken.balanceOf(alice)
-    await sYetiToken.rebase()
-    await sYetiToken.burn(alice, toBN(dec(120, 17)), { from: alice })
-    assert.equal(await yetiToken.balanceOf(alice) - alicePreYETI, finalYETI.toString())
+    let alicePrePREON = await preonToken.balanceOf(alice)
+    await sPreonToken.rebase()
+    await sPreonToken.burn(alice, toBN(dec(120, 17)), { from: alice })
+    assert.equal(await preonToken.balanceOf(alice) - alicePrePREON, finalPREON.toString())
   })
 
-  it("sYETI token buyback N burn, with 1% transfer ratio. ", async () => {
-    await sYetiToken.setTransferRatio(dec(1, 16))
-    await yetiToken.unprotectedMint(alice, toBN(dec(200, 17)))
+  it("sPREON token buyback N burn, with 1% transfer ratio. ", async () => {
+    await sPreonToken.setTransferRatio(dec(1, 16))
+    await preonToken.unprotectedMint(alice, toBN(dec(200, 17)))
 
-    // Alice should get 120 sYETI Tokens at ratio of 1. 
-    await yetiToken.approve(sYetiToken.address, toBN(dec(200, 17)), { from: alice })
-    await sYetiToken.mint(toBN(dec(120, 17)), { from: alice })
+    // Alice should get 120 sPREON Tokens at ratio of 1. 
+    await preonToken.approve(sPreonToken.address, toBN(dec(200, 17)), { from: alice })
+    await sPreonToken.mint(toBN(dec(120, 17)), { from: alice })
 
     // Check balance
-    assert.equal(toBN(dec(120, 17)).toString(), (await sYetiToken.balanceOf(alice)).toString())
-    assert.equal(toBN(dec(80, 17)).toString(), (await yetiToken.balanceOf(alice)).toString())
-    let yusdToken = contracts.yusdToken
+    assert.equal(toBN(dec(120, 17)).toString(), (await sPreonToken.balanceOf(alice)).toString())
+    assert.equal(toBN(dec(80, 17)).toString(), (await preonToken.balanceOf(alice)).toString())
+    let pusdToken = contracts.pusdToken
 
     const amountToBuyback = toBN(dec(100, 18))
-    await yusdToken.unprotectedMint(sYetiToken.address, amountToBuyback)
+    await pusdToken.unprotectedMint(sPreonToken.address, amountToBuyback)
 
 
-    let initialYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let initialYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("pre balances yusd/yeti", initialYUSD.toString(), initialYETI.toString())
+    let initialPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let initialPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("pre balances pusd/preon", initialPUSD.toString(), initialPREON.toString())
     
-    await sYetiToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [yusdToken.address, yetiToken.address])
+    await sPreonToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [pusdToken.address, preonToken.address])
 
-    const lastBuyBackPrice = await sYetiToken.lastBuybackPrice();
+    const lastBuyBackPrice = await sPreonToken.lastBuybackPrice();
     const valueAddedThroughBuyback = amountToBuyback.mul(toBN(dec(1, 18))).div(lastBuyBackPrice)
 
-    let finalYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let finalYETI = await yetiToken.balanceOf(sYetiToken.address)
-    assert.equal(initialYUSD - finalYUSD, dec(100, 18))
-    assert(finalYETI - initialYETI >= dec(9, 18))
+    let finalPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let finalPREON = await preonToken.balanceOf(sPreonToken.address)
+    assert.equal(initialPUSD - finalPUSD, dec(100, 18))
+    assert(finalPREON - initialPREON >= dec(9, 18))
     // Fastforward time 69 hours
     await ethers.provider.send('evm_increaseTime', [252000]);
     await ethers.provider.send('evm_mine');
-    let alicePreYETI = await yetiToken.balanceOf(alice)
-    await sYetiToken.rebase()
-    await sYetiToken.burn(alice, toBN(dec(120, 17)), { from: alice })
+    let alicePrePREON = await preonToken.balanceOf(alice)
+    await sPreonToken.rebase()
+    await sPreonToken.burn(alice, toBN(dec(120, 17)), { from: alice })
     await th.assertIsApproximatelyEqual(
-      await yetiToken.balanceOf(alice) - alicePreYETI, 
+      await preonToken.balanceOf(alice) - alicePrePREON, 
       toBN(dec(120, 17)).add(valueAddedThroughBuyback.div(toBN(dec(100, 0)))).toString(), 
       10000
     )
   })
 
-  it("Same buyback test as above, check to see if YUSD + YETI value taken into account", async () => {
-    await sYetiToken.setTransferRatio(dec(1, 16))
-    await yetiToken.unprotectedMint(alice, toBN(dec(200, 17)))
+  it("Same buyback test as above, check to see if PUSD + PREON value taken into account", async () => {
+    await sPreonToken.setTransferRatio(dec(1, 16))
+    await preonToken.unprotectedMint(alice, toBN(dec(200, 17)))
 
-    // Alice should get 120 sYETI Tokens at ratio of 1. 
-    await yetiToken.approve(sYetiToken.address, toBN(dec(200, 17)), { from: alice })
-    await sYetiToken.mint(toBN(dec(120, 17)), { from: alice })
+    // Alice should get 120 sPREON Tokens at ratio of 1. 
+    await preonToken.approve(sPreonToken.address, toBN(dec(200, 17)), { from: alice })
+    await sPreonToken.mint(toBN(dec(120, 17)), { from: alice })
 
     // Check balance
-    assert.equal(toBN(dec(120, 17)).toString(), (await sYetiToken.balanceOf(alice)).toString())
-    assert.equal(toBN(dec(80, 17)).toString(), (await yetiToken.balanceOf(alice)).toString())
-    let yusdToken = contracts.yusdToken
+    assert.equal(toBN(dec(120, 17)).toString(), (await sPreonToken.balanceOf(alice)).toString())
+    assert.equal(toBN(dec(80, 17)).toString(), (await preonToken.balanceOf(alice)).toString())
+    let pusdToken = contracts.pusdToken
 
     const amountToBuyback = toBN(dec(50, 18))
-    await yusdToken.unprotectedMint(sYetiToken.address, amountToBuyback)
+    await pusdToken.unprotectedMint(sPreonToken.address, amountToBuyback)
 
 
-    let initialYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let initialYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("pre balances yusd/yeti", initialYUSD.toString(), initialYETI.toString())
+    let initialPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let initialPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("pre balances pusd/preon", initialPUSD.toString(), initialPREON.toString())
     
-    await sYetiToken.buyBack(joeRouter.address, amountToBuyback, dec(4, 18), [yusdToken.address, yetiToken.address])
+    await sPreonToken.buyBack(joeRouter.address, amountToBuyback, dec(4, 18), [pusdToken.address, preonToken.address])
 
-    const lastBuyBackPrice = await sYetiToken.lastBuybackPrice();
+    const lastBuyBackPrice = await sPreonToken.lastBuybackPrice();
     // as if 100 (final value) is added
     const valueAddedThroughBuyback = amountToBuyback.mul(toBN(dec(2, 18))).div(lastBuyBackPrice)
 
-    let finalYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let finalYETI = await yetiToken.balanceOf(sYetiToken.address)
-    assert.equal(initialYUSD - finalYUSD, dec(50, 18))
-    assert(finalYETI - initialYETI >= dec(4, 18))
+    let finalPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let finalPREON = await preonToken.balanceOf(sPreonToken.address)
+    assert.equal(initialPUSD - finalPUSD, dec(50, 18))
+    assert(finalPREON - initialPREON >= dec(4, 18))
     // Fastforward time 69 hours
     await ethers.provider.send('evm_increaseTime', [252000]);
     await ethers.provider.send('evm_mine');
-    let alicePreYETI = await yetiToken.balanceOf(alice)
-    await yusdToken.unprotectedMint(sYetiToken.address, amountToBuyback)
-    await sYetiToken.rebase()
-    await sYetiToken.burn(alice, toBN(dec(120, 17)), { from: alice })
+    let alicePrePREON = await preonToken.balanceOf(alice)
+    await pusdToken.unprotectedMint(sPreonToken.address, amountToBuyback)
+    await sPreonToken.rebase()
+    await sPreonToken.burn(alice, toBN(dec(120, 17)), { from: alice })
     await th.assertIsApproximatelyEqual(
-      await yetiToken.balanceOf(alice) - alicePreYETI, 
+      await preonToken.balanceOf(alice) - alicePrePREON, 
       toBN(dec(120, 17)).add(valueAddedThroughBuyback.div(toBN(dec(100, 0)))).toString(), 
       10000
     )
   })
 
-  it("sYETI token buyback N burn, with 1% transfer ratio. Multiple rebases, with ratio change in between.", async () => {
-    await sYetiToken.setTransferRatio(dec(1, 16))
-    await yetiToken.unprotectedMint(alice, toBN(dec(200, 17)))
+  it("sPREON token buyback N burn, with 1% transfer ratio. Multiple rebases, with ratio change in between.", async () => {
+    await sPreonToken.setTransferRatio(dec(1, 16))
+    await preonToken.unprotectedMint(alice, toBN(dec(200, 17)))
 
-    // Alice should get 120 sYETI Tokens at ratio of 1. 
-    await yetiToken.approve(sYetiToken.address, toBN(dec(200, 17)), { from: alice })
-    await sYetiToken.mint(toBN(dec(120, 17)), { from: alice })
+    // Alice should get 120 sPREON Tokens at ratio of 1. 
+    await preonToken.approve(sPreonToken.address, toBN(dec(200, 17)), { from: alice })
+    await sPreonToken.mint(toBN(dec(120, 17)), { from: alice })
 
     // Check balance
-    assert.equal(toBN(dec(120, 17)).toString(), (await sYetiToken.balanceOf(alice)).toString())
-    assert.equal(toBN(dec(80, 17)).toString(), (await yetiToken.balanceOf(alice)).toString())
-    let yusdToken = contracts.yusdToken
+    assert.equal(toBN(dec(120, 17)).toString(), (await sPreonToken.balanceOf(alice)).toString())
+    assert.equal(toBN(dec(80, 17)).toString(), (await preonToken.balanceOf(alice)).toString())
+    let pusdToken = contracts.pusdToken
 
     const amountToBuyback = toBN(dec(100, 18))
-    await yusdToken.unprotectedMint(sYetiToken.address, amountToBuyback)
+    await pusdToken.unprotectedMint(sPreonToken.address, amountToBuyback)
 
 
-    let initialYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let initialYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("pre balances yusd/yeti", initialYUSD.toString(), initialYETI.toString())
+    let initialPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let initialPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("pre balances pusd/preon", initialPUSD.toString(), initialPREON.toString())
     
-    await sYetiToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [yusdToken.address, yetiToken.address])
+    await sPreonToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [pusdToken.address, preonToken.address])
 
-    const lastBuyBackPrice = await sYetiToken.lastBuybackPrice();
+    const lastBuyBackPrice = await sPreonToken.lastBuybackPrice();
     const valueAddedThroughBuyback = amountToBuyback.mul(toBN(dec(1, 18))).div(lastBuyBackPrice)
 
-    let finalYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let finalYETI = await yetiToken.balanceOf(sYetiToken.address)
-    assert.equal(initialYUSD - finalYUSD, dec(100, 18))
-    assert(finalYETI - initialYETI >= dec(9, 18))
+    let finalPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let finalPREON = await preonToken.balanceOf(sPreonToken.address)
+    assert.equal(initialPUSD - finalPUSD, dec(100, 18))
+    assert(finalPREON - initialPREON >= dec(9, 18))
     // Fastforward time 69 hours
     await ethers.provider.send('evm_increaseTime', [252000]);
     await ethers.provider.send('evm_mine');
-    let alicePreYETI = await yetiToken.balanceOf(alice)
-    await sYetiToken.rebase()
+    let alicePrePREON = await preonToken.balanceOf(alice)
+    await sPreonToken.rebase()
 
     await ethers.provider.send('evm_increaseTime', [252000]);
     await ethers.provider.send('evm_mine');
-    await sYetiToken.rebase()
+    await sPreonToken.rebase()
 
-    await sYetiToken.setTransferRatio(dec(2, 16))
+    await sPreonToken.setTransferRatio(dec(2, 16))
 
     await ethers.provider.send('evm_increaseTime', [252000]);
     await ethers.provider.send('evm_mine');
-    await sYetiToken.rebase()
-    await sYetiToken.burn(alice, toBN(dec(120, 17)), { from: alice })
+    await sPreonToken.rebase()
+    await sPreonToken.burn(alice, toBN(dec(120, 17)), { from: alice })
 
     const onePercent = valueAddedThroughBuyback.div(toBN(dec(100, 0)))
     const valueAddedThroughBuyback2 = (valueAddedThroughBuyback.mul(toBN(dec(99, 0))).div(toBN(dec(100, 0))))
@@ -365,92 +365,92 @@ contract('sYETI Token Buyback Teset', async accounts => {
     const oneOneTwoPercent = valueAddedThroughBuyback3.div(toBN(dec(50, 0)))
 
     await th.assertIsApproximatelyEqual(
-      await yetiToken.balanceOf(alice) - alicePreYETI, 
+      await preonToken.balanceOf(alice) - alicePrePREON, 
       toBN(dec(120, 17)).add(onePercent.add(oneOnePercent).add(oneOneTwoPercent)).toString(), 
       10000
     )
   })
 
-  it("sYETI token buyback N burn, with 1% transfer ratio. Alice gets reward 1 and 2, Bob gets reward 2.", async () => {
-    await sYetiToken.setTransferRatio(dec(1, 16))
-    await yetiToken.unprotectedMint(alice, toBN(dec(200, 17)))
+  it("sPREON token buyback N burn, with 1% transfer ratio. Alice gets reward 1 and 2, Bob gets reward 2.", async () => {
+    await sPreonToken.setTransferRatio(dec(1, 16))
+    await preonToken.unprotectedMint(alice, toBN(dec(200, 17)))
 
-    // Alice should get 120 sYETI Tokens at ratio of 1. 
-    await yetiToken.approve(sYetiToken.address, toBN(dec(200, 17)), { from: alice })
-    await sYetiToken.mint(toBN(dec(120, 17)), { from: alice })
+    // Alice should get 120 sPREON Tokens at ratio of 1. 
+    await preonToken.approve(sPreonToken.address, toBN(dec(200, 17)), { from: alice })
+    await sPreonToken.mint(toBN(dec(120, 17)), { from: alice })
 
     // Check balance
-    assert.equal(toBN(dec(120, 17)).toString(), (await sYetiToken.balanceOf(alice)).toString())
-    assert.equal(toBN(dec(80, 17)).toString(), (await yetiToken.balanceOf(alice)).toString())
-    let yusdToken = contracts.yusdToken
+    assert.equal(toBN(dec(120, 17)).toString(), (await sPreonToken.balanceOf(alice)).toString())
+    assert.equal(toBN(dec(80, 17)).toString(), (await preonToken.balanceOf(alice)).toString())
+    let pusdToken = contracts.pusdToken
 
     const amountToBuyback = toBN(dec(100, 18))
-    await yusdToken.unprotectedMint(sYetiToken.address, amountToBuyback)
+    await pusdToken.unprotectedMint(sPreonToken.address, amountToBuyback)
 
 
-    let initialYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let initialYETI = await yetiToken.balanceOf(sYetiToken.address)
-    console.log("pre balances yusd/yeti", initialYUSD.toString(), initialYETI.toString())
+    let initialPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let initialPREON = await preonToken.balanceOf(sPreonToken.address)
+    console.log("pre balances pusd/preon", initialPUSD.toString(), initialPREON.toString())
     
-    await sYetiToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [yusdToken.address, yetiToken.address])
+    await sPreonToken.buyBack(joeRouter.address, amountToBuyback, dec(9, 18), [pusdToken.address, preonToken.address])
 
-    const lastBuyBackPrice = await sYetiToken.lastBuybackPrice();
+    const lastBuyBackPrice = await sPreonToken.lastBuybackPrice();
     const valueAddedThroughBuyback = amountToBuyback.mul(toBN(dec(1, 18))).div(lastBuyBackPrice)
 
-    let finalYUSD = await yusdToken.balanceOf(sYetiToken.address)
-    let finalYETI = await yetiToken.balanceOf(sYetiToken.address)
-    assert.equal(initialYUSD - finalYUSD, dec(100, 18))
-    assert(finalYETI - initialYETI >= dec(9, 18))
+    let finalPUSD = await pusdToken.balanceOf(sPreonToken.address)
+    let finalPREON = await preonToken.balanceOf(sPreonToken.address)
+    assert.equal(initialPUSD - finalPUSD, dec(100, 18))
+    assert(finalPREON - initialPREON >= dec(9, 18))
     // Fastforward time 69 hours
     await ethers.provider.send('evm_increaseTime', [252000]);
     await ethers.provider.send('evm_mine');
-    let alicePreYETI = await yetiToken.balanceOf(alice)
-    await sYetiToken.rebase()
+    let alicePrePREON = await preonToken.balanceOf(alice)
+    await sPreonToken.rebase()
 
     // Bob should get rebase 2
-    await yetiToken.unprotectedMint(bob, toBN(dec(200, 17)))
-    await yetiToken.approve(sYetiToken.address, toBN(dec(200, 17)), { from: bob })
-    await sYetiToken.mint(toBN(dec(120, 17)), { from: bob })
+    await preonToken.unprotectedMint(bob, toBN(dec(200, 17)))
+    await preonToken.approve(sPreonToken.address, toBN(dec(200, 17)), { from: bob })
+    await sPreonToken.mint(toBN(dec(120, 17)), { from: bob })
 
     await ethers.provider.send('evm_increaseTime', [252000]);
     await ethers.provider.send('evm_mine');
-    const bobPreYETI = await yetiToken.balanceOf(bob)
-    await sYetiToken.rebase()
+    const bobPrePREON = await preonToken.balanceOf(bob)
+    await sPreonToken.rebase()
 
-    const alicesYETIBalance = await sYetiToken.balanceOf(alice)
-    const bobsYETIBalance = await sYetiToken.balanceOf(bob) // did not mint 120 bc alice rebase increased ratio
+    const alicesPREONBalance = await sPreonToken.balanceOf(alice)
+    const bobsPREONBalance = await sPreonToken.balanceOf(bob) // did not mint 120 bc alice rebase increased ratio
 
-    await sYetiToken.burn(alice, alicesYETIBalance, { from: alice })
-    await sYetiToken.burn(bob, bobsYETIBalance, { from: bob })
+    await sPreonToken.burn(alice, alicesPREONBalance, { from: alice })
+    await sPreonToken.burn(bob, bobsPREONBalance, { from: bob })
 
     const onePercent = valueAddedThroughBuyback.div(toBN(dec(100, 0)))
     const valueAddedThroughBuyback2 = (valueAddedThroughBuyback.mul(toBN(dec(99, 0))).div(toBN(dec(100, 0))))//.add(toBN(dec(120, 17)))
     // 1 % / 2 = .5% for each alice and bob. But this is probably not right because alice has more stake now? // TODO 
-    const denom = alicesYETIBalance.add(bobsYETIBalance)
+    const denom = alicesPREONBalance.add(bobsPREONBalance)
     
     const oneOnePercent = valueAddedThroughBuyback2.div(toBN(dec(100, 0)))
-    const aliceSecondOnePercent = oneOnePercent.mul(alicesYETIBalance).div(denom)
-    const bobSecondOnePercent = oneOnePercent.mul(bobsYETIBalance).div(denom)
-    const aliceFinalYETIDiff = await yetiToken.balanceOf(alice) - alicePreYETI
-    const bobFinalYETIDiff = await yetiToken.balanceOf(bob) - bobPreYETI
+    const aliceSecondOnePercent = oneOnePercent.mul(alicesPREONBalance).div(denom)
+    const bobSecondOnePercent = oneOnePercent.mul(bobsPREONBalance).div(denom)
+    const aliceFinalPREONDiff = await preonToken.balanceOf(alice) - alicePrePREON
+    const bobFinalPREONDiff = await preonToken.balanceOf(bob) - bobPrePREON
 
     await th.assertIsApproximatelyEqual(
-      aliceFinalYETIDiff, 
+      aliceFinalPREONDiff, 
       toBN(dec(120, 17)).add(onePercent.add(aliceSecondOnePercent)).toString(), 
       10000
     )
 
     await th.assertIsApproximatelyEqual(
-      bobFinalYETIDiff, 
+      bobFinalPREONDiff, 
       toBN(dec(120, 17)).add(bobSecondOnePercent).toString(), 
       10000
     )
 
     // re-minting resets ratio level to 1, aka 120 in = 120 out
-    await yetiToken.approve(sYetiToken.address, toBN(dec(200, 17)), { from: bob })
-    await sYetiToken.mint(toBN(dec(120, 17)), { from: bob })
-    const bobsYETIBalanceAfter = await sYetiToken.balanceOf(bob)
-    assert.equal(bobsYETIBalanceAfter.toString(), toBN(dec(120, 17)).toString())
+    await preonToken.approve(sPreonToken.address, toBN(dec(200, 17)), { from: bob })
+    await sPreonToken.mint(toBN(dec(120, 17)), { from: bob })
+    const bobsPREONBalanceAfter = await sPreonToken.balanceOf(bob)
+    assert.equal(bobsPREONBalanceAfter.toString(), toBN(dec(120, 17)).toString())
 
   })
 

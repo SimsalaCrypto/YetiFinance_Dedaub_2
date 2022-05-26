@@ -2,9 +2,9 @@
 pragma solidity 0.6.12;
 pragma experimental ABIEncoderV2;
 
-import "../YETI/sYETIToken.sol";
+import "../PREON/sPREONToken.sol";
 
-contract sYETITokenTester is sYETIToken {
+contract sPREONTokenTester is sPREONToken {
   function getUserInfo(address user)
     public
     view

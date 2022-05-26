@@ -3,10 +3,10 @@
 pragma solidity 0.6.11;
 
 import "../Interfaces/ICollSurplusPool.sol";
-import "../Interfaces/IYetiController.sol";
+import "../Interfaces/IPreonController.sol";
 import "../Dependencies/SafeMath.sol";
 import "../Dependencies/PoolBase.sol";
-import "../Interfaces/IYetiVaultToken.sol";
+import "../Interfaces/IPreonVaultToken.sol";
 import "../Dependencies/SafeERC20.sol";
 
 // @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -43,7 +43,7 @@ import "../Dependencies/SafeERC20.sol";
 
 /**
  * @notice The CollSurplusPool holds all the bonus collateral that occurs from liquidations and
- * redemptions, to be claimed by the trove owner. If they have been liquidated, their YUSD debt has been paid back, and a max
+ * redemptions, to be claimed by the trove owner. If they have been liquidated, their PUSD debt has been paid back, and a max
  * of 110% of their debt value, in USD of collateral, is distributed to the StabilityPool or is redistributed. If the collateral
  * weight of that collateral is < 1, then their USD ICR can be > 110% when they are liquidated, so the coll surplus is sent here
  * in that case.
@@ -62,12 +62,12 @@ contract CollSurplusPool is ICollSurplusPool, PoolBase {
   address internal troveManagerLiquidationsAddress;
   address internal troveManagerRedemptionsAddress;
   address internal activePoolAddress;
-  IERC20 internal yusdToken;
+  IERC20 internal pusdToken;
 
   // deposited collateral tracker. Colls is always the controller list of all collateral tokens. Amounts
   newColls internal poolColl;
 
-  // YUSD token balance from redemption bonus
+  // PUSD token balance from redemption bonus
   mapping(address => uint256) public redemptionBonus;
   uint256 public totalRedemptionBonus;
 
@@ -93,7 +93,7 @@ contract CollSurplusPool is ICollSurplusPool, PoolBase {
    * @param _troveManagerRedemptionsAddress, address
    * @param _activePoolAddress, address
    * @param _controllerAddress, address
-   * @param _yusdTokenAddress address
+   * @param _pusdTokenAddress address
    */
   function setAddresses(
     address _borrowerOperationsAddress,
@@ -101,7 +101,7 @@ contract CollSurplusPool is ICollSurplusPool, PoolBase {
     address _troveManagerRedemptionsAddress,
     address _activePoolAddress,
     address _controllerAddress,
-    address _yusdTokenAddress
+    address _pusdTokenAddress
   ) external override {
     require(addressSet == false, "Addresses already set");
     addressSet = true;
@@ -110,8 +110,8 @@ contract CollSurplusPool is ICollSurplusPool, PoolBase {
     troveManagerLiquidationsAddress = _troveManagerLiquidationsAddress;
     troveManagerRedemptionsAddress = _troveManagerRedemptionsAddress;
     activePoolAddress = _activePoolAddress;
-    controller = IYetiController(_controllerAddress);
-    yusdToken = IERC20(_yusdTokenAddress);
+    controller = IPreonController(_controllerAddress);
+    pusdToken = IERC20(_pusdTokenAddress);
   }
 
   // --- Coll Surplus Functionality ---
@@ -201,7 +201,7 @@ contract CollSurplusPool is ICollSurplusPool, PoolBase {
    * @param _collateral address
    */
   function addCollateralType(address _collateral) external override {
-    _requireCallerIsYetiController();
+    _requireCallerIsPreonController();
     poolColl.tokens.push(_collateral);
     poolColl.amounts.push(0);
   }
@@ -221,7 +221,7 @@ contract CollSurplusPool is ICollSurplusPool, PoolBase {
       if (controller.isWrapped(token)) {
         // Unwraps for original owner. _amounts[i] is in terms of the receipt token, and
         // the user will receive back the underlying based on the current exchange rate.
-        IYetiVaultToken(token).redeem(_to, _colls.amounts[i]);
+        IPreonVaultToken(token).redeem(_to, _colls.amounts[i]);
       } else {
         // Otherwise transfer like normal ERC20
         IERC20(token).safeTransfer(_to, _colls.amounts[i]);
@@ -236,12 +236,12 @@ contract CollSurplusPool is ICollSurplusPool, PoolBase {
    * @param _to address
    */
   function _sendRedemptionBonus(address _to) internal {
-    // Send YUSD Redemption bonus if applicable
+    // Send PUSD Redemption bonus if applicable
     uint256 thisRedemptionBonus = redemptionBonus[_to];
     if (thisRedemptionBonus != 0) {
       redemptionBonus[_to] = 0;
       totalRedemptionBonus = totalRedemptionBonus.sub(thisRedemptionBonus);
-      yusdToken.safeTransfer(_to, thisRedemptionBonus);
+      pusdToken.safeTransfer(_to, thisRedemptionBonus);
       emit RedemptionBonusSent(_to, thisRedemptionBonus);
     }
   }
@@ -358,7 +358,7 @@ contract CollSurplusPool is ICollSurplusPool, PoolBase {
 
   /**
    * @notice totalRedemptionBonus
-   * @dev this is the total amonut of YUSD in this contract that is
+   * @dev this is the total amonut of PUSD in this contract that is
    * claimable by users who have been redeemed against.
    * @return uint256
    */

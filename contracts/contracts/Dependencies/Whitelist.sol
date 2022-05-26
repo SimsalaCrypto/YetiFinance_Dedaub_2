@@ -121,7 +121,7 @@ contract Whitelist is Ownable, IWhitelist, IBaseOracle, CheckContract {
     checkContract(_routerAddress);
     // If collateral list is not 0, and if the 0th index is not equal to this collateral,
     // then if index is 0 that means it is not set yet.
-    require(_safetyRatio < 11e17, "ratio must be less than 1.10"); //=> greater than 1.1 would mean taking out more YUSD than collateral VC
+    require(_safetyRatio < 11e17, "ratio must be less than 1.10"); //=> greater than 1.1 would mean taking out more PUSD than collateral VC
 
     if (validCollateral.length != 0) {
       require(
@@ -244,7 +244,7 @@ contract Whitelist is Ownable, IWhitelist, IBaseOracle, CheckContract {
     exists(_collateral)
     onlyOwner
   {
-    require(_newSafetyRatio < 11e17, "ratio must be less than 1.10"); //=> greater than 1.1 would mean taking out more YUSD than collateral VC
+    require(_newSafetyRatio < 11e17, "ratio must be less than 1.10"); //=> greater than 1.1 would mean taking out more PUSD than collateral VC
     require(
       collateralParams[_collateral].safetyRatio < _newSafetyRatio,
       "New SR must be greater than previous SR"
@@ -579,9 +579,9 @@ contract Whitelist is Ownable, IWhitelist, IBaseOracle, CheckContract {
 
   // ===== Contract Callers ======
 
-  /* msg.sender is the Yeti contract calling this function
-   * _caller is the caller of that contract on the Yeti contract
-   * this function confirms whether the caller of the Yeti Contract is
+  /* msg.sender is the Preon contract calling this function
+   * _caller is the caller of that contract on the Preon contract
+   * this function confirms whether the caller of the Preon Contract is
    * allowed to call that function
    */
   function isValidCaller(address _caller)

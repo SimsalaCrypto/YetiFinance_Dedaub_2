@@ -3,10 +3,10 @@
 pragma solidity 0.6.11;
 
 /**
- * @notice Interface for use of wrapping and unwrapping vault tokens in the Yeti Finance borrowing
+ * @notice Interface for use of wrapping and unwrapping vault tokens in the Preon Finance borrowing
  * protocol.
  */
-interface IYetiVaultToken {
+interface IPreonVaultToken {
   function deposit(uint256 _amt) external returns (uint256 receiptTokens);
 
   function depositFor(

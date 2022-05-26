@@ -28,10 +28,10 @@ contract('Gas costs for math functions', async accounts => {
 
   beforeEach(async () => {
     contracts = await deploymentHelper.deployLiquityCore()
-    const YETIContracts = await deploymentHelper.deployYETIContracts(bountyAddress, lpRewardsAddress)
+    const PREONContracts = await deploymentHelper.deployPREONContracts(bountyAddress, lpRewardsAddress)
 
     priceFeed = contracts.priceFeedTestnet
-    yusdToken = contracts.yusdToken
+    pusdToken = contracts.pusdToken
     sortedTroves = contracts.sortedTroves
     troveManager = contracts.troveManager
     activePool = contracts.activePool
@@ -40,14 +40,14 @@ contract('Gas costs for math functions', async accounts => {
     borrowerOperations = contracts.borrowerOperations
     hintHelpers = contracts.hintHelpers
 
-    gtStaking = YETIContracts.gtStaking
-    yetiToken = YETIContracts.yetiToken
-    communityIssuance = YETIContracts.communityIssuance
-    lockupContractFactory = YETIContracts.lockupContractFactory
+    gtStaking = PREONContracts.gtStaking
+    preonToken = PREONContracts.preonToken
+    communityIssuance = PREONContracts.communityIssuance
+    lockupContractFactory = PREONContracts.lockupContractFactory
 
-    await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+    await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
   })
 
   // performs n runs of exponentiation on a random base

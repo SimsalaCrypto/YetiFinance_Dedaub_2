@@ -5,13 +5,13 @@ pragma solidity 0.6.11;
 import "./LiquityMath.sol";
 import "../Interfaces/IActivePool.sol";
 import "../Interfaces/IDefaultPool.sol";
-import "./YetiCustomBase.sol";
+import "./PreonCustomBase.sol";
 
 /*
  * Base contract for TroveManager, BorrowerOperations and StabilityPool. Contains global system constants and
  * common functions.
  */
-contract PoolBase2 is YetiCustomBase {
+contract PoolBase2 is PreonCustomBase {
   // Function for summing colls when coll1 includes all the tokens in the whitelist
   // Used in active, default, stability, and surplus pools
   // assumes _coll1.tokens = all whitelisted tokens

@@ -4,7 +4,7 @@ pragma solidity 0.6.11;
 
 import "../Dependencies/CheckContract.sol";
 import "../Dependencies/SafeMath.sol";
-import "../Interfaces/IYETIToken.sol";
+import "../Interfaces/IPREONToken.sol";
 import "../Interfaces/ILockupContractFactory.sol";
 import "hardhat/console.sol";
 
@@ -16,13 +16,13 @@ import "hardhat/console.sol";
 * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/53516bc555a454862470e7860a9b5254db4d00f5/contracts/token/ERC20/ERC20Permit.sol
 * 
 *
-*  --- Functionality added specific to the YETIToken ---
+*  --- Functionality added specific to the PREONToken ---
 * 
 * 1) Transfer protection: blacklist of addresses that are invalid recipients (i.e. core Liquity contracts) in external 
-* transfer() and transferFrom() calls. The purpose is to protect users from losing tokens by mistakenly sending YETI directly to a Liquity
+* transfer() and transferFrom() calls. The purpose is to protect users from losing tokens by mistakenly sending PREON directly to a Liquity
 * core contract, when they should rather call the right function.
 *
-* 2) sendToSYETI(): callable only by Liquity core contracts, which move YETI tokens from user -> SYETI contract.
+* 2) sendToSPREON(): callable only by Liquity core contracts, which move PREON tokens from user -> SPREON contract.
 *
 * 3) Supply hard-capped at 100 million
 *
@@ -41,19 +41,19 @@ import "hardhat/console.sol";
 *  LockupContractFactory 
 * -approve(), increaseAllowance(), decreaseAllowance() revert when called by the multisig
 * -transferFrom() reverts when the multisig is the sender
-* -sendToSYETI() reverts when the multisig is the sender, blocking the multisig from staking its YETI.
+* -sendToSPREON() reverts when the multisig is the sender, blocking the multisig from staking its PREON.
 * 
-* After one year has passed since deployment of the YETIToken, the restrictions on multisig operations are lifted
+* After one year has passed since deployment of the PREONToken, the restrictions on multisig operations are lifted
 * and the multisig has the same rights as any other address.
 */
 
-contract YETIToken is CheckContract, IYETIToken {
+contract PREONToken is CheckContract, IPREONToken {
     using SafeMath for uint256;
 
     // --- ERC20 Data ---
 
-    bytes32 internal constant _NAME = "YETI";
-    bytes32 internal constant _SYMBOL = "YETI";
+    bytes32 internal constant _NAME = "PREON";
+    bytes32 internal constant _SYMBOL = "PREON";
     bytes32 internal constant _VERSION = "1";
     uint8 internal constant _DECIMALS = 18;
 
@@ -80,7 +80,7 @@ contract YETIToken is CheckContract, IYETIToken {
 
     mapping(address => uint256) private _nonces;
 
-    // --- YETIToken specific data ---
+    // --- PREONToken specific data ---
 
     uint256 public constant ONE_YEAR_IN_SECONDS = 31536000; // 60 * 60 * 24 * 365
 
@@ -91,7 +91,7 @@ contract YETIToken is CheckContract, IYETIToken {
     address public immutable multisigAddress;
 
     address public immutable communityIssuanceAddress;
-    address public immutable sYETIAddress;
+    address public immutable sPREONAddress;
 
     uint256 internal immutable lpRewardsEntitlement;
 
@@ -100,7 +100,7 @@ contract YETIToken is CheckContract, IYETIToken {
     // --- Events ---
 
     event CommunityIssuanceAddressSet(address _communityIssuanceAddress);
-    event SYETIAddressSet(address _sYETIAddress);
+    event SPREONAddressSet(address _sPREONAddress);
     event LockupContractFactoryAddressSet(
         address _lockupContractFactoryAddress
     );
@@ -109,21 +109,21 @@ contract YETIToken is CheckContract, IYETIToken {
 
     constructor(
         address _communityIssuanceAddress,
-        address _sYETIAddress,
+        address _sPREONAddress,
         address _lockupFactoryAddress,
         address _bountyAddress,
         address _lpRewardsAddress,
         address _multisigAddress
     ) public {
         checkContract(_communityIssuanceAddress);
-        checkContract(_sYETIAddress);
+        checkContract(_sPREONAddress);
         checkContract(_lockupFactoryAddress);
 
         multisigAddress = _multisigAddress;
         deploymentStartTime = block.timestamp;
 
         communityIssuanceAddress = _communityIssuanceAddress;
-        sYETIAddress = _sYETIAddress;
+        sPREONAddress = _sPREONAddress;
         lockupContractFactory = ILockupContractFactory(_lockupFactoryAddress);
 
         bytes32 hashedName = keccak256(bytes(_NAME));
@@ -138,8 +138,8 @@ contract YETIToken is CheckContract, IYETIToken {
             hashedVersion
         );
 
-        // --- Initial YETI allocations ---
-        // TODO: @KingYeti-change allocations
+        // --- Initial PREON allocations ---
+        // TODO: @KingPreon-change allocations
         uint256 bountyEntitlement = _1_MILLION.mul(27); // Allocate 27 million for bounties/hackathons
         _mint(_bountyAddress, bountyEntitlement);
 
@@ -150,7 +150,7 @@ contract YETIToken is CheckContract, IYETIToken {
         lpRewardsEntitlement = _lpRewardsEntitlement;
         _mint(_lpRewardsAddress, _lpRewardsEntitlement);
 
-        // Allocate the remainder to the YETI Multisig: (100 - 3 - 27 - 50) million = 20
+        // Allocate the remainder to the PREON Multisig: (100 - 3 - 27 - 50) million = 20
         uint256 multisigEntitlement = _1_MILLION
             .mul(100)
             .sub(bountyEntitlement)
@@ -287,12 +287,12 @@ contract YETIToken is CheckContract, IYETIToken {
         return true;
     }
 
-    function sendToSYETI(address _sender, uint256 _amount) external override {
-        _requireCallerIsSYETI();
+    function sendToSPREON(address _sender, uint256 _amount) external override {
+        _requireCallerIsSPREON();
         if (_isFirstYear()) {
             _requireSenderIsNotMultisig(_sender);
-        } // Prevent the multisig from staking YETI
-        _transfer(_sender, sYETIAddress, _amount);
+        } // Prevent the multisig from staking PREON
+        _transfer(_sender, sPREONAddress, _amount);
     }
 
     // --- EIP 2612 functionality ---
@@ -319,7 +319,7 @@ contract YETIToken is CheckContract, IYETIToken {
         bytes32 r,
         bytes32 s
     ) external override {
-        require(deadline >= now, "YETI: expired deadline");
+        require(deadline >= now, "PREON: expired deadline");
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
@@ -337,7 +337,7 @@ contract YETIToken is CheckContract, IYETIToken {
             )
         );
         address recoveredAddress = ecrecover(digest, v, r, s);
-        require(recoveredAddress == owner, "YETI: invalid signature");
+        require(recoveredAddress == owner, "PREON: invalid signature");
         _approve(owner, spender, amount);
     }
 
@@ -416,40 +416,40 @@ contract YETIToken is CheckContract, IYETIToken {
     function _requireValidRecipient(address _recipient) internal view {
         require(
             _recipient != address(0) && _recipient != address(this),
-            "YETI: Cannot transfer tokens directly to the YETI token contract or the zero address"
+            "PREON: Cannot transfer tokens directly to the PREON token contract or the zero address"
         );
         require(
             _recipient != communityIssuanceAddress &&
-                _recipient != sYETIAddress,
-            "YETI: Cannot transfer tokens directly to the community issuance or staking contract"
+                _recipient != sPREONAddress,
+            "PREON: Cannot transfer tokens directly to the community issuance or staking contract"
         );
     }
 
     function _requireRecipientIsRegisteredLC(address _recipient) internal view {
         require(
             lockupContractFactory.isRegisteredLockup(_recipient),
-            "YETIToken: recipient must be a LockupContract registered in the Factory"
+            "PREONToken: recipient must be a LockupContract registered in the Factory"
         );
     }
 
     function _requireSenderIsNotMultisig(address _sender) internal view {
         require(
             _sender != multisigAddress,
-            "YETIToken: sender must not be the multisig"
+            "PREONToken: sender must not be the multisig"
         );
     }
 
     function _requireCallerIsNotMultisig() internal view {
         require(
             !_callerIsMultisig(),
-            "YETIToken: caller must not be the multisig"
+            "PREONToken: caller must not be the multisig"
         );
     }
 
-    function _requireCallerIsSYETI() internal view {
+    function _requireCallerIsSPREON() internal view {
         require(
-            msg.sender == sYETIAddress,
-            "YETIToken: caller must be the SYETI contract"
+            msg.sender == sPREONAddress,
+            "PREONToken: caller must be the SPREON contract"
         );
     }
 

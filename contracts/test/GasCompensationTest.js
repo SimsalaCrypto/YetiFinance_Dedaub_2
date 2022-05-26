@@ -2,7 +2,7 @@ const deploymentHelper = require("../utils/deploymentHelpers.js")
 const testHelpers = require("../utils/testHelpers.js")
 const TroveManagerTester = artifacts.require("./TroveManagerTester.sol")
 const BorrowerOperationsTester = artifacts.require("./BorrowerOperationsTester.sol")
-const YUSDToken = artifacts.require("YUSDToken")
+const PUSDToken = artifacts.require("PUSDToken")
 
 const th = testHelpers.TestHelper
 const dec = th.dec
@@ -19,7 +19,7 @@ contract('Gas compensation tests', async accounts => {
     const [bountyAddress, lpRewardsAddress, multisig] = accounts.slice(997, 1000)
 
   let priceFeed
-  let yusdToken
+  let pusdToken
   let sortedTroves
   let troveManager
   let activePool
@@ -34,7 +34,7 @@ contract('Gas compensation tests', async accounts => {
   let wethIDX
   let whitelist
 
-  const getOpenTroveYUSDAmount = async (totalDebt) => th.getOpenTroveYUSDAmount(contracts, totalDebt)
+  const getOpenTrovePUSDAmount = async (totalDebt) => th.getOpenTrovePUSDAmount(contracts, totalDebt)
   const openTrove = async (params) => th.openTrove(contracts, params)
 
   const logICRs = (ICRList) => {
@@ -54,17 +54,17 @@ contract('Gas compensation tests', async accounts => {
   beforeEach(async () => {
     contracts = await deploymentHelper.deployLiquityCore()
     contracts.troveManager = await TroveManagerTester.new()
-    contracts.yusdToken = await YUSDToken.new(
+    contracts.pusdToken = await PUSDToken.new(
       contracts.troveManager.address,
       contracts.troveManagerLiquidations.address,
       contracts.troveManagerRedemptions.address,
       contracts.stabilityPool.address,
       contracts.borrowerOperations.address
     )
-    const YETIContracts = await deploymentHelper.deployYETIContracts(bountyAddress, lpRewardsAddress, multisig)
+    const PREONContracts = await deploymentHelper.deployPREONContracts(bountyAddress, lpRewardsAddress, multisig)
 
     priceFeed = contracts.priceFeedETH
-    yusdToken = contracts.yusdToken
+    pusdToken = contracts.pusdToken
     sortedTroves = contracts.sortedTroves
     troveManager = contracts.troveManager
     activePool = contracts.activePool
@@ -74,9 +74,9 @@ contract('Gas compensation tests', async accounts => {
     weth = contracts.weth
     whitelist = contracts.whitelist
 
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
     wethIDX = await contracts.whitelist.getIndex(weth.address);
   })
@@ -211,25 +211,25 @@ contract('Gas compensation tests', async accounts => {
     /* 
     ETH:USD price = 200
     coll = 9.999 ETH 
-    debt = 10 YUSD
+    debt = 10 PUSD
     0.5% of coll = 0.04995 ETH. USD value: $9.99
-    -> Expect composite debt = 10 + 200  = 2100 YUSD*/
+    -> Expect composite debt = 10 + 200  = 2100 PUSD*/
     const compositeDebt_1 = await troveManagerTester.getCompositeDebt(dec(10, 18))
     assert.equal(compositeDebt_1, dec(210, 18))
 
     /* ETH:USD price = 200
      coll = 0.055 ETH  
-     debt = 0 YUSD
+     debt = 0 PUSD
      0.5% of coll = 0.000275 ETH. USD value: $0.055
-     -> Expect composite debt = 0 + 200 = 200 YUSD*/
+     -> Expect composite debt = 0 + 200 = 200 PUSD*/
     const compositeDebt_2 = await troveManagerTester.getCompositeDebt(0)
     assert.equal(compositeDebt_2, dec(200, 18))
 
     // /* ETH:USD price = 200
     // coll = 6.09232408808723580 ETH 
-    // debt = 200 YUSD
+    // debt = 200 PUSD
     // 0.5% of coll = 0.004995 ETH. USD value: $6.09
-    // -> Expect  composite debt =  200 + 200 = 400  YUSD */
+    // -> Expect  composite debt =  200 + 200 = 400  PUSD */
     const compositeDebt_3 = await troveManagerTester.getCompositeDebt(dec(200, 18))
     assert.equal(compositeDebt_3, '400000000000000000000')
   })
@@ -242,9 +242,9 @@ contract('Gas compensation tests', async accounts => {
     /* 
     ETH:USD price = 200
     coll = 10 ETH  
-    debt = 123.45 YUSD
+    debt = 123.45 PUSD
     0.5% of coll = 0.5 ETH. USD value: $10
-    -> Expect composite debt = (123.45 + 200) = 323.45 YUSD  */
+    -> Expect composite debt = (123.45 + 200) = 323.45 PUSD  */
     const compositeDebt = await troveManagerTester.getCompositeDebt('123450000000000000000')
     assert.equal(compositeDebt, '323450000000000000000')
   })
@@ -259,32 +259,32 @@ contract('Gas compensation tests', async accounts => {
     /* 
     ETH:USD price = 200 $/E
     coll = 100 ETH  
-    debt = 2000 YUSD
-    -> Expect composite debt = (2000 + 200) = 2200 YUSD  */
+    debt = 2000 PUSD
+    -> Expect composite debt = (2000 + 200) = 2200 PUSD  */
     const compositeDebt_1 = (await troveManagerTester.getCompositeDebt(dec(2000, 18))).toString()
     assert.equal(compositeDebt_1, '2200000000000000000000')
 
     /* 
     ETH:USD price = 200 $/E
     coll = 10.001 ETH  
-    debt = 200 YUSD
-    -> Expect composite debt = (200 + 200) = 400 YUSD  */
+    debt = 200 PUSD
+    -> Expect composite debt = (200 + 200) = 400 PUSD  */
     const compositeDebt_2 = (await troveManagerTester.getCompositeDebt(dec(200, 18))).toString()
     assert.equal(compositeDebt_2, '400000000000000000000')
 
     /* 
     ETH:USD price = 200 $/E
     coll = 37.5 ETH  
-    debt = 500 YUSD
-    -> Expect composite debt = (500 + 200) = 700 YUSD  */
+    debt = 500 PUSD
+    -> Expect composite debt = (500 + 200) = 700 PUSD  */
     const compositeDebt_3 = (await troveManagerTester.getCompositeDebt(dec(500, 18))).toString()
     assert.equal(compositeDebt_3, '700000000000000000000')
 
     /* 
     ETH:USD price = 45323.54542 $/E
     coll = 94758.230582309850 ETH  
-    debt = 1 billion YUSD
-    -> Expect composite debt = (1000000000 + 200) = 1000000200 YUSD  */
+    debt = 1 billion PUSD
+    -> Expect composite debt = (1000000000 + 200) = 1000000200 PUSD  */
     await priceFeed.setPrice('45323545420000000000000')
     const price_2 = await priceFeed.getPrice()
     const compositeDebt_4 = (await troveManagerTester.getCompositeDebt(dec(1, 27))).toString()
@@ -293,8 +293,8 @@ contract('Gas compensation tests', async accounts => {
     /* 
     ETH:USD price = 1000000 $/E (1 million)
     coll = 300000000 ETH   (300 million)
-    debt = 54321.123456789 YUSD
-   -> Expect composite debt = (54321.123456789 + 200) = 54521.123456789 YUSD */
+    debt = 54321.123456789 PUSD
+   -> Expect composite debt = (54321.123456789 + 200) = 54521.123456789 PUSD */
     await priceFeed.setPrice(dec(1, 24))
     const price_3 = await priceFeed.getPrice()
     const compositeDebt_5 = (await troveManagerTester.getCompositeDebt('54321123456789000000000')).toString()
@@ -306,43 +306,43 @@ contract('Gas compensation tests', async accounts => {
     const price = await priceFeed.getPrice()
     await openTrove({ ICR: toBN(dec(200, 18)), extraParams: { from: whale } })
 
-    // A opens with 1 ETH, 110 YUSD
+    // A opens with 1 ETH, 110 PUSD
     await openTrove({ ICR: toBN('1818181818181818181'), extraParams: { from: alice } })
     const alice_ICR = (await troveManager.getCurrentICR(alice)).toString()
     // Expect aliceICR = (1 * 200) / (110) = 181.81%
     assert.isAtMost(th.getDifference(alice_ICR, '1818181818181818181'), 1000)
 
-    // B opens with 0.5 ETH, 50 YUSD
+    // B opens with 0.5 ETH, 50 PUSD
     await openTrove({ ICR: toBN(dec(2, 18)), extraParams: { from: bob } })
     const bob_ICR = (await troveManager.getCurrentICR(bob)).toString()
     // Expect Bob's ICR = (0.5 * 200) / 50 = 200%
     assert.isAtMost(th.getDifference(bob_ICR, dec(2, 18)), 1000)
 
-    // F opens with 1 ETH, 100 YUSD
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(100, 18), extraParams: { from: flyn } })
+    // F opens with 1 ETH, 100 PUSD
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(100, 18), extraParams: { from: flyn } })
     const flyn_ICR = (await troveManager.getCurrentICR(flyn)).toString()
     // Expect Flyn's ICR = (1 * 200) / 100 = 200%
     assert.isAtMost(th.getDifference(flyn_ICR, dec(2, 18)), 1000)
 
-    // C opens with 2.5 ETH, 160 YUSD
+    // C opens with 2.5 ETH, 160 PUSD
     await openTrove({ ICR: toBN(dec(3125, 15)), extraParams: { from: carol } })
     const carol_ICR = (await troveManager.getCurrentICR(carol)).toString()
     // Expect Carol's ICR = (2.5 * 200) / (160) = 312.50%
     assert.isAtMost(th.getDifference(carol_ICR, '3125000000000000000'), 1000)
 
-    // D opens with 1 ETH, 0 YUSD
+    // D opens with 1 ETH, 0 PUSD
     await openTrove({ ICR: toBN(dec(4, 18)), extraParams: { from: dennis } })
     const dennis_ICR = (await troveManager.getCurrentICR(dennis)).toString()
     // Expect Dennis's ICR = (1 * 200) / (50) = 400.00%
     assert.isAtMost(th.getDifference(dennis_ICR, dec(4, 18)), 1000)
 
-    // E opens with 4405.45 ETH, 32598.35 YUSD
+    // E opens with 4405.45 ETH, 32598.35 PUSD
     await openTrove({ ICR: toBN('27028668628933700000'), extraParams: { from: erin } })
     const erin_ICR = (await troveManager.getCurrentICR(erin)).toString()
     // Expect Erin's ICR = (4405.45 * 200) / (32598.35) = 2702.87%
     assert.isAtMost(th.getDifference(erin_ICR, '27028668628933700000'), 100000)
 
-    // H opens with 1 ETH, 180 YUSD
+    // H opens with 1 ETH, 180 PUSD
     await openTrove({ ICR: toBN('1111111111111111111'), extraParams: { from: harriet } })
     const harriet_ICR = (await troveManager.getCurrentICR(harriet)).toString()
     // Expect Harriet's ICR = (1 * 200) / (180) = 111.11%
@@ -355,17 +355,17 @@ contract('Gas compensation tests', async accounts => {
     await openTrove({ ICR: toBN(dec(2000, 18)), extraParams: { from: whale } })
 
     // A-E open troves
-    const { totalDebt: A_totalDebt } = await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(100, 18), extraParams: { from: alice } })
-    const { totalDebt: B_totalDebt } = await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(200, 18), extraParams: { from: bob } })
-    const { totalDebt: C_totalDebt } = await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(300, 18), extraParams: { from: carol } })
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: A_totalDebt, extraParams: { from: dennis } })
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: B_totalDebt.add(C_totalDebt), extraParams: { from: erin } })
+    const { totalDebt: A_totalDebt } = await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(100, 18), extraParams: { from: alice } })
+    const { totalDebt: B_totalDebt } = await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(200, 18), extraParams: { from: bob } })
+    const { totalDebt: C_totalDebt } = await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(300, 18), extraParams: { from: carol } })
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: A_totalDebt, extraParams: { from: dennis } })
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: B_totalDebt.add(C_totalDebt), extraParams: { from: erin } })
 
-    // D, E each provide YUSD to SP
+    // D, E each provide PUSD to SP
     await stabilityPool.provideToSP(A_totalDebt, ZERO_ADDRESS, { from: dennis })
     await stabilityPool.provideToSP(B_totalDebt.add(C_totalDebt), ZERO_ADDRESS, { from: erin })
 
-    const YUSDinSP_0 = await stabilityPool.getTotalYUSDDeposits()
+    const PUSDinSP_0 = await stabilityPool.getTotalPUSDDeposits()
 
     // --- Price drops to 9.99 ---
     await priceFeed.setPrice('9990000000000000000')
@@ -393,9 +393,9 @@ contract('Gas compensation tests', async accounts => {
     const _0pt5percent_aliceColl = aliceColl.div(web3.utils.toBN('200'))
     assert.equal(compensationReceived_A, _0pt5percent_aliceColl)
 
-    // Check SP YUSD has decreased due to the liquidation
-    const YUSDinSP_A = await stabilityPool.getTotalYUSDDeposits()
-    assert.isTrue(YUSDinSP_A.lte(YUSDinSP_0))
+    // Check SP PUSD has decreased due to the liquidation
+    const PUSDinSP_A = await stabilityPool.getTotalPUSDDeposits()
+    assert.isTrue(PUSDinSP_A.lte(PUSDinSP_0))
 
     // Check ETH in SP has received the liquidation
     const ETHinSP_A = await stabilityPool.getCollateral(weth.address)
@@ -423,9 +423,9 @@ contract('Gas compensation tests', async accounts => {
     const _0pt5percent_bobColl = bobColl.div(web3.utils.toBN('200'))
     assert.equal(compensationReceived_B, _0pt5percent_bobColl) // 0.5% of 2 ETH
 
-    // Check SP YUSD has decreased due to the liquidation of B
-    const YUSDinSP_B = await stabilityPool.getTotalYUSDDeposits()
-    assert.isTrue(YUSDinSP_B.lt(YUSDinSP_A))
+    // Check SP PUSD has decreased due to the liquidation of B
+    const PUSDinSP_B = await stabilityPool.getTotalPUSDDeposits()
+    assert.isTrue(PUSDinSP_B.lt(PUSDinSP_A))
 
     // Check ETH in SP has received the liquidation
     const ETHinSP_B = await stabilityPool.getCollateral(weth.address)
@@ -455,9 +455,9 @@ contract('Gas compensation tests', async accounts => {
     const _0pt5percent_carolColl = carolColl.div(web3.utils.toBN('200'))
     assert.equal(compensationReceived_C, _0pt5percent_carolColl)
 
-    // Check SP YUSD has decreased due to the liquidation of C
-    const YUSDinSP_C = await stabilityPool.getTotalYUSDDeposits()
-    assert.isTrue(YUSDinSP_C.lt(YUSDinSP_B))
+    // Check SP PUSD has decreased due to the liquidation of C
+    const PUSDinSP_C = await stabilityPool.getTotalPUSDDeposits()
+    assert.isTrue(PUSDinSP_C.lt(PUSDinSP_B))
 
     // Check ETH in SP has not changed due to the lquidation of C
     const ETHinSP_C = await stabilityPool.getCollateral(weth.address)
@@ -469,17 +469,17 @@ contract('Gas compensation tests', async accounts => {
     await openTrove({ ICR: toBN(dec(2000, 18)), extraParams: { from: whale } })
 
     // A-E open troves
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(200, 18), extraParams: { from: alice } })
-    await openTrove({ ICR: toBN(dec(120, 16)), extraYUSDAmount: dec(5000, 18), extraParams: { from: bob } })
-    await openTrove({ ICR: toBN(dec(60, 18)), extraYUSDAmount: dec(600, 18), extraParams: { from: carol } })
-    await openTrove({ ICR: toBN(dec(80, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: dennis } })
-    await openTrove({ ICR: toBN(dec(80, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: erin } })
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(200, 18), extraParams: { from: alice } })
+    await openTrove({ ICR: toBN(dec(120, 16)), extraPUSDAmount: dec(5000, 18), extraParams: { from: bob } })
+    await openTrove({ ICR: toBN(dec(60, 18)), extraPUSDAmount: dec(600, 18), extraParams: { from: carol } })
+    await openTrove({ ICR: toBN(dec(80, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: dennis } })
+    await openTrove({ ICR: toBN(dec(80, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: erin } })
 
-    // D, E each provide 10000 YUSD to SP
+    // D, E each provide 10000 PUSD to SP
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: dennis })
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: erin })
 
-    const YUSDinSP_0 = await stabilityPool.getTotalYUSDDeposits()
+    const PUSDinSP_0 = await stabilityPool.getTotalPUSDDeposits()
     const ETHinSP_0 = await stabilityPool.getCollateral(weth.address)
 
     // --- Price drops to 199.999 ---
@@ -512,9 +512,9 @@ contract('Gas compensation tests', async accounts => {
     const _0pt5percent_aliceColl = aliceColl.div(web3.utils.toBN('200'))
     assert.equal(compensationReceived_A, _0pt5percent_aliceColl)
 
-    // Check SP YUSD has decreased due to the liquidation of A
-    const YUSDinSP_A = await stabilityPool.getTotalYUSDDeposits()
-    assert.isTrue(YUSDinSP_A.lt(YUSDinSP_0))
+    // Check SP PUSD has decreased due to the liquidation of A
+    const PUSDinSP_A = await stabilityPool.getTotalPUSDDeposits()
+    assert.isTrue(PUSDinSP_A.lt(PUSDinSP_0))
 
     // Check ETH in SP has increased by the remainder of B's coll
     const collRemainder_A = aliceColl.sub(_0pt5percent_aliceColl)
@@ -554,9 +554,9 @@ contract('Gas compensation tests', async accounts => {
     const compensationReceived_B = (liquidatorBalance_after_B.sub(liquidatorBalance_before_B)).toString()
     assert.equal(compensationReceived_B, _0pt5percent_bobColl)
 
-    // Check SP YUSD has decreased due to the liquidation of B
-    const YUSDinSP_B = await stabilityPool.getTotalYUSDDeposits()
-    assert.isTrue(YUSDinSP_B.lt(YUSDinSP_A))
+    // Check SP PUSD has decreased due to the liquidation of B
+    const PUSDinSP_B = await stabilityPool.getTotalPUSDDeposits()
+    assert.isTrue(PUSDinSP_B.lt(PUSDinSP_A))
 
     // Check ETH in SP has increased by the remainder of B's coll
     const collRemainder_B = bobColl.sub(_0pt5percent_bobColl)
@@ -573,17 +573,17 @@ contract('Gas compensation tests', async accounts => {
     await openTrove({ ICR: toBN(dec(200, 18)), extraParams: { from: whale } })
 
     // A-E open troves
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(2000, 18), extraParams: { from: alice } })
-    await openTrove({ ICR: toBN(dec(1875, 15)), extraYUSDAmount: dec(8000, 18), extraParams: { from: bob } })
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(600, 18), extraParams: { from: carol } })
-    await openTrove({ ICR: toBN(dec(4, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: dennis } })
-    await openTrove({ ICR: toBN(dec(4, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: erin } })
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(2000, 18), extraParams: { from: alice } })
+    await openTrove({ ICR: toBN(dec(1875, 15)), extraPUSDAmount: dec(8000, 18), extraParams: { from: bob } })
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(600, 18), extraParams: { from: carol } })
+    await openTrove({ ICR: toBN(dec(4, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: dennis } })
+    await openTrove({ ICR: toBN(dec(4, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: erin } })
 
-    // D, E each provide 10000 YUSD to SP
+    // D, E each provide 10000 PUSD to SP
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: dennis })
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: erin })
 
-    const YUSDinSP_0 = await stabilityPool.getTotalYUSDDeposits()
+    const PUSDinSP_0 = await stabilityPool.getTotalPUSDDeposits()
     const ETHinSP_0 = await stabilityPool.getCollateral(weth.address)
 
     await priceFeed.setPrice(dec(200, 18))
@@ -615,9 +615,9 @@ contract('Gas compensation tests', async accounts => {
     const compensationReceived_A = (liquidatorBalance_after_A.sub(liquidatorBalance_before_A)).toString()
     assert.equal(compensationReceived_A, _0pt5percent_aliceColl)
 
-    // Check SP YUSD has decreased due to the liquidation of A
-    const YUSDinSP_A = await stabilityPool.getTotalYUSDDeposits()
-    assert.isTrue(YUSDinSP_A.lt(YUSDinSP_0))
+    // Check SP PUSD has decreased due to the liquidation of A
+    const PUSDinSP_A = await stabilityPool.getTotalPUSDDeposits()
+    assert.isTrue(PUSDinSP_A.lt(PUSDinSP_0))
 
     // Check ETH in SP has increased by the remainder of A's coll
     const collRemainder_A = aliceColl.sub(_0pt5percent_aliceColl)
@@ -654,9 +654,9 @@ contract('Gas compensation tests', async accounts => {
     const compensationReceived_B = (liquidatorBalance_after_B.sub(liquidatorBalance_before_B)).toString()
     assert.equal(compensationReceived_B, _0pt5percent_bobColl)
 
-    // Check SP YUSD has decreased due to the liquidation of B
-    const YUSDinSP_B = await stabilityPool.getTotalYUSDDeposits()
-    assert.isTrue(YUSDinSP_B.lt(YUSDinSP_A))
+    // Check SP PUSD has decreased due to the liquidation of B
+    const PUSDinSP_B = await stabilityPool.getTotalPUSDDeposits()
+    assert.isTrue(PUSDinSP_B.lt(PUSDinSP_A))
 
     // Check ETH in SP has increased by the remainder of B's coll
     const collRemainder_B = bobColl.sub(_0pt5percent_bobColl)
@@ -674,17 +674,17 @@ contract('Gas compensation tests', async accounts => {
     await openTrove({ ICR: toBN(dec(2000, 18)), extraParams: { from: whale } })
 
     // A-E open troves
-    const { totalDebt: A_totalDebt } = await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(100, 18), extraParams: { from: alice } })
-    const { totalDebt: B_totalDebt } = await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(200, 18), extraParams: { from: bob } })
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(300, 18), extraParams: { from: carol } })
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: A_totalDebt, extraParams: { from: dennis } })
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: B_totalDebt, extraParams: { from: erin } })
+    const { totalDebt: A_totalDebt } = await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(100, 18), extraParams: { from: alice } })
+    const { totalDebt: B_totalDebt } = await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(200, 18), extraParams: { from: bob } })
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(300, 18), extraParams: { from: carol } })
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: A_totalDebt, extraParams: { from: dennis } })
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: B_totalDebt, extraParams: { from: erin } })
 
-    // D, E each provide YUSD to SP
+    // D, E each provide PUSD to SP
     await stabilityPool.provideToSP(A_totalDebt, ZERO_ADDRESS, { from: dennis })
     await stabilityPool.provideToSP(B_totalDebt, ZERO_ADDRESS, { from: erin })
 
-    const YUSDinSP_0 = await stabilityPool.getTotalYUSDDeposits()
+    const PUSDinSP_0 = await stabilityPool.getTotalPUSDDeposits()
 
     th.logBN('TCR', await troveManager.getTCR())
     // --- Price drops to 9.99 ---
@@ -750,17 +750,17 @@ contract('Gas compensation tests', async accounts => {
     await openTrove({ ICR: toBN(dec(2000, 18)), extraParams: { from: whale } })
 
     // A-E open troves
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(200, 18), extraParams: { from: alice } })
-    await openTrove({ ICR: toBN(dec(120, 16)), extraYUSDAmount: dec(5000, 18), extraParams: { from: bob } })
-    await openTrove({ ICR: toBN(dec(60, 18)), extraYUSDAmount: dec(600, 18), extraParams: { from: carol } })
-    await openTrove({ ICR: toBN(dec(80, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: dennis } })
-    await openTrove({ ICR: toBN(dec(80, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: erin } })
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(200, 18), extraParams: { from: alice } })
+    await openTrove({ ICR: toBN(dec(120, 16)), extraPUSDAmount: dec(5000, 18), extraParams: { from: bob } })
+    await openTrove({ ICR: toBN(dec(60, 18)), extraPUSDAmount: dec(600, 18), extraParams: { from: carol } })
+    await openTrove({ ICR: toBN(dec(80, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: dennis } })
+    await openTrove({ ICR: toBN(dec(80, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: erin } })
 
-    // D, E each provide 10,000 YUSD to SP
+    // D, E each provide 10,000 PUSD to SP
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: dennis })
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: erin })
 
-    const YUSDinSP_0 = await stabilityPool.getTotalYUSDDeposits()
+    const PUSDinSP_0 = await stabilityPool.getTotalPUSDDeposits()
     const ETHinSP_0 = await stabilityPool.getCollateral(weth.address)
 
     // --- Price drops to 199.999 ---
@@ -849,17 +849,17 @@ contract('Gas compensation tests', async accounts => {
     await openTrove({ ICR: toBN(dec(200, 18)), extraParams: { from: whale } })
 
     // A-E open troves
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(2000, 18), extraParams: { from: alice } })
-    await openTrove({ ICR: toBN(dec(1875, 15)), extraYUSDAmount: dec(8000, 18), extraParams: { from: bob } })
-    await openTrove({ ICR: toBN(dec(2, 18)), extraYUSDAmount: dec(600, 18), extraParams: { from: carol } })
-    await openTrove({ ICR: toBN(dec(4, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: dennis } })
-    await openTrove({ ICR: toBN(dec(4, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: erin } })
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(2000, 18), extraParams: { from: alice } })
+    await openTrove({ ICR: toBN(dec(1875, 15)), extraPUSDAmount: dec(8000, 18), extraParams: { from: bob } })
+    await openTrove({ ICR: toBN(dec(2, 18)), extraPUSDAmount: dec(600, 18), extraParams: { from: carol } })
+    await openTrove({ ICR: toBN(dec(4, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: dennis } })
+    await openTrove({ ICR: toBN(dec(4, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: erin } })
 
-    // D, E each provide 10000 YUSD to SP
+    // D, E each provide 10000 PUSD to SP
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: dennis })
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: erin })
 
-    const YUSDinSP_0 = await stabilityPool.getTotalYUSDDeposits()
+    const PUSDinSP_0 = await stabilityPool.getTotalPUSDDeposits()
     const ETHinSP_0 = await stabilityPool.getCollateral(weth.address)
 
     await priceFeed.setPrice(dec(200, 18))
@@ -929,18 +929,18 @@ contract('Gas compensation tests', async accounts => {
     await openTrove({ ICR: toBN(dec(2000, 18)), extraParams: { from: whale } })
 
     // A-F open troves
-    await openTrove({ ICR: toBN(dec(118, 16)), extraYUSDAmount: dec(2000, 18), extraParams: { from: alice } })
-    await openTrove({ ICR: toBN(dec(526, 16)), extraYUSDAmount: dec(8000, 18), extraParams: { from: bob } })
-    await openTrove({ ICR: toBN(dec(488, 16)), extraYUSDAmount: dec(600, 18), extraParams: { from: carol } })
-    await openTrove({ ICR: toBN(dec(545, 16)), extraYUSDAmount: dec(1, 23), extraParams: { from: dennis } })
-    await openTrove({ ICR: toBN(dec(10, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: erin } })
-    await openTrove({ ICR: toBN(dec(10, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: flyn } })
+    await openTrove({ ICR: toBN(dec(118, 16)), extraPUSDAmount: dec(2000, 18), extraParams: { from: alice } })
+    await openTrove({ ICR: toBN(dec(526, 16)), extraPUSDAmount: dec(8000, 18), extraParams: { from: bob } })
+    await openTrove({ ICR: toBN(dec(488, 16)), extraPUSDAmount: dec(600, 18), extraParams: { from: carol } })
+    await openTrove({ ICR: toBN(dec(545, 16)), extraPUSDAmount: dec(1, 23), extraParams: { from: dennis } })
+    await openTrove({ ICR: toBN(dec(10, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: erin } })
+    await openTrove({ ICR: toBN(dec(10, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: flyn } })
 
-    // D, E each provide 10000 YUSD to SP
+    // D, E each provide 10000 PUSD to SP
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: erin })
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: flyn })
 
-    const YUSDinSP_0 = await stabilityPool.getTotalYUSDDeposits()
+    const PUSDinSP_0 = await stabilityPool.getTotalPUSDDeposits()
 
     // price drops to 200 
     await priceFeed.setPrice(dec(200, 18))
@@ -997,9 +997,9 @@ contract('Gas compensation tests', async accounts => {
     await troveManager.batchLiquidateTroves([alice, bob, carol, dennis], liquidator, { from: liquidator, gasPrice: 0 })
     const liquidatorBalance_after = web3.utils.toBN(await weth.balanceOf(liquidator))
 
-    // Check YUSD in SP has decreased
-    const YUSDinSP_1 = await stabilityPool.getTotalYUSDDeposits()
-    assert.isTrue(YUSDinSP_1.lt(YUSDinSP_0))
+    // Check PUSD in SP has decreased
+    const PUSDinSP_1 = await stabilityPool.getTotalPUSDDeposits()
+    assert.isTrue(PUSDinSP_1.lt(PUSDinSP_0))
 
     // Check liquidator's balance has increased by the expected compensation amount
     const compensationReceived = (liquidatorBalance_after.sub(liquidatorBalance_before)).toString()
@@ -1017,12 +1017,12 @@ contract('Gas compensation tests', async accounts => {
     await openTrove({ ICR: toBN(dec(200, 18)), extraParams: { from: whale } })
 
     // A-D open troves
-    await openTrove({ ICR: toBN(dec(118, 16)), extraYUSDAmount: dec(2000, 18), extraParams: { from: alice } })
-    await openTrove({ ICR: toBN(dec(526, 16)), extraYUSDAmount: dec(8000, 18), extraParams: { from: bob } })
-    await openTrove({ ICR: toBN(dec(488, 16)), extraYUSDAmount: dec(600, 18), extraParams: { from: carol } })
-    await openTrove({ ICR: toBN(dec(545, 16)), extraYUSDAmount: dec(1, 23), extraParams: { from: dennis } })
+    await openTrove({ ICR: toBN(dec(118, 16)), extraPUSDAmount: dec(2000, 18), extraParams: { from: alice } })
+    await openTrove({ ICR: toBN(dec(526, 16)), extraPUSDAmount: dec(8000, 18), extraParams: { from: bob } })
+    await openTrove({ ICR: toBN(dec(488, 16)), extraPUSDAmount: dec(600, 18), extraParams: { from: carol } })
+    await openTrove({ ICR: toBN(dec(545, 16)), extraPUSDAmount: dec(1, 23), extraParams: { from: dennis } })
 
-    const YUSDinDefaultPool_0 = await defaultPool.getYUSDDebt()
+    const PUSDinDefaultPool_0 = await defaultPool.getPUSDDebt()
 
     // price drops to 200 
     await priceFeed.setPrice(dec(200, 18))
@@ -1073,9 +1073,9 @@ contract('Gas compensation tests', async accounts => {
     await troveManager.batchLiquidateTroves([alice, bob, carol, dennis], liquidator, { from: liquidator, gasPrice: 0 })
     const liquidatorBalance_after = web3.utils.toBN(await weth.balanceOf(liquidator))
 
-    // Check YUSD in DefaultPool has decreased
-    const YUSDinDefaultPool_1 = await defaultPool.getYUSDDebt()
-    assert.isTrue(YUSDinDefaultPool_1.gt(YUSDinDefaultPool_0))
+    // Check PUSD in DefaultPool has decreased
+    const PUSDinDefaultPool_1 = await defaultPool.getPUSDDebt()
+    assert.isTrue(PUSDinDefaultPool_1.gt(PUSDinDefaultPool_0))
 
     // Check liquidator's balance has increased by the expected compensation amount
     const compensationReceived = (liquidatorBalance_after.sub(liquidatorBalance_before)).toString()
@@ -1094,18 +1094,18 @@ contract('Gas compensation tests', async accounts => {
     await openTrove({ ICR: toBN(dec(2000, 18)), extraParams: { from: whale } })
 
     // A-F open troves
-    const { totalDebt: A_totalDebt } = await openTrove({ ICR: toBN(dec(118, 16)), extraYUSDAmount: dec(2000, 18), extraParams: { from: alice } })
-    const { totalDebt: B_totalDebt } = await openTrove({ ICR: toBN(dec(526, 16)), extraYUSDAmount: dec(8000, 18), extraParams: { from: bob } })
-    const { totalDebt: C_totalDebt } = await openTrove({ ICR: toBN(dec(488, 16)), extraYUSDAmount: dec(600, 18), extraParams: { from: carol } })
-    const { totalDebt: D_totalDebt } = await openTrove({ ICR: toBN(dec(545, 16)), extraYUSDAmount: dec(1, 23), extraParams: { from: dennis } })
-    await openTrove({ ICR: toBN(dec(10, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: erin } })
-    await openTrove({ ICR: toBN(dec(10, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: flyn } })
+    const { totalDebt: A_totalDebt } = await openTrove({ ICR: toBN(dec(118, 16)), extraPUSDAmount: dec(2000, 18), extraParams: { from: alice } })
+    const { totalDebt: B_totalDebt } = await openTrove({ ICR: toBN(dec(526, 16)), extraPUSDAmount: dec(8000, 18), extraParams: { from: bob } })
+    const { totalDebt: C_totalDebt } = await openTrove({ ICR: toBN(dec(488, 16)), extraPUSDAmount: dec(600, 18), extraParams: { from: carol } })
+    const { totalDebt: D_totalDebt } = await openTrove({ ICR: toBN(dec(545, 16)), extraPUSDAmount: dec(1, 23), extraParams: { from: dennis } })
+    await openTrove({ ICR: toBN(dec(10, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: erin } })
+    await openTrove({ ICR: toBN(dec(10, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: flyn } })
 
-    // D, E each provide 10000 YUSD to SP
+    // D, E each provide 10000 PUSD to SP
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: erin })
     await stabilityPool.provideToSP(dec(1, 23), ZERO_ADDRESS, { from: flyn })
 
-    const YUSDinSP_0 = await stabilityPool.getTotalYUSDDeposits()
+    const PUSDinSP_0 = await stabilityPool.getTotalPUSDDeposits()
 
     // price drops to 200 
     await priceFeed.setPrice(dec(200, 18))
@@ -1156,7 +1156,7 @@ contract('Gas compensation tests', async accounts => {
           .add(carolColl.sub(_0pt5percent_carolColl))
           .add(dennisColl.sub(_0pt5percent_dennisColl))
 
-    // Expect liquidatedDebt = 51 + 190 + 1025 + 13510 = 14646 YUSD
+    // Expect liquidatedDebt = 51 + 190 + 1025 + 13510 = 14646 PUSD
     const expectedLiquidatedDebt = A_totalDebt.add(B_totalDebt).add(C_totalDebt).add(D_totalDebt)
 
     // Liquidate troves A-D
@@ -1176,14 +1176,14 @@ contract('Gas compensation tests', async accounts => {
     await openTrove({ ICR: toBN(dec(2000, 18)), extraParams: { from: whale } })
 
     // A-F open troves
-    const { totalDebt: A_totalDebt } = await openTrove({ ICR: toBN(dec(118, 16)), extraYUSDAmount: dec(2000, 18), extraParams: { from: alice } })
-    const { totalDebt: B_totalDebt } = await openTrove({ ICR: toBN(dec(526, 16)), extraYUSDAmount: dec(8000, 18), extraParams: { from: bob } })
-    const { totalDebt: C_totalDebt } = await openTrove({ ICR: toBN(dec(488, 16)), extraYUSDAmount: dec(600, 18), extraParams: { from: carol } })
-    const { totalDebt: D_totalDebt } = await openTrove({ ICR: toBN(dec(545, 16)), extraYUSDAmount: dec(1, 23), extraParams: { from: dennis } })
-    await openTrove({ ICR: toBN(dec(10, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: erin } })
-    await openTrove({ ICR: toBN(dec(10, 18)), extraYUSDAmount: dec(1, 23), extraParams: { from: flyn } })
+    const { totalDebt: A_totalDebt } = await openTrove({ ICR: toBN(dec(118, 16)), extraPUSDAmount: dec(2000, 18), extraParams: { from: alice } })
+    const { totalDebt: B_totalDebt } = await openTrove({ ICR: toBN(dec(526, 16)), extraPUSDAmount: dec(8000, 18), extraParams: { from: bob } })
+    const { totalDebt: C_totalDebt } = await openTrove({ ICR: toBN(dec(488, 16)), extraPUSDAmount: dec(600, 18), extraParams: { from: carol } })
+    const { totalDebt: D_totalDebt } = await openTrove({ ICR: toBN(dec(545, 16)), extraPUSDAmount: dec(1, 23), extraParams: { from: dennis } })
+    await openTrove({ ICR: toBN(dec(10, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: erin } })
+    await openTrove({ ICR: toBN(dec(10, 18)), extraPUSDAmount: dec(1, 23), extraParams: { from: flyn } })
 
-    const YUSDinDefaultPool_0 = await defaultPool.getYUSDDebt()
+    const PUSDinDefaultPool_0 = await defaultPool.getPUSDDebt()
 
     // price drops to 200 
     await priceFeed.setPrice(dec(200, 18))
@@ -1225,7 +1225,7 @@ contract('Gas compensation tests', async accounts => {
       .add(carolColl.sub(_0pt5percent_carolColl))
       .add(dennisColl.sub(_0pt5percent_dennisColl))
 
-    // Expect liquidatedDebt = 51 + 190 + 1025 + 13510 = 14646 YUSD
+    // Expect liquidatedDebt = 51 + 190 + 1025 + 13510 = 14646 PUSD
     const expectedLiquidatedDebt = A_totalDebt.add(B_totalDebt).add(C_totalDebt).add(D_totalDebt)
 
     // Liquidate troves A-D
@@ -1245,11 +1245,11 @@ contract('Gas compensation tests', async accounts => {
     const _10_accounts = accounts.slice(1, 11)
 
     let debt = 50
-    // create 10 troves, constant coll, descending debt 100 to 90 YUSD
+    // create 10 troves, constant coll, descending debt 100 to 90 PUSD
     for (const account of _10_accounts) {
 
       const debtString = debt.toString().concat('000000000000000000')
-      await openTrove({ extraYUSDAmount: debtString, extraParams: { from: account, value: dec(30, 'ether') } })
+      await openTrove({ extraPUSDAmount: debtString, extraParams: { from: account, value: dec(30, 'ether') } })
 
       const squeezedTroveAddr = th.squeezeAddr(account)
 
@@ -1302,11 +1302,11 @@ contract('Gas compensation tests', async accounts => {
     const _20_accounts = accounts.slice(1, 21)
 
     let coll = 50
-    // create 20 troves, increasing collateral, constant debt = 100YUSD
+    // create 20 troves, increasing collateral, constant debt = 100PUSD
     for (const account of _20_accounts) {
 
       const collString = coll.toString().concat('000000000000000000')
-      await openTrove({ extraYUSDAmount: dec(100, 18), extraParams: { from: account, value: collString } })
+      await openTrove({ extraPUSDAmount: dec(100, 18), extraParams: { from: account, value: collString } })
 
       coll += 5
     }
@@ -1354,7 +1354,7 @@ contract('Gas compensation tests', async accounts => {
 
       const account = accountsList[accountIdx]
       const collString = coll.toString().concat('000000000000000000')
-      await openTrove({ extraYUSDAmount: dec(100, 18), extraParams: { from: account, value: collString } })
+      await openTrove({ extraPUSDAmount: dec(100, 18), extraParams: { from: account, value: collString } })
 
       accountIdx += 1
     }

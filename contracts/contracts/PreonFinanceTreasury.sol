@@ -6,10 +6,10 @@ import "./Interfaces/IERC20.sol";
 import "./Dependencies/SafeERC20.sol";
 
 /*
- * Brought to you by @YetiFinance
- * Holds/Distributes Yeti Finance Treasury Tokens
+ * Brought to you by @PreonFinance
+ * Holds/Distributes Preon Finance Treasury Tokens
  */
-contract YetiFinanceTreasury {
+contract PreonFinanceTreasury {
   using SafeERC20 for IERC20;
 
   address teamWallet;

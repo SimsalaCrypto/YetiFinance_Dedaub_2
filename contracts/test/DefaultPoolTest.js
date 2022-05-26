@@ -21,7 +21,7 @@ contract('DefaultPool', async accounts => {
     await defaultPool.setAddresses(mockTroveManager.address, mockActivePool.address)
   })
 
-  // @KingYeti: no longer sending ETH
+  // @KingPreon: no longer sending ETH
   // it('sendETHToActivePool(): fails if receiver cannot receive ETH', async () => {
   //   const amount = dec(1, 'ether')
   //

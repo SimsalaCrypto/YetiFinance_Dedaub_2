@@ -3,9 +3,9 @@
 pragma solidity 0.6.11;
 
 import "../Interfaces/IActivePool.sol";
-import "../Interfaces/IYetiController.sol";
+import "../Interfaces/IPreonController.sol";
 import "../Interfaces/IERC20.sol";
-import "../Interfaces/IYetiVaultToken.sol";
+import "../Interfaces/IPreonVaultToken.sol";
 import "../Interfaces/IDefaultPool.sol";
 import "../Dependencies/SafeMath.sol";
 import "../Dependencies/PoolBase2.sol";
@@ -44,8 +44,8 @@ import "../Dependencies/SafeERC20.sol";
 //      \__|   \_______|  \____/ \__|      \__|      \__|\__|  \__| \_______|\__|  \__| \_______| \_______|
 
 /**
- * @title Holds the all collateral and YUSD debt (but not YUSD tokens) for all active troves
- * @notice When a trove is liquidated, its collateral and YUSD debt are transferred from the Active Pool, to either the
+ * @title Holds the all collateral and PUSD debt (but not PUSD tokens) for all active troves
+ * @notice When a trove is liquidated, its collateral and PUSD debt are transferred from the Active Pool, to either the
  * Stability Pool, the Default Pool, or both, depending on the liquidation conditions
  */
 contract ActivePool is IActivePool, PoolBase2 {
@@ -65,12 +65,12 @@ contract ActivePool is IActivePool, PoolBase2 {
   // deposited collateral tracker. Colls is always the controller list of all collateral tokens. Amounts
   newColls internal poolColl;
 
-  // YUSD Debt tracker. Tracker of all debt in the system.
-  uint256 public YUSDDebt;
+  // PUSD Debt tracker. Tracker of all debt in the system.
+  uint256 public PUSDDebt;
 
   // --- Events ---
 
-  event ActivePoolYUSDDebtUpdated(uint256 _YUSDDebt);
+  event ActivePoolPUSDDebtUpdated(uint256 _PUSDDebt);
   event ActivePoolBalanceUpdated(address _collateral, uint256 _amount);
   event ActivePoolBalancesUpdated(address[] _collaterals, uint256[] _amounts);
   event CollateralsSent(
@@ -102,7 +102,7 @@ contract ActivePool is IActivePool, PoolBase2 {
     troveManagerAddress = _troveManagerAddress;
     stabilityPoolAddress = _stabilityPoolAddress;
     defaultPoolAddress = _defaultPoolAddress;
-    controller = IYetiController(_controllerAddress);
+    controller = IPreonController(_controllerAddress);
     troveManagerLiquidationsAddress = _troveManagerLiquidationsAddress;
     troveManagerRedemptionsAddress = _troveManagerRedemptionsAddress;
     collSurplusPoolAddress = _collSurplusPoolAddress;
@@ -151,7 +151,7 @@ contract ActivePool is IActivePool, PoolBase2 {
   /**
    * @notice returns the individual Amount value of a subset of collaterals in this contract and the Default Pool
    * contract as well. AP + DP Balance
-   * @dev used in getTotalVariableDepositFeeAndUpdate in YetiController
+   * @dev used in getTotalVariableDepositFeeAndUpdate in PreonController
    * @param _collaterals collaterals to get the amount value of
    * @return the Amounts of the collaterals in this contract and the Default Pool
    */
@@ -243,10 +243,10 @@ contract ActivePool is IActivePool, PoolBase2 {
   }
 
   /**
-   * @notice returns YUSD Debt that this pool holds
+   * @notice returns PUSD Debt that this pool holds
    */
-  function getYUSDDebt() external view override returns (uint256) {
-    return YUSDDebt;
+  function getPUSDDebt() external view override returns (uint256) {
+    return PUSDDebt;
   }
 
   // --- Pool functionality ---
@@ -340,7 +340,7 @@ contract ActivePool is IActivePool, PoolBase2 {
 
           // Unwraps for original owner. _amounts[i] is in terms of the receipt token, and
           // the user will receive back the underlying based on the current exchange rate.
-          IYetiVaultToken(collateral).redeem(_to, amount);
+          IPreonVaultToken(collateral).redeem(_to, amount);
         } else {
           _sendCollateral(_to, _tokens[i], amount, indices[i]); // reverts if send fails
         }
@@ -374,7 +374,7 @@ contract ActivePool is IActivePool, PoolBase2 {
       // Unwraps for original owner. _amounts[i] is in terms of the receipt token, and
       // the user will receive back the underlying based on the current exchange rate.
       _logCollateralDecrease(_to, _token, _amount, controller.getIndex(_token));
-      IYetiVaultToken(_token).redeem(_to, _amount);
+      IPreonVaultToken(_token).redeem(_to, _amount);
     } else {
       _sendCollateral(_to, _token, _amount, controller.getIndex(_token)); // reverts if send fails
     }
@@ -396,23 +396,23 @@ contract ActivePool is IActivePool, PoolBase2 {
   }
 
   /**
-   * @notice Increases the tracked YUSD Debt of this pool.
+   * @notice Increases the tracked PUSD Debt of this pool.
    * @param _amount to increase by
    */
-  function increaseYUSDDebt(uint256 _amount) external override {
+  function increasePUSDDebt(uint256 _amount) external override {
     _requireCallerIsBOorTMorTML();
-    YUSDDebt = YUSDDebt.add(_amount);
-    emit ActivePoolYUSDDebtUpdated(YUSDDebt);
+    PUSDDebt = PUSDDebt.add(_amount);
+    emit ActivePoolPUSDDebtUpdated(PUSDDebt);
   }
 
   /**
-   * @notice Increases the tracked YUSD Debt of this pool.
+   * @notice Increases the tracked PUSD Debt of this pool.
    * @param _amount to decrease by
    */
-  function decreaseYUSDDebt(uint256 _amount) external override {
+  function decreasePUSDDebt(uint256 _amount) external override {
     _requireCallerIsBOorTroveMorSP();
-    YUSDDebt = YUSDDebt.sub(_amount);
-    emit ActivePoolYUSDDebtUpdated(YUSDDebt);
+    PUSDDebt = PUSDDebt.sub(_amount);
+    emit ActivePoolPUSDDebtUpdated(PUSDDebt);
   }
 
   /**
@@ -434,7 +434,7 @@ contract ActivePool is IActivePool, PoolBase2 {
    * @param _collateral The address of the collateral
    */
   function addCollateralType(address _collateral) external override {
-    _requireCallerIsYetiController();
+    _requireCallerIsPreonController();
     poolColl.tokens.push(_collateral);
     poolColl.amounts.push(0);
   }

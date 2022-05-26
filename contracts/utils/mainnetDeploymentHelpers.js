@@ -77,7 +77,7 @@ class MainnetDeploymentHelper {
     const collSurplusPoolFactory = await this.getFactory("CollSurplusPool")
     const borrowerOperationsFactory = await this.getFactory("BorrowerOperations")
     const hintHelpersFactory = await this.getFactory("HintHelpers")
-    const yusdTokenFactory = await this.getFactory("YUSDToken")
+    const pusdTokenFactory = await this.getFactory("PUSDToken")
     const tellorCallerFactory = await this.getFactory("TellorCaller")
     const troveManagerLiquidationsFactory = await this.getFactory("TroveManagerLiquidations")
     const troveManagerRedemptionsFactory = await this.getFactory("TroveManagerRedemptions")
@@ -100,18 +100,18 @@ class MainnetDeploymentHelper {
     const troveManagerRedemptions = await this.loadOrDeploy(troveManagerRedemptionsFactory, 'troveManagerRedemptions', deploymentState)
     const whitelist = await this.loadOrDeploy(whitelistFactory, 'whitelist', deploymentState)
 
-    const yusdTokenParams = [
+    const pusdTokenParams = [
       troveManager.address,
       troveManagerLiquidations.address,
       troveManagerRedemptions.address,
       stabilityPool.address,
       borrowerOperations.address
     ]
-    const yusdToken = await this.loadOrDeploy(
-      yusdTokenFactory,
-      'yusdToken',
+    const pusdToken = await this.loadOrDeploy(
+      pusdTokenFactory,
+      'pusdToken',
       deploymentState,
-      yusdTokenParams
+      pusdTokenParams
     )
 
     if (!this.configParams.ETHERSCAN_BASE_URL) {
@@ -130,13 +130,13 @@ class MainnetDeploymentHelper {
       // await this.verifyContract('borrowerOperations', deploymentState)
       // await this.verifyContract('hintHelpers', deploymentState)
       // await this.verifyContract('tellorCaller', deploymentState, [tellorMasterAddr])
-      // await this.verifyContract('yusdToken', deploymentState, yusdTokenParams)
+      // await this.verifyContract('pusdToken', deploymentState, pusdTokenParams)
     }
 
     const coreContracts = {
       priceFeed,
       whitelist,
-      yusdToken,
+      pusdToken,
       sortedTroves,
       troveManager,
       troveManagerLiquidations,
@@ -153,47 +153,47 @@ class MainnetDeploymentHelper {
     return coreContracts
   }
 
-  async deployYETIContractsMainnet(bountyAddress, lpRewardsAddress, multisigAddress, deploymentState) {
-    const sYETIFactory = await this.getFactory("sYETIToken")
+  async deployPREONContractsMainnet(bountyAddress, lpRewardsAddress, multisigAddress, deploymentState) {
+    const sPREONFactory = await this.getFactory("sPREONToken")
     const lockupContractFactory_Factory = await this.getFactory("LockupContractFactory")
     const communityIssuanceFactory = await this.getFactory("CommunityIssuance")
-    const yetiTokenFactory = await this.getFactory("YETIToken")
+    const preonTokenFactory = await this.getFactory("PREONToken")
 
-    const sYETI = await this.loadOrDeploy(sYETIFactory, 'sYETI', deploymentState)
+    const sPREON = await this.loadOrDeploy(sPREONFactory, 'sPREON', deploymentState)
     const lockupContractFactory = await this.loadOrDeploy(lockupContractFactory_Factory, 'lockupContractFactory', deploymentState)
     const communityIssuance = await this.loadOrDeploy(communityIssuanceFactory, 'communityIssuance', deploymentState)
 
-    // Deploy YETI Token, passing Community Issuance and Factory addresses to the constructor
+    // Deploy PREON Token, passing Community Issuance and Factory addresses to the constructor
     // TODO: these two multisigAddresses should be updated to contracts for Treasury and Team that implement specific locking
-    const yetiTokenParams = [
-      sYETI.address,
+    const preonTokenParams = [
+      sPREON.address,
       communityIssuance.address,
       communityIssuance.address
     ]
 
-    const yetiToken = await this.loadOrDeploy(
-      yetiTokenFactory,
-      'yetiToken',
+    const preonToken = await this.loadOrDeploy(
+      preonTokenFactory,
+      'preonToken',
       deploymentState,
-      yetiTokenParams
+      preonTokenParams
     )
 
     if (!this.configParams.ETHERSCAN_BASE_URL) {
       console.log('No Etherscan Url defined, skipping verification')
     } else {
-      await this.verifyContract('sYETI', deploymentState)
+      await this.verifyContract('sPREON', deploymentState)
       await this.verifyContract('lockupContractFactory', deploymentState)
       await this.verifyContract('communityIssuance', deploymentState)
-      await this.verifyContract('yetiToken', deploymentState, yetiTokenParams)
+      await this.verifyContract('preonToken', deploymentState, preonTokenParams)
     }
 
-    const YETIContracts = {
-      sYETI,
+    const PREONContracts = {
+      sPREON,
       lockupContractFactory,
       communityIssuance,
-      yetiToken
+      preonToken
     }
-    return YETIContracts
+    return PREONContracts
   }
 
   async deployUnipoolMainnet(deploymentState) {
@@ -253,7 +253,7 @@ class MainnetDeploymentHelper {
     return owner == ZERO_ADDRESS
   }
   // Connect contracts to their dependencies
-  async connectCoreContractsMainnet(contracts, YETIContracts, chainlinkProxyAddress) {
+  async connectCoreContractsMainnet(contracts, PREONContracts, chainlinkProxyAddress) {
     const gasPrice = this.configParams.GAS_PRICE
     // Set ChainlinkAggregatorProxy and TellorCaller in the PriceFeed
     await this.isOwnershipRenounced(contracts.priceFeed) ||
@@ -278,10 +278,10 @@ class MainnetDeploymentHelper {
         contracts.stabilityPool.address,
         contracts.gasPool.address,
         contracts.collSurplusPool.address,
-        contracts.yusdToken.address,
+        contracts.pusdToken.address,
         contracts.sortedTroves.address,
-        YETIContracts.yetiToken.address,
-        YETIContracts.sYETI.address,
+        PREONContracts.preonToken.address,
+        PREONContracts.sPREON.address,
         contracts.whitelist.address,
         contracts.troveManagerRedemptions.address,
         contracts.troveManagerLiquidations.address,
@@ -297,10 +297,10 @@ class MainnetDeploymentHelper {
       contracts.stabilityPool.address,
       contracts.gasPool.address,
       contracts.collSurplusPool.address,
-      contracts.yusdToken.address,
+      contracts.pusdToken.address,
       contracts.sortedTroves.address,
-      YETIContracts.yetiToken.address,
-      YETIContracts.sYETI.address,
+      PREONContracts.preonToken.address,
+      PREONContracts.sPREON.address,
       contracts.whitelist.address,
       contracts.troveManager.address,
       {gasPrice}
@@ -314,10 +314,10 @@ class MainnetDeploymentHelper {
       contracts.stabilityPool.address,
       contracts.gasPool.address,
       contracts.collSurplusPool.address,
-      contracts.yusdToken.address,
+      contracts.pusdToken.address,
       contracts.sortedTroves.address,
-      YETIContracts.yetiToken.address,
-      YETIContracts.sYETI.address,
+      PREONContracts.preonToken.address,
+      PREONContracts.sPREON.address,
       contracts.whitelist.address,
       contracts.troveManager.address,
       {gasPrice}
@@ -333,8 +333,8 @@ class MainnetDeploymentHelper {
         contracts.gasPool.address,
         contracts.collSurplusPool.address,
         contracts.sortedTroves.address,
-        contracts.yusdToken.address,
-        YETIContracts.sYETI.address,
+        contracts.pusdToken.address,
+        PREONContracts.sPREON.address,
         contracts.whitelist.address,
 	{gasPrice}
       ))
@@ -345,9 +345,9 @@ class MainnetDeploymentHelper {
         contracts.borrowerOperations.address,
         contracts.troveManager.address,
         contracts.activePool.address,
-        contracts.yusdToken.address,
+        contracts.pusdToken.address,
         contracts.sortedTroves.address,
-        YETIContracts.communityIssuance.address,
+        PREONContracts.communityIssuance.address,
         contracts.whitelist.address,
         contracts.troveManagerLiquidations.address,
 	{gasPrice}
@@ -394,39 +394,39 @@ class MainnetDeploymentHelper {
       ))
   }
 
-  async connectYETIContractsMainnet(YETIContracts) {
+  async connectPREONContractsMainnet(PREONContracts) {
     const gasPrice = this.configParams.GAS_PRICE
-    // Set YETIToken address in LCF
-    await this.isOwnershipRenounced(YETIContracts.sYETI) ||
-      await this.sendAndWaitForTransaction(YETIContracts.lockupContractFactory.setYETITokenAddress(YETIContracts.yetiToken.address, {gasPrice}))
+    // Set PREONToken address in LCF
+    await this.isOwnershipRenounced(PREONContracts.sPREON) ||
+      await this.sendAndWaitForTransaction(PREONContracts.lockupContractFactory.setPREONTokenAddress(PREONContracts.preonToken.address, {gasPrice}))
   }
 
-  async connectYETIContractsToCoreMainnet(YETIContracts, coreContracts) {
+  async connectPREONContractsToCoreMainnet(PREONContracts, coreContracts) {
     const gasPrice = this.configParams.GAS_PRICE
-    await this.isOwnershipRenounced(YETIContracts.sYETI) ||
-      await this.sendAndWaitForTransaction(YETIContracts.sYETI.setAddresses(
-        YETIContracts.yetiToken.address,
-        coreContracts.yusdToken.address,
+    await this.isOwnershipRenounced(PREONContracts.sPREON) ||
+      await this.sendAndWaitForTransaction(PREONContracts.sPREON.setAddresses(
+        PREONContracts.preonToken.address,
+        coreContracts.pusdToken.address,
 	{gasPrice}
       ))
 
-    await this.isOwnershipRenounced(YETIContracts.communityIssuance) ||
-      await this.sendAndWaitForTransaction(YETIContracts.communityIssuance.setAddresses(
-        YETIContracts.yetiToken.address,
+    await this.isOwnershipRenounced(PREONContracts.communityIssuance) ||
+      await this.sendAndWaitForTransaction(PREONContracts.communityIssuance.setAddresses(
+        PREONContracts.preonToken.address,
         coreContracts.stabilityPool.address,
 	{gasPrice}
       ))
   }
 
-  async connectUnipoolMainnet(uniPool, YETIContracts, YUSDWETHPairAddr, duration) {
+  async connectUnipoolMainnet(uniPool, PREONContracts, PUSDWETHPairAddr, duration) {
     const gasPrice = this.configParams.GAS_PRICE
     await this.isOwnershipRenounced(uniPool) ||
-      await this.sendAndWaitForTransaction(uniPool.setParams(YETIContracts.yetiToken.address, YUSDWETHPairAddr, duration, {gasPrice}))
+      await this.sendAndWaitForTransaction(uniPool.setParams(PREONContracts.preonToken.address, PUSDWETHPairAddr, duration, {gasPrice}))
   }
 
   // --- Verify on Ethrescan ---
   async verifyContract(name, deploymentState, constructorArguments=[]) {
-    console.log("@KingYeti: commented out verifyContract function")
+    console.log("@KingPreon: commented out verifyContract function")
     // if (!deploymentState[name] || !deploymentState[name].address) {
     //   console.error(`  --> No deployment state for contract ${name}!!`)
     //   return

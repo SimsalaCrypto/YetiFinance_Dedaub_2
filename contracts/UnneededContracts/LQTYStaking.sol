@@ -7,31 +7,31 @@ import "../Dependencies/SafeMath.sol";
 import "../Dependencies/Ownable.sol";
 import "../Dependencies/CheckContract.sol";
 import "hardhat/console.sol";
-import "../Interfaces/IYETIToken.sol";
-import "../Interfaces/ISYETI.sol";
+import "../Interfaces/IPREONToken.sol";
+import "../Interfaces/ISPREON.sol";
 import "../Dependencies/LiquityMath.sol";
-import "../Interfaces/IYUSDToken.sol";
+import "../Interfaces/IPUSDToken.sol";
 
-contract SYETI is ISYETI, Ownable, CheckContract, BaseMath {
+contract SPREON is ISPREON, Ownable, CheckContract, BaseMath {
     using SafeMath for uint;
 
     // --- Data ---
-    bytes32 constant public NAME = "YETIStaking";
+    bytes32 constant public NAME = "PREONStaking";
 
     mapping( address => uint) public stakes;
-    uint public totalYETIStaked;
+    uint public totalPREONStaked;
 
-    uint public F_YUSD; // Running sum of YETI fees per-YETI-staked
+    uint public F_PUSD; // Running sum of PREON fees per-PREON-staked
 
-    // User snapshots of F_YUSD, taken at the point at which their latest deposit was made
+    // User snapshots of F_PUSD, taken at the point at which their latest deposit was made
     mapping (address => Snapshot) public snapshots;
 
     struct Snapshot {
-        uint F_YUSD_Snapshot;
+        uint F_PUSD_Snapshot;
     }
 
-    IYETIToken public yetiToken;
-    IYUSDToken public yusdToken;
+    IPREONToken public preonToken;
+    IPUSDToken public pusdToken;
 
     address public troveManagerAddress;
     address public troveManagerRedemptionsAddress;
@@ -40,26 +40,26 @@ contract SYETI is ISYETI, Ownable, CheckContract, BaseMath {
 
     // --- Events ---
 
-    event YETITokenAddressSet(address _yetiTokenAddress);
-    event YUSDTokenAddressSet(address _yusdTokenAddress);
+    event PREONTokenAddressSet(address _preonTokenAddress);
+    event PUSDTokenAddressSet(address _pusdTokenAddress);
     event TroveManagerAddressSet(address _troveManager);
     event TroveManagerRedemptionsAddressSet(address _troveManagerRedemptionsAddress);
     event BorrowerOperationsAddressSet(address _borrowerOperationsAddress);
     event ActivePoolAddressSet(address _activePoolAddress);
 
     event StakeChanged(address indexed staker, uint newStake);
-    event StakingGainsWithdrawn(address indexed staker, uint YUSDGain);
-    event F_YUSDUpdated(uint _F_YUSD);
-    event TotalYETIStakedUpdated(uint _totalYETIStaked);
+    event StakingGainsWithdrawn(address indexed staker, uint PUSDGain);
+    event F_PUSDUpdated(uint _F_PUSD);
+    event TotalPREONStakedUpdated(uint _totalPREONStaked);
     event EtherSent(address _account, uint _amount);
-    event StakerSnapshotsUpdated(address _staker, uint _F_YUSD);
+    event StakerSnapshotsUpdated(address _staker, uint _F_PUSD);
 
     // --- Functions ---
 
     function setAddresses
     (
-        address _yetiTokenAddress,
-        address _yusdTokenAddress,
+        address _preonTokenAddress,
+        address _pusdTokenAddress,
         address _troveManagerAddress,
         address _troveManagerRedemptionsAddress,
         address _borrowerOperationsAddress,
@@ -69,22 +69,22 @@ contract SYETI is ISYETI, Ownable, CheckContract, BaseMath {
         onlyOwner
         override
     {
-        checkContract(_yetiTokenAddress);
-        checkContract(_yusdTokenAddress);
+        checkContract(_preonTokenAddress);
+        checkContract(_pusdTokenAddress);
         checkContract(_troveManagerAddress);
         checkContract(_troveManagerRedemptionsAddress);
         checkContract(_borrowerOperationsAddress);
         checkContract(_activePoolAddress);
 
-        yetiToken = IYETIToken(_yetiTokenAddress);
-        yusdToken = IYUSDToken(_yusdTokenAddress);
+        preonToken = IPREONToken(_preonTokenAddress);
+        pusdToken = IPUSDToken(_pusdTokenAddress);
         troveManagerAddress = _troveManagerAddress;
         troveManagerRedemptionsAddress = _troveManagerRedemptionsAddress;
         borrowerOperationsAddress = _borrowerOperationsAddress;
         activePoolAddress = _activePoolAddress;
 
-        emit YETITokenAddressSet(_yetiTokenAddress);
-        emit YETITokenAddressSet(_yusdTokenAddress);
+        emit PREONTokenAddressSet(_preonTokenAddress);
+        emit PREONTokenAddressSet(_pusdTokenAddress);
         emit TroveManagerAddressSet(_troveManagerAddress);
         emit TroveManagerRedemptionsAddressSet(_troveManagerRedemptionsAddress);
         emit BorrowerOperationsAddressSet(_borrowerOperationsAddress);
@@ -93,74 +93,74 @@ contract SYETI is ISYETI, Ownable, CheckContract, BaseMath {
         _renounceOwnership();
     }
 
-    // If caller has a pre-existing stake, send any accumulated YUSD gains to them.
-    function stake(uint _YETIamount) external override {
-        _requireNonZeroAmount(_YETIamount);
+    // If caller has a pre-existing stake, send any accumulated PUSD gains to them.
+    function stake(uint _PREONamount) external override {
+        _requireNonZeroAmount(_PREONamount);
 
         uint currentStake = stakes[msg.sender];
 
 //        uint ETHGain;
-        uint YUSDGain;
-        // Grab any accumulated ETH and YUSD gains from the current stake
+        uint PUSDGain;
+        // Grab any accumulated ETH and PUSD gains from the current stake
         if (currentStake != 0) {
 //            ETHGain = _getPendingETHGain(msg.sender);
-            YUSDGain = _getPendingYUSDGain(msg.sender);
+            PUSDGain = _getPendingPUSDGain(msg.sender);
         }
 
        _updateUserSnapshots(msg.sender);
 
-        uint newStake = currentStake.add(_YETIamount);
+        uint newStake = currentStake.add(_PREONamount);
 
-        // Increase user’s stake and total YETI staked
+        // Increase user’s stake and total PREON staked
         stakes[msg.sender] = newStake;
-        totalYETIStaked = totalYETIStaked.add(_YETIamount);
-        emit TotalYETIStakedUpdated(totalYETIStaked);
+        totalPREONStaked = totalPREONStaked.add(_PREONamount);
+        emit TotalPREONStakedUpdated(totalPREONStaked);
 
-        // Transfer YETI from caller to this contract
-        yetiToken.sendToSYETI(msg.sender, _YETIamount);
+        // Transfer PREON from caller to this contract
+        preonToken.sendToSPREON(msg.sender, _PREONamount);
 
         emit StakeChanged(msg.sender, newStake);
-        emit StakingGainsWithdrawn(msg.sender, YUSDGain);
+        emit StakingGainsWithdrawn(msg.sender, PUSDGain);
 
-         // Send accumulated YUSD gains to the caller
+         // Send accumulated PUSD gains to the caller
         if (currentStake != 0) {
-            yusdToken.transfer(msg.sender, YUSDGain);
+            pusdToken.transfer(msg.sender, PUSDGain);
 //            _sendETHGainToUser(ETHGain);
         }
     }
 
-    // Unstake the YETI and send the it back to the caller, along with their accumulated YUSD gains.
+    // Unstake the PREON and send the it back to the caller, along with their accumulated PUSD gains.
     // If requested amount > stake, send their entire stake.
-    function unstake(uint _YETIamount) external override {
+    function unstake(uint _PREONamount) external override {
         uint currentStake = stakes[msg.sender];
         _requireUserHasStake(currentStake);
 
-        // Grab any accumulated YUSD gains from the current stake
+        // Grab any accumulated PUSD gains from the current stake
 //        uint ETHGain = _getPendingETHGain(msg.sender);
-        uint YUSDGain = _getPendingYUSDGain(msg.sender);
+        uint PUSDGain = _getPendingPUSDGain(msg.sender);
 
         _updateUserSnapshots(msg.sender);
 
-        if (_YETIamount != 0) {
-            uint YETIToWithdraw = LiquityMath._min(_YETIamount, currentStake);
+        if (_PREONamount != 0) {
+            uint PREONToWithdraw = LiquityMath._min(_PREONamount, currentStake);
 
-            uint newStake = currentStake.sub(YETIToWithdraw);
+            uint newStake = currentStake.sub(PREONToWithdraw);
 
-            // Decrease user's stake and total YETI staked
+            // Decrease user's stake and total PREON staked
             stakes[msg.sender] = newStake;
-            totalYETIStaked = totalYETIStaked.sub(YETIToWithdraw);
-            emit TotalYETIStakedUpdated(totalYETIStaked);
+            totalPREONStaked = totalPREONStaked.sub(PREONToWithdraw);
+            emit TotalPREONStakedUpdated(totalPREONStaked);
 
-            // Transfer unstaked YETI to user
-            yetiToken.transfer(msg.sender, YETIToWithdraw);
+            // Transfer unstaked PREON to user
+            preonToken.transfer(msg.sender, PREONToWithdraw);
 
             emit StakeChanged(msg.sender, newStake);
         }
 
-        emit StakingGainsWithdrawn(msg.sender, YUSDGain);
+        emit StakingGainsWithdrawn(msg.sender, PUSDGain);
 
-        // Send accumulated YUSD gains to the caller
-        yusdToken.transfer(msg.sender, YUSDGain);
+        // Send accumulated PUSD gains to the caller
+        pusdToken.transfer(msg.sender, PUSDGain);
 //        _sendETHGainToUser(ETHGain);
     }
 
@@ -168,22 +168,22 @@ contract SYETI is ISYETI, Ownable, CheckContract, BaseMath {
 
 //    function increaseF_ETH(uint _ETHFee) external override {
 //        _requireCallerIsTroveManager();
-//        uint ETHFeePerYETIStaked;
+//        uint ETHFeePerPREONStaked;
 //
-//        if (totalYETIStaked != 0) {ETHFeePerYETIStaked = _ETHFee.mul(DECIMAL_PRECISION).div(totalYETIStaked);}
+//        if (totalPREONStaked != 0) {ETHFeePerPREONStaked = _ETHFee.mul(DECIMAL_PRECISION).div(totalPREONStaked);}
 //
-//        F_ETH = F_ETH.add(ETHFeePerYETIStaked);
+//        F_ETH = F_ETH.add(ETHFeePerPREONStaked);
 //        emit F_ETHUpdated(F_ETH);
 //    }
 
-    function increaseF_YUSD(uint _YUSDFee) external override {
+    function increaseF_PUSD(uint _PUSDFee) external override {
         _requireCallerIsBOOrTM();
-        uint YUSDFeePerYETIStaked;
+        uint PUSDFeePerPREONStaked;
 
-        if (totalYETIStaked != 0) {YUSDFeePerYETIStaked = _YUSDFee.mul(DECIMAL_PRECISION).div(totalYETIStaked);}
+        if (totalPREONStaked != 0) {PUSDFeePerPREONStaked = _PUSDFee.mul(DECIMAL_PRECISION).div(totalPREONStaked);}
 
-        F_YUSD = F_YUSD.add(YUSDFeePerYETIStaked);
-        emit F_YUSDUpdated(F_YUSD);
+        F_PUSD = F_PUSD.add(PUSDFeePerPREONStaked);
+        emit F_PUSDUpdated(F_PUSD);
     }
 
     // --- Pending reward functions ---
@@ -198,53 +198,53 @@ contract SYETI is ISYETI, Ownable, CheckContract, BaseMath {
 //        return ETHGain;
 //    }
 
-    function getPendingYUSDGain(address _user) external view override returns (uint) {
-        return _getPendingYUSDGain(_user);
+    function getPendingPUSDGain(address _user) external view override returns (uint) {
+        return _getPendingPUSDGain(_user);
     }
 
-    function _getPendingYUSDGain(address _user) internal view returns (uint) {
-        uint F_YUSD_Snapshot = snapshots[_user].F_YUSD_Snapshot;
-        uint YUSDGain = stakes[_user].mul(F_YUSD.sub(F_YUSD_Snapshot)).div(DECIMAL_PRECISION);
-        return YUSDGain;
+    function _getPendingPUSDGain(address _user) internal view returns (uint) {
+        uint F_PUSD_Snapshot = snapshots[_user].F_PUSD_Snapshot;
+        uint PUSDGain = stakes[_user].mul(F_PUSD.sub(F_PUSD_Snapshot)).div(DECIMAL_PRECISION);
+        return PUSDGain;
     }
 
     // --- Internal helper functions ---
 
     function _updateUserSnapshots(address _user) internal {
 //        snapshots[_user].F_ETH_Snapshot = F_ETH;
-        snapshots[_user].F_YUSD_Snapshot = F_YUSD;
-        emit StakerSnapshotsUpdated(_user, F_YUSD);
+        snapshots[_user].F_PUSD_Snapshot = F_PUSD;
+        emit StakerSnapshotsUpdated(_user, F_PUSD);
     }
 
 //    function _sendETHGainToUser(uint ETHGain) internal {
 //        emit EtherSent(msg.sender, ETHGain);
 //        (bool success, ) = msg.sender.call{value: ETHGain}("");
-//        require(success, "SYETI: Failed to send accumulated ETHGain");
+//        require(success, "SPREON: Failed to send accumulated ETHGain");
 //    }
 
     // --- 'require' functions ---
 
     function _requireCallerIsTroveManager() internal view {
-        require(msg.sender == troveManagerAddress, "SYETI: caller is not TroveM");
+        require(msg.sender == troveManagerAddress, "SPREON: caller is not TroveM");
     }
 
     function _requireCallerIsBOOrTM() internal view {
         require(((msg.sender == troveManagerAddress)
         || (msg.sender == borrowerOperationsAddress))
         || (msg.sender == troveManagerRedemptionsAddress),
-            "SYETI: caller is not BorrowerOps");
+            "SPREON: caller is not BorrowerOps");
     }
 
      function _requireCallerIsActivePool() internal view {
-        require(msg.sender == activePoolAddress, "SYETI: caller is not ActivePool");
+        require(msg.sender == activePoolAddress, "SPREON: caller is not ActivePool");
     }
 
     function _requireUserHasStake(uint currentStake) internal pure {
-        require(currentStake != 0, 'SYETI: User must have a non-zero stake');
+        require(currentStake != 0, 'SPREON: User must have a non-zero stake');
     }
 
     function _requireNonZeroAmount(uint _amount) internal pure {
-        require(_amount != 0, 'SYETI: Amount must be non-zero');
+        require(_amount != 0, 'SPREON: Amount must be non-zero');
     }
 
     receive() external payable {

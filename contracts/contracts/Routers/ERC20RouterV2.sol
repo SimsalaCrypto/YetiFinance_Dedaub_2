@@ -2,20 +2,20 @@
 
 pragma solidity 0.6.11;
 
-import "../Interfaces/IYetiRouter.sol";
+import "../Interfaces/IPreonRouter.sol";
 import "../Interfaces/IERC20.sol";
 import "../Dependencies/SafeMath.sol";
 import "../Dependencies/Ownable.sol";
-import "../YUSDToken.sol";
+import "../PUSDToken.sol";
 
-// ERC20 router contract to be used for routing YUSD -> ERC20 and then wrapping.
+// ERC20 router contract to be used for routing PUSD -> ERC20 and then wrapping.
 // simple router using TJ router.
-contract ERC20RouterV2 is Ownable, IYetiRouter {
+contract ERC20RouterV2 is Ownable, IPreonRouter {
   using SafeMath for uint256;
 
   address internal activePoolAddress;
   address internal traderJoeRouter;
-  address internal yusdTokenAddress;
+  address internal pusdTokenAddress;
   string public name;
   event RouteSet(address, address, address[]);
 
@@ -24,19 +24,19 @@ contract ERC20RouterV2 is Ownable, IYetiRouter {
 
   // Usage: type = nodeType[path[i]]
   // 1 = traderJoe
-  // 2 = yusdMetapool
+  // 2 = pusdMetapool
   // 3 = aToken
   // 4 = qToken
   //
   mapping(address => uint256) public nodeTypes;
 
-  mapping(address => int128) public yusdMetapoolIndex;
+  mapping(address => int128) public pusdMetapoolIndex;
 
   constructor(
     string memory _name,
     address _activePoolAddress,
     address _traderJoeRouter,
-    address _yusdTokenAddress,
+    address _pusdTokenAddress,
     address _USDC,
     address _USDT,
     address _DAI
@@ -44,12 +44,12 @@ contract ERC20RouterV2 is Ownable, IYetiRouter {
     name = _name;
     activePoolAddress = _activePoolAddress;
     traderJoeRouter = _traderJoeRouter;
-    yusdTokenAddress = _yusdTokenAddress;
-    yusdMetapoolIndex[_yusdTokenAddress] = 0;
-    yusdMetapoolIndex[_USDC] = 1;
-    yusdMetapoolIndex[_USDT] = 2;
-    yusdMetapoolIndex[_DAI] = 3;
-    yusdMetapoolIndex[_yusdTokenAddress] = 4;
+    pusdTokenAddress = _pusdTokenAddress;
+    pusdMetapoolIndex[_pusdTokenAddress] = 0;
+    pusdMetapoolIndex[_USDC] = 1;
+    pusdMetapoolIndex[_USDT] = 2;
+    pusdMetapoolIndex[_DAI] = 3;
+    pusdMetapoolIndex[_pusdTokenAddress] = 4;
   }
 
   function setApprovals(
@@ -134,31 +134,31 @@ contract ERC20RouterV2 is Ownable, IYetiRouter {
     amountIn = (numerator / denominator).add(1);
   }
 
-  function swapYUSDMetapool(
+  function swapPUSDMetapool(
     address _token,
     address _metapool,
-    bool YUSDIn
+    bool PUSDIn
   ) internal returns (address) {
     uint256 amountIn = IERC20(_token).balanceOf(address(this));
 
-    if (YUSDIn) {
-      // Swap YUSD for _token
+    if (PUSDIn) {
+      // Swap PUSD for _token
       IMeta(_metapool).exchange_underlying(
         0,
-        yusdMetapoolIndex[_token],
+        pusdMetapoolIndex[_token],
         amountIn,
         0
       );
       return _token;
     } else {
-      // Swap _token for YUSD
+      // Swap _token for PUSD
       IMeta(_metapool).exchange_underlying(
-        yusdMetapoolIndex[_token],
+        pusdMetapoolIndex[_token],
         0,
         amountIn,
         0
       );
-      return yusdTokenAddress;
+      return pusdTokenAddress;
     }
   }
 
@@ -172,19 +172,19 @@ contract ERC20RouterV2 is Ownable, IYetiRouter {
     uint256 _minSwapAmount
   ) public override returns (uint256) {
     require(
-      _startingTokenAddress == yusdTokenAddress,
-      "Cannot route from a token other than YUSD"
+      _startingTokenAddress == pusdTokenAddress,
+      "Cannot route from a token other than PUSD"
     );
     address[] memory path = routes[_startingTokenAddress][_endingTokenAddress];
     require(path.length > 0, "No route found");
-    IERC20(yusdTokenAddress).transferFrom(_fromUser, address(this), _amount);
+    IERC20(pusdTokenAddress).transferFrom(_fromUser, address(this), _amount);
     for (uint256 i; i < path.length; i++) {
       if (nodeTypes[path[i]] == 1) {
         // Is traderjoe
         _startingTokenAddress = swapJoePair(path[i], _startingTokenAddress);
       } else if (nodeTypes[path[i]] == 2) {
-        // Is yusd metapool
-        _startingTokenAddress = swapYUSDMetapool(
+        // Is pusd metapool
+        _startingTokenAddress = swapPUSDMetapool(
           _startingTokenAddress,
           path[i],
           true
@@ -208,12 +208,12 @@ contract ERC20RouterV2 is Ownable, IYetiRouter {
     uint256 _minSwapAmount
   ) external override returns (uint256) {
     require(
-      _endingTokenAddress == yusdTokenAddress,
-      "Cannot unroute from a token other than YUSD"
+      _endingTokenAddress == pusdTokenAddress,
+      "Cannot unroute from a token other than PUSD"
     );
     address[] memory path = new address[](2);
     path[0] = _startingTokenAddress;
-    path[1] = yusdTokenAddress;
+    path[1] = pusdTokenAddress;
     IERC20(_startingTokenAddress).transferFrom(
       _fromUser,
       address(this),
@@ -236,7 +236,7 @@ contract ERC20RouterV2 is Ownable, IYetiRouter {
   }
 }
 
-// Router for Uniswap V2, performs YUSD -> YETI swaps
+// Router for Uniswap V2, performs PUSD -> PREON swaps
 interface IRouter {
   function swapExactTokensForTokens(
     uint256 amountIn,

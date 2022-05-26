@@ -22,7 +22,7 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
   let contracts
 
   let priceFeed
-  let yusdToken
+  let pusdToken
   let sortedTroves
   let troveManager
   let nameRegistry
@@ -33,8 +33,8 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
   let borrowerOperations
   let whitelist
 
-  let sYETI
-  let yetiToken
+  let sPREON
+  let preonToken
   let communityIssuance
   let lockupContractFactory
 
@@ -47,13 +47,13 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
   before(async () => {
     contracts = await deploymentHelper.deployLiquityCore()
     contracts.troveManager = await TroveManagerTester.new()
-    contracts = await deploymentHelper.deployYUSDToken(contracts)
+    contracts = await deploymentHelper.deployPUSDToken(contracts)
 
-    const YETIContracts = await deploymentHelper.deployYETIContracts(bountyAddress, lpRewardsAddress, multisig)
+    const PREONContracts = await deploymentHelper.deployPREONContracts(bountyAddress, lpRewardsAddress, multisig)
 
     priceFeedETH = contracts.priceFeedETH
     priceFeedAVAX = contracts.priceFeedAVAX
-    yusdToken = contracts.yusdToken
+    pusdToken = contracts.pusdToken
     sortedTroves = contracts.sortedTroves
     troveManager = contracts.troveManager
     nameRegistry = contracts.nameRegistry
@@ -66,14 +66,14 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
     weth = contracts.weth
     wavax = contracts.wavax
 
-    sYETI = YETIContracts.sYETI
-    yetiToken = YETIContracts.yetiToken
-    communityIssuance = YETIContracts.communityIssuance
-    lockupContractFactory = YETIContracts.lockupContractFactory
+    sPREON = PREONContracts.sPREON
+    preonToken = PREONContracts.preonToken
+    communityIssuance = PREONContracts.communityIssuance
+    lockupContractFactory = PREONContracts.lockupContractFactory
 
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectCoreContracts(contracts, YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, contracts)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectCoreContracts(contracts, PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, contracts)
 
     // const amountToMint = toBN(dec(1000, 18));
 
@@ -84,14 +84,14 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
     // const wethRatio = await contracts.whitelist.getRatio(contracts.weth.address)
 
     for (account of accounts.slice(0, 10)) {
-      await th.openTrove(contracts, { extraYUSDAmount: toBN(dec(20000, 18)), ICR: toBN(dec(2, 18)), extraParams: { from: account } })
+      await th.openTrove(contracts, { extraPUSDAmount: toBN(dec(20000, 18)), ICR: toBN(dec(2, 18)), extraParams: { from: account } })
     }
 
 
     const expectedCISupplyCap = '32000000000000000000000000' // 32mil
 
     // Check CI has been properly funded
-    // const bal = await yetiToken.balanceOf(communityIssuance.address)
+    // const bal = await preonToken.balanceOf(communityIssuance.address)
     // assert.equal(bal, expectedCISupplyCap)
   })
 
@@ -193,7 +193,7 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
       }
     })
 
-    // @KingYeti: removed this function
+    // @KingPreon: removed this function
     // increaseTroveColl
     // it("increaseTroveColl(): reverts when called by an account that is not BorrowerOperations", async () => {
     //   // Attempt call from alice
@@ -206,7 +206,7 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
     //   }
     // })
 
-    // @KingYeti: removed this function
+    // @KingPreon: removed this function
     // decreaseTroveColl
     // it("decreaseTroveColl(): reverts when called by an account that is not BorrowerOperations", async () => {
     //   // Attempt call from alice
@@ -257,11 +257,11 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
       }
     })
 
-    // increaseYUSD
-    it("increaseYUSDDebt(): reverts when called by an account that is not BO nor TroveM", async () => {
+    // increasePUSD
+    it("increasePUSDDebt(): reverts when called by an account that is not BO nor TroveM", async () => {
       // Attempt call from alice
       try {
-        const txAlice = await activePool.increaseYUSDDebt(100, { from: alice })
+        const txAlice = await activePool.increasePUSDDebt(100, { from: alice })
 
       } catch (err) {
         assert.include(err.message, "revert")
@@ -269,11 +269,11 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
       }
     })
 
-    // decreaseYUSD
-    it("decreaseYUSDDebt(): reverts when called by an account that is not BO nor TroveM nor SP", async () => {
+    // decreasePUSD
+    it("decreasePUSDDebt(): reverts when called by an account that is not BO nor TroveM nor SP", async () => {
       // Attempt call from alice
       try {
-        const txAlice = await activePool.decreaseYUSDDebt(100, { from: alice })
+        const txAlice = await activePool.decreasePUSDDebt(100, { from: alice })
 
       } catch (err) {
         assert.include(err.message, "revert")
@@ -281,7 +281,7 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
       }
     })
 
-    // fallback (payment)	@KingYeti function has been removed
+    // fallback (payment)	@KingPreon function has been removed
     // it("fallback(): reverts when called by an account that is not Borrower Operations nor Default Pool", async () => {
     //   // Attempt call from alice
     //   try {
@@ -307,11 +307,11 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
       }
     })
 
-    // increaseYUSD
-    it("increaseYUSDDebt(): reverts when called by an account that is not TroveManager", async () => {
+    // increasePUSD
+    it("increasePUSDDebt(): reverts when called by an account that is not TroveManager", async () => {
       // Attempt call from alice
       try {
-        const txAlice = await defaultPool.increaseYUSDDebt(100, { from: alice })
+        const txAlice = await defaultPool.increasePUSDDebt(100, { from: alice })
 
       } catch (err) {
         assert.include(err.message, "revert")
@@ -319,11 +319,11 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
       }
     })
 
-    // decreaseYUSD
-    it("decreaseYUSD(): reverts when called by an account that is not TroveManager", async () => {
+    // decreasePUSD
+    it("decreasePUSD(): reverts when called by an account that is not TroveManager", async () => {
       // Attempt call from alice
       try {
-        const txAlice = await defaultPool.decreaseYUSDDebt(100, { from: alice })
+        const txAlice = await defaultPool.decreasePUSDDebt(100, { from: alice })
 
       } catch (err) {
         assert.include(err.message, "revert")
@@ -331,7 +331,7 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
       }
     })
 
-    // fallback (payment)	@KingYeti Function has been removed. 
+    // fallback (payment)	@KingPreon Function has been removed. 
     // it("fallback(): reverts when called by an account that is not the Active Pool", async () => {
     //   // Attempt call from alice
     //   try {
@@ -361,7 +361,7 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
 
     // --- onlyActivePool ---
 
-    // fallback (payment)	@KingYeti Function has been removed. 
+    // fallback (payment)	@KingPreon Function has been removed. 
     // it("fallback(): reverts when called by an account that is not the Active Pool", async () => {
     //   // Attempt call from alice
     //   try {
@@ -374,12 +374,12 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
     // })
   })
 
-  describe('YUSDToken', async accounts => {
+  describe('PUSDToken', async accounts => {
 
     //    mint
     it("mint(): reverts when called by an account that is not BorrowerOperations", async () => {
       // Attempt call from alice
-      const txAlice = yusdToken.mint(bob, 100, { from: alice })
+      const txAlice = pusdToken.mint(bob, 100, { from: alice })
       await th.assertRevert(txAlice, "Caller is not BorrowerOperations")
     })
 
@@ -387,7 +387,7 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
     it("burn(): reverts when called by an account that is not BO nor TroveM nor SP", async () => {
       // Attempt call from alice
       try {
-        const txAlice = await yusdToken.burn(bob, 100, { from: alice })
+        const txAlice = await pusdToken.burn(bob, 100, { from: alice })
 
       } catch (err) {
         assert.include(err.message, "revert")
@@ -399,7 +399,7 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
     it("sendToPool(): reverts when called by an account that is not StabilityPool", async () => {
       // Attempt call from alice
       try {
-        const txAlice = await yusdToken.sendToPool(bob, activePool.address, 100, { from: alice })
+        const txAlice = await pusdToken.sendToPool(bob, activePool.address, 100, { from: alice })
 
       } catch (err) {
         assert.include(err.message, "revert")
@@ -411,7 +411,7 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
     it("returnFromPool(): reverts when called by an account that is not TroveManager nor StabilityPool", async () => {
       // Attempt call from alice
       try {
-        const txAlice = await yusdToken.returnFromPool(activePool.address, bob, 100, { from: alice })
+        const txAlice = await pusdToken.returnFromPool(activePool.address, bob, 100, { from: alice })
 
       } catch (err) {
         assert.include(err.message, "revert")
@@ -461,22 +461,22 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
     })
   })
 
-  describe('SYETI', async accounts => {
+  describe('SPREON', async accounts => {
     it("setAddresses(): reverts when caller is not Owner", async () => {
       try {
-        const txAlice = await sYETI.setAddresses(alice, alice, { from: alice })
+        const txAlice = await sPREON.setAddresses(alice, alice, { from: alice })
       } catch (err) {
         assert.include(err.message, "revert")
       }
     })
   })
 
-  describe('YETIToken', async accounts => {
-    it("sendToSYETI(): reverts when caller is not the YETISstaking", async () => {
+  describe('PREONToken', async accounts => {
+    it("sendToSPREON(): reverts when caller is not the PREONSstaking", async () => {
 
       // multisig tries to call it
       try {
-        const tx = await yetiToken.sendToSYETI(multisig, 1, { from: multisig })
+        const tx = await preonToken.sendToSPREON(multisig, 1, { from: multisig })
       } catch (err) {
         assert.include(err.message, "revert")
       }
@@ -486,7 +486,7 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
 
       // Bob tries to call it
       try {
-        const tx = await yetiToken.sendToSYETI(bob, dec(1, 18), { from: bob })
+        const tx = await preonToken.sendToSPREON(bob, dec(1, 18), { from: bob })
       } catch (err) {
         assert.include(err.message, "revert")
       }
@@ -494,18 +494,18 @@ contract('Access Control: Liquity functions with the caller restricted to Liquit
   })
 
   describe('CommunityIssuance', async accounts => {
-    it("sendYETI(): reverts when caller is not the StabilityPool", async () => {
-      const tx1 = communityIssuance.sendYETI(alice, dec(100, 18), { from: alice })
-      const tx2 = communityIssuance.sendYETI(bob, dec(100, 18), { from: alice })
-      const tx3 = communityIssuance.sendYETI(stabilityPool.address, dec(100, 18), { from: alice })
+    it("sendPREON(): reverts when caller is not the StabilityPool", async () => {
+      const tx1 = communityIssuance.sendPREON(alice, dec(100, 18), { from: alice })
+      const tx2 = communityIssuance.sendPREON(bob, dec(100, 18), { from: alice })
+      const tx3 = communityIssuance.sendPREON(stabilityPool.address, dec(100, 18), { from: alice })
 
       assertRevert(tx1)
       assertRevert(tx2)
       assertRevert(tx3)
     })
 
-    it("issueYETI(): reverts when caller is not the StabilityPool", async () => {
-      const tx1 = communityIssuance.issueYETI({ from: alice })
+    it("issuePREON(): reverts when caller is not the StabilityPool", async () => {
+      const tx1 = communityIssuance.issuePREON({ from: alice })
 
       assertRevert(tx1)
     })

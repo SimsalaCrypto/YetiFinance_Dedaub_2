@@ -6,7 +6,7 @@ contract('Deployment script - Sets correct contract addresses dependencies after
   const [bountyAddress, lpRewardsAddress, multisig] = accounts.slice(997, 1000)
   
   let priceFeed
-  let yusdToken
+  let pusdToken
   let sortedTroves
   let troveManager
   let activePool
@@ -14,17 +14,17 @@ contract('Deployment script - Sets correct contract addresses dependencies after
   let defaultPool
   let functionCaller
   let borrowerOperations
-  let sYETI
-  let yetiToken
+  let sPREON
+  let preonToken
   let communityIssuance
   let lockupContractFactory
 
   before(async () => {
     const coreContracts = await deploymentHelper.deployLiquityCore()
-    const YETIContracts = await deploymentHelper.deployYETIContracts(bountyAddress, lpRewardsAddress, multisig)
+    const PREONContracts = await deploymentHelper.deployPREONContracts(bountyAddress, lpRewardsAddress, multisig)
 
     priceFeed = coreContracts.priceFeedTestnet
-    yusdToken = coreContracts.yusdToken
+    pusdToken = coreContracts.pusdToken
     sortedTroves = coreContracts.sortedTroves
     troveManager = coreContracts.troveManager
     activePool = coreContracts.activePool
@@ -33,17 +33,17 @@ contract('Deployment script - Sets correct contract addresses dependencies after
     functionCaller = coreContracts.functionCaller
     borrowerOperations = coreContracts.borrowerOperations
 
-    sYETI = YETIContracts.sYETI
-    yetiToken = YETIContracts.yetiToken
-    communityIssuance = YETIContracts.communityIssuance
-    lockupContractFactory = YETIContracts.lockupContractFactory
+    sPREON = PREONContracts.sPREON
+    preonToken = PREONContracts.preonToken
+    communityIssuance = PREONContracts.communityIssuance
+    lockupContractFactory = PREONContracts.lockupContractFactory
 
-    await deploymentHelper.connectYETIContracts(YETIContracts)
-    await deploymentHelper.connectCoreContracts(coreContracts, YETIContracts)
-    await deploymentHelper.connectYETIContractsToCore(YETIContracts, coreContracts)
+    await deploymentHelper.connectPREONContracts(PREONContracts)
+    await deploymentHelper.connectCoreContracts(coreContracts, PREONContracts)
+    await deploymentHelper.connectPREONContractsToCore(PREONContracts, coreContracts)
   })
 
-  // @KingYeti: priceFeed no longer set in troveManager
+  // @KingPreon: priceFeed no longer set in troveManager
   // it('Sets the correct PriceFeed address in TroveManager', async () => {
   //   const priceFeedAddress = priceFeed.address
   //
@@ -52,12 +52,12 @@ contract('Deployment script - Sets correct contract addresses dependencies after
   //   assert.equal(priceFeedAddress, recordedPriceFeedAddress)
   // })
 
-  it('Sets the correct YUSDToken address in TroveManager', async () => {
-    const yusdTokenAddress = yusdToken.address
+  it('Sets the correct PUSDToken address in TroveManager', async () => {
+    const pusdTokenAddress = pusdToken.address
 
-    const recordedClvTokenAddress = await troveManager.yusdToken()
+    const recordedClvTokenAddress = await troveManager.pusdToken()
 
-    assert.equal(yusdTokenAddress, recordedClvTokenAddress)
+    assert.equal(pusdTokenAddress, recordedClvTokenAddress)
   })
 
   it('Sets the correct SortedTroves address in TroveManager', async () => {
@@ -103,12 +103,12 @@ contract('Deployment script - Sets correct contract addresses dependencies after
     assert.equal(stabilityPoolAddress, recordedStabilityPoolAddresss)
   })
 
-  // YETI Staking in TroveM
-  it('Sets the correct SYETI address in TroveManager', async () => {
-    const sYETIAddress = sYETI.address
+  // PREON Staking in TroveM
+  it('Sets the correct SPREON address in TroveManager', async () => {
+    const sPREONAddress = sPREON.address
 
-    const recordedSYETIAddress = await troveManager.sYETI()
-    assert.equal(sYETIAddress, recordedSYETIAddress)
+    const recordedSPREONAddress = await troveManager.sPREON()
+    assert.equal(sPREONAddress, recordedSPREONAddress)
   })
 
   // Active Pool
@@ -161,12 +161,12 @@ contract('Deployment script - Sets correct contract addresses dependencies after
     assert.equal(borrowerOperationsAddress, recordedBorrowerOperationsAddress)
   })
 
-  it('Sets the correct YUSDToken address in StabilityPool', async () => {
-    const yusdTokenAddress = yusdToken.address
+  it('Sets the correct PUSDToken address in StabilityPool', async () => {
+    const pusdTokenAddress = pusdToken.address
 
-    const recordedClvTokenAddress = await stabilityPool.yusdToken()
+    const recordedClvTokenAddress = await stabilityPool.pusdToken()
 
-    assert.equal(yusdTokenAddress, recordedClvTokenAddress)
+    assert.equal(pusdTokenAddress, recordedClvTokenAddress)
   })
 
   it('Sets the correct TroveManager address in StabilityPool', async () => {
@@ -216,7 +216,7 @@ contract('Deployment script - Sets correct contract addresses dependencies after
     assert.equal(troveManagerAddress, recordedTroveManagerAddress)
   })
 
-  // @KingYeti: Price Feed no longer set in Borrower Operations
+  // @KingPreon: Price Feed no longer set in Borrower Operations
   // it('Sets the correct PriceFeed address in BorrowerOperations', async () => {
   //   const priceFeedAddress = priceFeed.address
   //
@@ -248,78 +248,78 @@ contract('Deployment script - Sets correct contract addresses dependencies after
     assert.equal(defaultPoolAddress, recordedDefaultPoolAddress)
   })
 
-  // YETI Staking in BO
-  it('Sets the correct SYETI address in BorrowerOperations', async () => {
-    const sYETIAddress = sYETI.address
+  // PREON Staking in BO
+  it('Sets the correct SPREON address in BorrowerOperations', async () => {
+    const sPREONAddress = sPREON.address
 
-    const recordedSYETIAddress = await borrowerOperations.sYETIAddress()
-    assert.equal(sYETIAddress, recordedSYETIAddress)
+    const recordedSPREONAddress = await borrowerOperations.sPREONAddress()
+    assert.equal(sPREONAddress, recordedSPREONAddress)
   })
 
 
-  // --- YETI Staking ---
+  // --- PREON Staking ---
 
-  // Sets YETIToken in SYETI
-  it('Sets the correct YETIToken address in SYETI', async () => {
-    const yetiTokenAddress = yetiToken.address
+  // Sets PREONToken in SPREON
+  it('Sets the correct PREONToken address in SPREON', async () => {
+    const preonTokenAddress = preonToken.address
 
-    const recordedYETITokenAddress = await sYETI.yetiToken()
-    assert.equal(yetiTokenAddress, recordedYETITokenAddress)
+    const recordedPREONTokenAddress = await sPREON.preonToken()
+    assert.equal(preonTokenAddress, recordedPREONTokenAddress)
   })
 
-  // Sets YUSDToken in SYETI
-  it('Sets the correct YUSD Token address in SYETI', async () => {
-    const yusdTokenAddress = yusdToken.address
+  // Sets PUSDToken in SPREON
+  it('Sets the correct PUSD Token address in SPREON', async () => {
+    const pusdTokenAddress = pusdToken.address
 
-    const recordedYUSDTokenAddress = await sYETI.yusdToken()
-    assert.equal(yusdTokenAddress, recordedYUSDTokenAddress)
+    const recordedPUSDTokenAddress = await sPREON.pusdToken()
+    assert.equal(pusdTokenAddress, recordedPUSDTokenAddress)
   })
 
 
-  // ---  YETIToken ---
+  // ---  PREONToken ---
 
-  // Sets CI in YETIToken
-  it('Sets the correct CommunityIssuance address in YETIToken', async () => {
+  // Sets CI in PREONToken
+  it('Sets the correct CommunityIssuance address in PREONToken', async () => {
     const communityIssuanceAddress = communityIssuance.address
 
-    const recordedcommunityIssuanceAddress = await yetiToken.communityIssuanceAddress()
+    const recordedcommunityIssuanceAddress = await preonToken.communityIssuanceAddress()
     assert.equal(communityIssuanceAddress, recordedcommunityIssuanceAddress)
   })
 
-  // Sets SYETI in YETIToken
-  it('Sets the correct SYETI address in YETIToken', async () => {
-    const sYETIAddress = sYETI.address
+  // Sets SPREON in PREONToken
+  it('Sets the correct SPREON address in PREONToken', async () => {
+    const sPREONAddress = sPREON.address
 
-    const recordedSYETIAddress =  await yetiToken.sYETIAddress()
-    assert.equal(sYETIAddress, recordedSYETIAddress)
+    const recordedSPREONAddress =  await preonToken.sPREONAddress()
+    assert.equal(sPREONAddress, recordedSPREONAddress)
   })
 
-  // Sets LCF in YETIToken
-  it('Sets the correct LockupContractFactory address in YETIToken', async () => {
+  // Sets LCF in PREONToken
+  it('Sets the correct LockupContractFactory address in PREONToken', async () => {
     const LCFAddress = lockupContractFactory.address
 
-    const recordedLCFAddress =  await yetiToken.lockupContractFactory()
+    const recordedLCFAddress =  await preonToken.lockupContractFactory()
     assert.equal(LCFAddress, recordedLCFAddress)
   })
 
   // --- LCF  ---
 
-  // Sets YETIToken in LockupContractFactory
-  it('Sets the correct YETIToken address in LockupContractFactory', async () => {
-    const yetiTokenAddress = yetiToken.address
+  // Sets PREONToken in LockupContractFactory
+  it('Sets the correct PREONToken address in LockupContractFactory', async () => {
+    const preonTokenAddress = preonToken.address
 
-    const recordedYETITokenAddress = await lockupContractFactory.yetiTokenAddress()
-    assert.equal(yetiTokenAddress, recordedYETITokenAddress)
+    const recordedPREONTokenAddress = await lockupContractFactory.preonTokenAddress()
+    assert.equal(preonTokenAddress, recordedPREONTokenAddress)
   })
 
   // --- CI ---
 
-  // Sets YETIToken in CommunityIssuance
-  it('Sets the correct YETIToken address in CommunityIssuance', async () => {
-    const yetiTokenAddress = yetiToken.address
+  // Sets PREONToken in CommunityIssuance
+  it('Sets the correct PREONToken address in CommunityIssuance', async () => {
+    const preonTokenAddress = preonToken.address
 
-    const recordedYETITokenAddress = await communityIssuance.yetiToken()
-    assert.equal(yetiTokenAddress, recordedYETITokenAddress)
+    const recordedPREONTokenAddress = await communityIssuance.preonToken()
+    assert.equal(preonTokenAddress, recordedPREONTokenAddress)
   })
 
   it('Sets the correct StabilityPool address in CommunityIssuance', async () => {
